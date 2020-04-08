@@ -103,7 +103,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     elapsed_time = time.time() - start_time  # End-to-end elapsed time, including overhead
     inference_time /= n_frames  # Average inference (model forward + postprocessing) time taken per frame
     frames_per_second = 1/inference_time
-    print("End-to-end elapsed time %f sec, processed frame/sec in average", %(elapsed_time, frames_per_second))
+    print("End-to-end elapsed time %f sec, processed %f frame/sec in average" % (elapsed_time, frames_per_second))
 
     # Release the opened videos.
     vcap.release()
