@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import cv2 as cv2
+import cv2
 import time
 import yolov2tiny
 
@@ -20,7 +20,7 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
         print("Input video w: %f,"
               " h: %f,"
               " fps: %f frames/s,"
-              " total %d frames," % (width, height, fps, n_frames))
+              " total %d frames" % (width, height, fps, n_frames))
     else:
         raise RuntimeError("open_video_with_opencv: Could not open input video")
 
