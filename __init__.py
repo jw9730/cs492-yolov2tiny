@@ -92,13 +92,17 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
         # Output: (1, 125, 13, 13) numpy array
+        output = np.ones((1, 125, 13, 13))
 
         # TODO: Run postprocessing and get an output frame (h0 x w0 x 3 numpy array)
-        # Post-processing steps
         # The output is a (125x13x13) tensor where 13x13 is the number of grid cells that the image gets divided into.
         # Each grid cell corresponds to 125 channels,
         # made up of the 5 bounding boxes predicted by the grid cell
         # and the 25 data elements that describe each bounding box (5x25=125).
+        output = output.squeeze(0)
+        # Iterate over grid cells
+        # 125-dim feature = 5 bbox * 25 bbox feature = 5 bbox * (t_x, t_y, t_w, t_h, t_o, logit(category_0...20))
+
 
         out_frame = resize_output(frame, w0, h0)
 
