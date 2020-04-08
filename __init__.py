@@ -27,7 +27,7 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
     # Open an object of output video using cv2.VideoWriter.
     # Same encoding, size, and fps
-    fourcc = cv2.VideoWriter_fourcc(*codec)
+    fourcc = cv2.VideoWriter_fourcc(codec)
     out = cv2.ViewoWriter(out_video_path, fourcc, fps, (width, height))
 
     # Return the video objects and anything you want for further process.
