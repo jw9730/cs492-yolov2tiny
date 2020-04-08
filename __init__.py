@@ -33,11 +33,19 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
 
 def resize_input(im):
-    imsz = cv2.resize(im, (416, 416))
+    # im: (h0, w0, 3) numpy array
+    imsz = np.asarray(cv2.resize(im, (416, 416)), dtype=np.float32)
     imsz = imsz / 255.
-    imsz = imsz[:, :, :-1]
-    return np.asarray(imsz, dtype=np.float32)
+    # imsz = imsz[:, :, ::-1]
+    imsz = imsz.transpose((2, 0, 1))
+    return imsz
 
+def resize_output(imsz, w0, h0):
+    # imsz: (3, 416, 416) numpy array
+    im = imsz.transpose((1, 2, 0))
+    im = cv2.resize(im, (w0, h0))
+    im = im * 255.
+    return np.asarray(im, dtype=np.uint8)
 
 def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # This function runs the inference for each frame and creates the output video.
@@ -79,9 +87,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # TODO: Resize input frame to fit YOLOv2_tiny input layer
         # Pre-processing steps: Resize the input image to a (3, 416, 416) array of type float32.
-        frame = resize_input(in_frame)  # (416, 416, 3)
-        frame = frame.transpose((2, 0, 1))  # (3, 416, 416)
-        print(frame.shape)
+        frame = resize_input(in_frame)  # (3, 416, 416)
 
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
@@ -94,7 +100,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # made up of the 5 bounding boxes predicted by the grid cell
         # and the 25 data elements that describe each bounding box (5x25=125).
 
-        out_frame = frame
+        out_frame = resize_output(frame, w0, h0)
 
         # TODO: Adjust bbox x, y, w, h and write on resized output frame
         x, y, w, h = (20, 40, 60, 80)
