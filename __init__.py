@@ -142,8 +142,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # TODO: Create an instance of the YOLO_V2_TINY class. Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
 
     # Start the main loop. For each frame of the video, the loop must do the followings:
-    # 1. Do the inference.
-    # 2. TODO: Run postprocessing using the inference result, accumulate them through the video writer object.
+    # 1. TODO: Do the inference.
+    # 2. Run postprocessing using the inference result, accumulate them through the video writer object.
     #    The coordinates from postprocessing are calculated according to resized input; you must adjust
     #    them to fit into the original video.
     # 3. Measure the end-to-end time and the time spent only for inference.
