@@ -12,22 +12,21 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
     # Get video properties
     if vcap.isOpened():
-        width = vcap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
-        height = vcap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
+        width = int(vcap.get(cv2.CAP_PROP_FRAME_WIDTH))  # float
+        height = int(vcap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # float
         fps = vcap.get(cv2.CAP_PROP_FPS)  # frames per second
-        n_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)  # number of frames
-        codec = vcap.get(cv2.CAP_PROP_FOURCC)  # 4-character codec code
-        print("Input video w: %f,"
-              " h: %f,"
-              " fps: %f frames/s,"
+        n_frames = int(vcap.get(cv2.CAP_PROP_FRAME_COUNT))  # number of frames
+        print("Input video w: %d,"
+              " h: %d,"
+              " fps: %d frames/s,"
               " total %d frames" % (width, height, fps, n_frames))
     else:
         raise RuntimeError("open_video_with_opencv: Could not open input video")
 
     # Open an object of output video using cv2.VideoWriter.
     # Same encoding, size, and fps
-    fourcc = cv2.VideoWriter_fourcc(*'mpeg')
-    out = cv2.ViewoWriter(out_video_path, fourcc, fps, (width, height), True)
+    fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
+    out = cv2.VideoWriter(out_video_path, fourcc, fps, (width, height), True)
 
     # Return the video objects and anything you want for further process.
     return vcap, out, (width, height, n_frames)
