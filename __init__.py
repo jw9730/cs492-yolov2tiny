@@ -35,7 +35,7 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 def resize_input(im):
     imsz = cv2.resize(im, (416, 416))
     imsz = imsz / 255.
-    imsz = imsz[:,:,::-1]
+    imsz = imsz[:, :, :-1]
     return np.asarray(imsz, dtype=np.float32)
 
 
@@ -78,10 +78,20 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         ret, in_frame = vcap.read()
 
         # TODO: Resize input frame to fit YOLOv2_tiny input layer
+        # Input: (3, 416, 416) numpy array
+        # Output: (1, 125, 13, 13) numpy array
+        # Pre-processing steps: Resize the input image to a (3x416x416) array of type float32.
+        print(in_frame.shape)
 
         # TODO: Do the inference.
 
         # TODO: Run postprocessing and get an output frame (h0 x w0 x 3 numpy array)
+        # Post-processing steps
+        # The output is a (125x13x13) tensor where 13x13 is the number of grid cells that the image gets divided into.
+        # Each grid cell corresponds to 125 channels,
+        # made up of the 5 bounding boxes predicted by the grid cell
+        # and the 25 data elements that describe each bounding box (5x25=125).
+
         out_frame = in_frame
 
         # TODO: Adjust bbox x, y, w, h and write on resized output frame
