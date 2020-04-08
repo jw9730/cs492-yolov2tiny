@@ -89,7 +89,7 @@ def postprocess(output, w0, h0):
 
                 # If box confidence >= 0.2, decode x, y, w, h and bbox category
                 p_bbox = sigmoid(t_o)
-                if p_bbox < 0.2:
+                if p_bbox < 0.9:
                     continue
 
                 # Decode position in image pixel space
