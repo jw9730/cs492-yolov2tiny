@@ -5,10 +5,10 @@ import time
 import yolov2tiny
 
 
-def open_video_with_opencv(in_video_path, out_video_path):
+def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp4'):
 
     # Open an object of input video using cv2.VideoCapture.
-    vcap = cv2.VideoCapture('sample.mp4')
+    vcap = cv2.VideoCapture(in_video_path)
 
     # Get video properties
     if vcap.isOpened():
@@ -28,7 +28,7 @@ def open_video_with_opencv(in_video_path, out_video_path):
     # Open an object of output video using cv2.VideoWriter.
     # Same encoding, size, and fps
     fourcc = cv2.VideoWriter_fourcc(*codec)
-    out = cv2.ViewoWriter('output.mp4', fourcc, fps, (width, height))
+    out = cv2.ViewoWriter(out_video_path, fourcc, fps, (width, height))
 
     # Return the video objects and anything you want for further process.
     return vcap, out, (width, height, n_frames)
