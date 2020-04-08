@@ -17,8 +17,7 @@ def open_video_with_opencv(in_video_path, out_video_path):
         fps = vcap.get(cv2.CAP_PROP_FPS)  # frames per second
         n_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)  # number of frames
         codec = vcap.get(cv2.CAP_PROP_FOURCC)  # 4-character codec code
-        print(f"Input video w: {width}, h: {height},"
-              f" fps: {fps}frames/s, total {n_frames} frames, codec code {codec}")
+        print(f"Input video w: {width}, h: {height}, fps: {fps}frames/s, total {n_frames} frames, codec code {codec}")
     else:
         raise RuntimeError("open_video_with_opencv: Could not open input video")
 
