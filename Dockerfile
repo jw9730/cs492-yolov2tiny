@@ -1,5 +1,5 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04 
-MAINTAINER Jongse Park
+MAINTAINER Jinwoo Kim
 
 RUN apt-get update  
 RUN apt-get install -y build-essential wget python3 python3-pip python3-dev git libssl-dev \

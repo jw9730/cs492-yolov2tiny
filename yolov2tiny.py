@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import tensorflow as tf
 
+
 class YOLO_V2_TINY(object):
 
     def __init__(self, in_shape, weight_pickle, proc="cpu"):
