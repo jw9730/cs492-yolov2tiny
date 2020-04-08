@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import time
 import math
-import seaborn as sns
+from random import randint
 import yolov2tiny
 
 
@@ -62,8 +62,8 @@ def postprocess(output, w0, h0):
     bbox_dim = 25
 
     # Image pixel distance per one output cell width / height
-    c_x = 32 * (w0 / 416)
-    c_y = 32 * (h0 / 416)
+    x_ratio = 32 * (w0 / 416)
+    y_ratio = 32 * (h0 / 416)
 
     # Pre-defined anchors: Height and width of the 5 anchors defined by YOLOv2
     # Source: https://github.com/simo23/tinyYOLOv2
@@ -93,14 +93,14 @@ def postprocess(output, w0, h0):
                     continue
 
                 # Decode position in image pixel space
-                del_x = sigmoid(t_x) * (w0 / 416)
-                del_y = sigmoid(t_y) * (h0 / 416)
-                x = c_x*j + del_x
-                y = c_y*i + del_y
+                del_x = sigmoid(t_x)
+                del_y = sigmoid(t_y)
+                x = (j+del_x) * x_ratio
+                y = (i+del_y) * y_ratio
 
                 # Decode size in image pixel space
-                p_w = anchors[bbox_idx] * 32 * (w0 / 416)
-                p_h = anchors[bbox_idx+1] * 32 * (h0 / 416)
+                p_w = anchors[bbox_idx] * x_ratio
+                p_h = anchors[bbox_idx+1] * y_ratio
                 w = math.exp(t_w) * p_w
                 h = math.exp(t_h) * p_h
 
@@ -112,6 +112,14 @@ def postprocess(output, w0, h0):
 
     bbox_list = [(50, 40, 100, 80, 0), (100, 50, 70, 90, 1), (100, 100, 70, 90, 10)]
     return bbox_list
+
+
+def color_list(n=20):
+    # Color palette for categories
+    color_list = list()
+    for i in range(n):
+        color_list.append((randint(0, 255), randint(0, 255), randint(0, 255)))
+    return color_list
 
 
 def video_object_detection(in_video_path, out_video_path, proc="cpu"):
@@ -143,11 +151,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
 
-    # Color palette for categories
-    color_list = sns.color_palette("husl", 20)
-    for color in color_list:
-        for value in color:
-            value *= 255
+
 
     # Main loop
     inference_time = 0
