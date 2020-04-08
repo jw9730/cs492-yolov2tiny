@@ -114,7 +114,7 @@ def postprocess(output, w0, h0):
     return bbox_list
 
 
-def color_list(n=20):
+def randcolors(n=20):
     # Color palette for categories
     color_list = list()
     for i in range(n):
@@ -151,7 +151,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
 
-
+    # Generate a random color list
+    color_list = randcolors(20)
 
     # Main loop
     inference_time = 0
@@ -162,7 +163,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         ret, frame = vcap.read()
 
         # Pre-processing steps: Resize the input image to a (3, 416, 416) array of type float32.
-        frame = resize_input(frame)  # (3, 416, 416)
+        input_img = resize_input(frame)  # (3, 416, 416)
 
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
@@ -176,7 +177,9 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         for x, y, w, h, category_idx in bbox_list:
             assert (0 < x < w0) and (0 < y < h0) and (0 < w < w0) and (0 < h < h0)
             # x, y: box center
-            cv2.rectangle(frame, (x-w/2, y-h/2), (x+w/2, y+h/2), color_list[category_idx], 3)
+            start = (int(x-w/2), int(y-h/2))
+            end = (int(x+w/2), int(y+h/2))
+            cv2.rectangle(frame, start, end, color_list[category_idx], 1)
 
         inference_time += (time.time() - inference_start_time)
         # Accumulate final output frame to VideoWriter object
