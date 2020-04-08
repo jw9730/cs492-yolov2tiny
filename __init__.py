@@ -105,12 +105,11 @@ def postprocess(output, w0, h0):
                 h = math.exp(t_h) * p_h
 
                 # Decode category
-                category_idx = np.argmax(logits) + 1
+                category_idx = np.argmax(logits) 
 
                 # Add to decoded bounding box list
                 bbox_list.append((x, y, w, h, category_idx))
 
-    bbox_list = [(50, 40, 100, 80, 0), (100, 50, 70, 90, 1), (100, 100, 70, 90, 10)]
     return bbox_list
 
 
@@ -168,14 +167,15 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
         # Output: (1, 125, 13, 13) numpy array
-        output = np.ones((1, 125, 13, 13))
+
+        # Example random output
+        output = np.random.normal(loc=0., scale=1., size=(1, 125, 13, 13))
 
         # Postprocess
         bbox_list = postprocess(output, w0, h0)
 
         # Layout on
         for x, y, w, h, category_idx in bbox_list:
-            assert (0 < x < w0) and (0 < y < h0) and (0 < w < w0) and (0 < h < h0)
             # x, y: box center
             start = (int(x-w/2), int(y-h/2))
             end = (int(x+w/2), int(y+h/2))
