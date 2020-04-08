@@ -74,16 +74,18 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     for t in range(n_frames):
         inference_start_time = time.time()
 
-        # Get an input frame
+        # Get an input frame as a (h0, w0, 3) numpy array
         ret, in_frame = vcap.read()
 
         # TODO: Resize input frame to fit YOLOv2_tiny input layer
-        # Input: (3, 416, 416) numpy array
-        # Output: (1, 125, 13, 13) numpy array
-        # Pre-processing steps: Resize the input image to a (3x416x416) array of type float32.
-        print(in_frame.shape)
+        # Pre-processing steps: Resize the input image to a (3, 416, 416) array of type float32.
+        frame = resize_input(in_frame)  # (416, 416, 3)
+        frame = frame.transpose((2, 0, 1))  # (3, 416, 416)
+        print(frame.shape)
 
         # TODO: Do the inference.
+        # Input: (3, 416, 416) numpy array
+        # Output: (1, 125, 13, 13) numpy array
 
         # TODO: Run postprocessing and get an output frame (h0 x w0 x 3 numpy array)
         # Post-processing steps
@@ -92,7 +94,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # made up of the 5 bounding boxes predicted by the grid cell
         # and the 25 data elements that describe each bounding box (5x25=125).
 
-        out_frame = in_frame
+        out_frame = frame
 
         # TODO: Adjust bbox x, y, w, h and write on resized output frame
         x, y, w, h = (20, 40, 60, 80)
