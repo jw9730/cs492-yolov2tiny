@@ -17,7 +17,11 @@ def open_video_with_opencv(in_video_path, out_video_path):
         fps = vcap.get(cv2.CAP_PROP_FPS)  # frames per second
         n_frames = vcap.get(cv2.CAP_PROP_FRAME_COUNT)  # number of frames
         codec = vcap.get(cv2.CAP_PROP_FOURCC)  # 4-character codec code
-        print(f"Input video w: {width}, h: {height}, fps: {fps}frames/s, total {n_frames} frames")
+        print("Input video w: %f,"
+              " h: %f,"
+              " fps: %f frames/s,"
+              " total %d frames,"
+              " codec code %s" % (width, height, fps, n_frames, codec))
     else:
         raise RuntimeError("open_video_with_opencv: Could not open input video")
 
@@ -91,7 +95,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         out.write(out_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            print(f"Main loop terminated after processing {t+1} frames, {n_frames} expected")
+            print("Main loop terminated after processing %d frames, %d expected" % (t+1, n_frames))
             break
 
     # Check the inference performance; end-to-end elapsed time and inference time.
@@ -99,7 +103,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     elapsed_time = time.time() - start_time  # End-to-end elapsed time, including overhead
     inference_time /= n_frames  # Average inference (model forward + postprocessing) time taken per frame
     frames_per_second = 1/inference_time
-    print(f"End-to-end elapsed time {elapsed_time} sec, processed {frames_per_second} frame/sec in average")
+    print("End-to-end elapsed time %f sec, processed frame/sec in average", %(elapsed_time, frames_per_second))
 
     # Release the opened videos.
     vcap.release()
