@@ -94,7 +94,14 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Layout on
         for best_class_name, lefttop, rightbottom, color in bbox_list:
             cv2.rectangle(frame, lefttop, rightbottom, color, 1)
-            cv2.putText(frame, best_class_name, rightbottom, cv2.FONT_HERSHEY_SIMPLEX, 2, 255)
+            text = best_class_name
+
+            (text_width, text_height) = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX,
+                                                        fontScale=1, thickness=1)[0]
+            box_coords = ((lefttop[0], rightbottom[1]), (lefttop[0] + text_width + 2, rightbottom[1] - text_height - 2))
+            cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
+            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, color=(255, 255, 255), thickness=1)
 
         inference_time += (time.time() - inference_start_time)
         # Accumulate final output frame to VideoWriter object
