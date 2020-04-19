@@ -5,7 +5,6 @@ import time
 import math
 from random import randint
 import yolov2tiny
-from .yolov2tiny import postprocessing
 
 
 def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp4'):
@@ -90,7 +89,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         output = np.random.normal(loc=0., scale=1., size=(1, 125, 13, 13))
 
         # Postprocess
-        bbox_list = postprocessing(output, w0, h0)
+        bbox_list = yolov2tiny.postprocessing(output, w0, h0)
 
         # Layout on
         for best_class_name, lefttop, rightbottom, color in bbox_list:
