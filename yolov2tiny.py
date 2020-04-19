@@ -130,10 +130,9 @@ class YOLO_V2_TINY(object):
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
                                          padding='SAME', name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        l = tf.nn.linear(features=n, name="conv{}_linear".format(i))
 
-                        tensor_list += [c, b, l]
-                        x = l
+                        tensor_list += [c, b]
+                        x = b
 
                     else:
                         raise RuntimeError("conv frame index out of range")
