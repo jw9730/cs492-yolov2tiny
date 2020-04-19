@@ -126,9 +126,11 @@ class YOLO_V2_TINY(object):
                         # k: kernel, biases
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
+                        # final padding is 1 although kernel size is 1
+                        pad = [[0, 0], [1, 1], [1, 1], [0, 0]]
 
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding='SAME', name="conv{}_conv2d".format(i))
+                                         padding=pad, name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
 
                         tensor_list += [c, b]
