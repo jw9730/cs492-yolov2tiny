@@ -86,7 +86,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Do the inference.
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
-        output = model.inference(input_img)
+        out_tensors = model.inference(input_img)
+        print(out_tensors)
+        raise NotImplementedError
+        out_frame0 = out_tensors[0:5]
+        output = out_tensors[0]
 
         # Postprocess
         bbox_list = yolov2tiny.postprocessing(output, w0, h0)

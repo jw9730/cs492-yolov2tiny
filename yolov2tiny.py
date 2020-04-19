@@ -52,7 +52,7 @@ class YOLO_V2_TINY(object):
         num_conv = 9
 
         # Construct computation graph, following the loaded weight structure
-        tensor_list = []
+        tensor_list = list()
         print("Type: {}".format(type(w)))
         print("Length of list:: {}".format(type(len(w))))
         print("Type of list element: {}".format(type(w[0])))
@@ -143,11 +143,6 @@ class YOLO_V2_TINY(object):
     def inference(self, img):
         feed_dict = {self.input_tensor: img}
         out_tensors = self.sess.run(self.tensor_list, feed_dict)
-
-        op = self.sess.graph.get_operations()
-        print(m.values() for m in op)
-
-        raise NotImplementedError
 
         return out_tensors
 
