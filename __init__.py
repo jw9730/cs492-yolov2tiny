@@ -94,7 +94,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Layout on
         for best_class_name, lefttop, rightbottom, color in bbox_list:
             cv2.rectangle(frame, lefttop, rightbottom, color, 1)
-            cv2.putText(frame, best_class_name, rightbottom, cv2.CV_FONT_HERSHEY_SIMPLEX, 2, 255)
+            cv2.putText(frame, best_class_name, rightbottom, cv2.cv.CV_FONT_HERSHEY_SIMPLEX, 2, 255)
 
         inference_time += (time.time() - inference_start_time)
         # Accumulate final output frame to VideoWriter object
