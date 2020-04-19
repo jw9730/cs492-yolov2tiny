@@ -84,8 +84,12 @@ class YOLO_V2_TINY(object):
                                                       scale=gamma, variance_epsilon=1e-5,
                                                       name="conv{}_batch_norm".format(i))
                         r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
-                        m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='VALID',
-                                             name="conv{}_max_pool2d".format(i))
+                        if i < num_maxpool - 1:
+                            m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='VALID',
+                                                 name="conv{}_max_pool2d".format(i))
+                        else:
+                            m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='SAME',
+                                                 name="conv{}_max_pool2d".format(i))
 
                         tensor_list += [c, b, n, r, m]
                         x = m
@@ -126,11 +130,10 @@ class YOLO_V2_TINY(object):
                         # k: kernel, biases
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
-                        # final padding is 1 although kernel size is 1
-                        pad = [[0, 0], [1, 1], [1, 1], [0, 0]]
+                        # pad = [[0, 0], [1, 1], [1, 1], [0, 0]]
 
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding=pad, name="conv{}_conv2d".format(i))
+                                         padding='SAME', name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
 
                         tensor_list += [c, b]
