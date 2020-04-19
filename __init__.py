@@ -41,6 +41,7 @@ def resize_input(im):
     imsz = imsz.transpose((2, 0, 1))
     return imsz
 
+
 def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # This function runs the inference for each frame and creates the output video.
 
@@ -58,8 +59,10 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         print('video_object_detection: Output video not opened')
         sys.exit()
 
-    # TODO: Create an instance of the YOLO_V2_TINY class. Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
-
+    # TODO: Create an instance of the YOLO_V2_TINY class.
+    #  Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
+    model = yolov2tiny.YOLO_V2_TINY(in_shape=(3, 416, 416), weight_pickle="./y2t_weights.pickle", proc=proc)
+    
     # Start the main loop. For each frame of the video, the loop must do the followings:
     # 1. TODO: Do the inference.
     # 2. Run postprocessing using the inference result, accumulate them through the video writer object.
@@ -84,9 +87,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
         # Output: (1, 125, 13, 13) numpy array
-
-        # Example random output
-        output = np.random.normal(loc=0., scale=1., size=(1, 125, 13, 13))
+        output = model.inference(input_img)
 
         # Postprocess
         bbox_list = yolov2tiny.postprocessing(output, w0, h0)
