@@ -27,8 +27,12 @@ class YOLO_V2_TINY(object):
         # sys.exit()
 
         # Load weight parameters from a pickle file.
+        w_all = pickle.load(self.weight_pickle)
+        print(w_all)
+        raise NotImplementedError
 
         bn_epsilon = 1e-5
+        n_input_imgs = 1
 
         # Create an empty list for tensors.
         tensor_list = []
@@ -118,12 +122,14 @@ class YOLO_V2_TINY(object):
                 o9 = h9
                 num_params = num_params + 1 * 1 * 1024 * 125 + 125
 
-                # Use self.g as a default graph. Refer to this API.
+        # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
+
         # Then you need to declare which device to use for tensor computation. The device info
         # is given from the command line argument and stored somewhere in this object.
         # In this project, you may choose CPU or GPU. Consider using the following API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#device
+
         # Then you are ready to add tensors to the graph. According to the Yolo v2 tiny model,
         # build a graph and append the tensors to the returning list for computing intermediate
         # values. One tip is to start adding a placeholder tensor for the first tensor.
