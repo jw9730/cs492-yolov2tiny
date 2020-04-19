@@ -57,8 +57,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         print('video_object_detection: Output video not opened')
         sys.exit()
 
-    # TODO: Create an instance of the YOLO_V2_TINY class.
-    #  Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
+    # Create an instance of the YOLO_V2_TINY class.
+    # Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
     model = yolov2tiny.YOLO_V2_TINY(in_shape=(3, 416, 416), weight_pickle="./y2t_weights.pickle", proc=proc)
     
     # Start the main loop. For each frame of the video, the loop must do the followings:

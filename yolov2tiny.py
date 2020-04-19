@@ -27,8 +27,17 @@ class YOLO_V2_TINY(object):
         # sys.exit()
 
         # Load weight parameters from a pickle file.
-        w_all = pickle.load(self.weight_pickle)
-        print(w_all)
+        with open(self.weight_pickle, 'rb') as h:
+            w = pickle.load(h, encoding='latin1')
+
+        print("Type: {}".format(type(w)))
+        print("Length of list:: {}".format(type(len(w))))
+        print("Type of list element: {}".format(type(w[0])))
+        for i in range(len(w)):
+            print("Conv{}".format(i))
+            for k in w[i].keys():
+                print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
+
         raise NotImplementedError
 
         bn_epsilon = 1e-5
@@ -39,7 +48,7 @@ class YOLO_V2_TINY(object):
         with self.g.as_default():
             with tf.name_scope('input'):
                 input_tensor = tf.placeholder(tf.float32, shape=[n_input_imgs, in_shape[0], in_shape[1], in_shape[2]])
-                labels = tf.placeholder(tf.float32, shape=[n_input_imgs, 1])
+                # labels = tf.placeholder(tf.float32, shape=[n_input_imgs, 1])
 
                 # 1 conv1     16  3 x 3 / 1   416 x 416 x   3   ->   416 x 416 x  16
                 w1 = tf.Variable(tf.truncated_normal([3, 3, 3, 16], stddev=0.1))
