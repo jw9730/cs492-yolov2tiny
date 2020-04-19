@@ -62,12 +62,12 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     model = yolov2tiny.YOLO_V2_TINY(in_shape=(1, 416, 416, 3), weight_pickle="./y2t_weights.pickle", proc=proc)
     
     # Start the main loop. For each frame of the video, the loop must do the followings:
-    # 1. TODO: Do the inference.
+    # 1. Do the inference.
     # 2. Run postprocessing using the inference result, accumulate them through the video writer object.
     #    The coordinates from postprocessing are calculated according to resized input; you must adjust
     #    them to fit into the original video.
     # 3. Measure the end-to-end time and the time spent only for inference.
-    # 4. TODO: Save the intermediate values for the first layer.
+    # 4. TODO: Save the intermediate values for the first frame.
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
 
