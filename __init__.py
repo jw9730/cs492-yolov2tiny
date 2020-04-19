@@ -9,10 +9,6 @@ from .yolov2tiny import postprocessing
 
 
 def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp4'):
-<<<<<<< HEAD
-=======
-
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
     # Open an object of input video using cv2.VideoCapture.
     vcap = cv2.VideoCapture(in_video_path)
 
@@ -46,88 +42,6 @@ def resize_input(im):
     imsz = imsz.transpose((2, 0, 1))
     return imsz
 
-<<<<<<< HEAD
-=======
-
-def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
-
-
-def postprocess(output, w0, h0):
-    """
-    :param output: (1, 125, 13, 13) numpy array
-        Each grid cell corresponds to 125 channels, made up of the 5 bounding boxes predicted by the grid cell
-        and the 25 data elements that describe each bounding box.
-
-    :return: bbox_list: list of tuples (x, y, w, h, text), representing bbox of confidence > 0.25
-        x, y: bbox position in global coordinate, in respect to original image
-        w, h: bbox size in global coordinate, in respect to original image
-        text: box representative text (i.e. semantic category)
-    """
-    output = output.squeeze(0)  # (125, 13, 13)
-    bbox_dim = 25
-
-    # Image pixel distance per one output cell width / height
-    x_ratio = 32 * (w0 / 416)
-    y_ratio = 32 * (h0 / 416)
-
-    # Pre-defined anchors: Height and width of the 5 anchors defined by YOLOv2
-    # Source: https://github.com/simo23/tinyYOLOv2
-    # [p_w, p_h] for first bbox, [p_w, p_h] for second bbox, ...
-    # (distance in output cell space)
-    anchors = [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
-
-    bbox_list = list()
-    # Iterate over grid cells
-    for i in range(13):  # y-axis
-        for j in range(13):  # x-axis
-            # 125-dim feature = 5 bbox * 25 bbox feature = 5 bbox * (t_x, t_y, t_w, t_h, t_o, logit(category_0...20))
-            o = output[:, i, j]
-            for bbox_idx in range(5):
-                # Parse prediction prior t_x, t_y, t_w, t_h, t_o, logit[0...19]
-                bbox_feat = o[bbox_dim*bbox_idx:bbox_dim*(bbox_idx+1)]
-                t_x = bbox_feat[0]
-                t_y = bbox_feat[1]
-                t_w = bbox_feat[2]
-                t_h = bbox_feat[3]
-                t_o = bbox_feat[4]
-                logits = bbox_feat[5:]
-
-                # If box confidence >= 0.2, decode x, y, w, h and bbox category
-                p_bbox = sigmoid(t_o)
-                if p_bbox < 0.9:
-                    continue
-
-                # Decode position in image pixel space
-                del_x = sigmoid(t_x)
-                del_y = sigmoid(t_y)
-                x = (j+del_x) * x_ratio
-                y = (i+del_y) * y_ratio
-
-                # Decode size in image pixel space
-                p_w = anchors[bbox_idx] * x_ratio
-                p_h = anchors[bbox_idx+1] * y_ratio
-                w = math.exp(t_w) * p_w
-                h = math.exp(t_h) * p_h
-
-                # Decode category
-                category_idx = np.argmax(logits) 
-
-                # Add to decoded bounding box list
-                bbox_list.append((x, y, w, h, category_idx))
-
-    return bbox_list
-
-
-def randcolors(n=20):
-    # Color palette for categories
-    color_list = list()
-    for i in range(n):
-        color_list.append((randint(0, 255), randint(0, 255), randint(0, 255)))
-    return color_list
-
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
-
 def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # This function runs the inference for each frame and creates the output video.
 
@@ -157,22 +71,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
 
-<<<<<<< HEAD
     # Main loop
     inference_time = 0
     for t in range(n_frames):
         inference_start_time = time.time()
 
-=======
-    # Generate a random color list
-    color_list = randcolors(20)
-
-    # Main loop
-    inference_time = 0
-    for t in range(n_frames):
-        inference_start_time = time.time()
-
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
         # Get an input frame as a (h0, w0, 3) numpy array
         ret, frame = vcap.read()
 
@@ -187,55 +90,31 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         output = np.random.normal(loc=0., scale=1., size=(1, 125, 13, 13))
 
         # Postprocess
-<<<<<<< HEAD
         bbox_list = postprocessing(output, w0, h0)
-=======
-        bbox_list = postprocess(output, w0, h0)
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
 
         # Layout on
-        for x, y, w, h, category_idx in bbox_list:
-            # x, y: box center
-<<<<<<< HEAD
-            start = (int(x - w / 2), int(y - h / 2))
-            end = (int(x + w / 2), int(y + h / 2))
-=======
-            start = (int(x-w/2), int(y-h/2))
-            end = (int(x+w/2), int(y+h/2))
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
-            cv2.rectangle(frame, start, end, color_list[category_idx], 1)
+        for best_class_name, lefttop, rightbottom, color in bbox_list:
+            cv2.rectangle(frame, lefttop, rightbottom, color, 1)
+            cv2.putText(frame, best_class_name, rightbottom, cv2.CV_FONT_HERSHEY_SIMPLEX, 2, 255)
 
         inference_time += (time.time() - inference_start_time)
         # Accumulate final output frame to VideoWriter object
         out.write(frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-<<<<<<< HEAD
             print("Main loop terminated after processing %d frames, %d expected" % (t + 1, n_frames))
-=======
-            print("Main loop terminated after processing %d frames, %d expected" % (t+1, n_frames))
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
             break
 
     # Check the inference performance; end-to-end elapsed time and inference time.
     # Check how many frames are processed per second respectively.
     elapsed_time = time.time() - start_time  # End-to-end elapsed time, including overhead
     inference_time /= n_frames  # Average inference (model forward + postprocessing) time taken per frame
-<<<<<<< HEAD
     frames_per_second = 1 / inference_time
-=======
-    frames_per_second = 1/inference_time
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
     print("End-to-end elapsed time %f sec, processed %f frame/sec in average" % (elapsed_time, frames_per_second))
 
     # Release the opened videos.
     vcap.release()
     out.release()
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 8aa7572b209369ad15827261cb5a273335023baa
 
 def main():
     if len(sys.argv) < 3:
