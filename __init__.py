@@ -92,7 +92,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # Postprocess
         bbox_list = yolov2tiny.postprocessing(output, w0, h0)
-        print(len(bbox_list), print(bbox_list[0]))
+        print(len(bbox_list), print(bbox_list))
 
         # Layout on
         for best_class_name, lefttop, rightbottom, color in bbox_list:
