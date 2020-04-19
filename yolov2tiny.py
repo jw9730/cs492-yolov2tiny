@@ -26,124 +26,6 @@ class YOLO_V2_TINY(object):
         # print('build_graph is not yet implemented')
         # sys.exit()
 
-        # Load weight parameters from a pickle file.
-        with open(self.weight_pickle, 'rb') as h:
-            w = pickle.load(h, encoding='latin1')
-
-        # Construct computation graph, following the loaded weight structure
-        tensor_list = []
-        print("Type: {}".format(type(w)))
-        print("Length of list:: {}".format(type(len(w))))
-        print("Type of list element: {}".format(type(w[0])))
-        with self.g.as_default():
-            with tf.device('/'+self.proc):
-                inp = tf.placeholder(tf.float32, shape=(1, 416, 416, 3), name="input")
-                for i in range(len(w)):
-                    # What are we assigning?
-                    print("Conv{}".format(i))
-                    for k in w[i].keys():
-                        print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
-
-                    # convolutional layer k: kernel, biases
-                    # batch-norm layer k: moving_variance, gamma, moving_mean
-                    kernel = w[i]['kernel']
-                    biases = w[i]['biases']
-                    moving_variance = w[i]['moving_variance']
-                    gamma = w[i]['gamma']
-                    moving_mean = w[i]['moving_mean']
-                    inp = tf.nn.conv2d(input=inp, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="Conv{}_conv2d".format(i))
-                    inp = tf.nn.bias_add(input=inp, bias=biases, name="Conv{}_bias_add".format(i))
-                    inp = tf.nn.batch_normalization(x=inp, mean=moving_mean, variance=moving_variance)
-
-
-        # Create an empty list for tensors.
-        tensor_list = []
-        with self.g.as_default():
-            with tf.name_scope('input'):
-                input_tensor = tf.placeholder(tf.float32, shape=[1, in_shape[0], in_shape[1], in_shape[2]])
-                # labels = tf.placeholder(tf.float32, shape=[n_input_imgs, 1])
-
-                # 1 conv1     16  3 x 3 / 1   416 x 416 x   3   ->   416 x 416 x  16
-                w1 = tf.Variable(tf.truncated_normal([3, 3, 3, 16], stddev=0.1))
-                b1 = tf.Variable(tf.constant(0.0, shape=[16]))
-                h1 = tf.nn.conv2d(input_tensor, w1, strides=[1, 1, 1, 1], padding='SAME') + b1
-                o1 = tf.maximum(0.01 * h1, h1)
-                num_params = 3 * 3 * 3 * 16 + 16 * 4
-
-                # 2 max1          2 x 2 / 2   416 x 416 x  16   ->   208 x 208 x  16
-                mp1 = tf.nn.max_pool(o1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 3 conv2     32  3 x 3 / 1   208 x 208 x  16   ->   208 x 208 x  32
-                w2 = tf.Variable(tf.truncated_normal([3, 3, 16, 32], stddev=0.1))
-                b2 = tf.Variable(tf.constant(0.0, shape=[32]))
-                h2 = tf.nn.conv2d(mp1, w2, strides=[1, 1, 1, 1], padding='SAME') + b2
-                o2 = tf.maximum(0.01 * h2, h2)
-                num_params = num_params + 3 * 3 * 16 * 32 + 32 * 4
-
-                # 4 max2          2 x 2 / 2   208 x 208 x  16   ->   104 x 104 x  32
-                mp2 = tf.nn.max_pool(o2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 5 conv     64  3 x 3 / 1   104 x 104 x  32   ->   104 x 104 x  64
-                w3 = tf.Variable(tf.truncated_normal([3, 3, 32, 64], stddev=0.1))
-                b3 = tf.Variable(tf.constant(0.0, shape=[64]))
-                h3 = tf.nn.conv2d(mp2, w3, strides=[1, 1, 1, 1], padding='SAME') + b3
-                o3 = tf.maximum(0.01 * h3, h3)
-                num_params = num_params + 3 * 3 * 32 * 64 + 64 * 4
-
-                # 6 max3          2 x 2 / 2   104 x 104 x  64   ->    52 x  52 x  64
-                mp3 = tf.nn.max_pool(o3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 7 conv4    128  3 x 3 / 1    52 x  52 x  64   ->    52 x  52 x 128
-                w4 = tf.Variable(tf.truncated_normal([3, 3, 64, 128], stddev=0.1))
-                b4 = tf.Variable(tf.constant(0.0, shape=[128]))
-                h4 = tf.nn.conv2d(mp3, w4, strides=[1, 1, 1, 1], padding='SAME') + b4
-                o4 = tf.maximum(0.01 * h4, h4)
-                num_params = num_params + 3 * 3 * 64 * 128 + 128 * 4
-
-                # 8 max4          2 x 2 / 2    52 x  52 x 128   ->    26 x  26 x 128
-                mp4 = tf.nn.max_pool(o4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 9 conv5    256  3 x 3 / 1    26 x  26 x 128   ->    26 x  26 x 256
-                w5 = tf.Variable(tf.truncated_normal([3, 3, 128, 256], stddev=0.1))
-                b5 = tf.Variable(tf.constant(0.0, shape=[256]))
-                h5 = tf.nn.conv2d(mp4, w5, strides=[1, 1, 1, 1], padding='SAME') + b5
-                o5 = tf.maximum(0.01 * h5, h5)
-                num_params = num_params + 3 * 3 * 128 * 256 + 256 * 4
-
-                # 10 max5          2 x 2 / 2    26 x  26 x 256   ->    13 x  13 x 256
-                mp5 = tf.nn.max_pool(o5, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 11 conv6   512  3 x 3 / 1    13 x  13 x 256   ->    13 x  13 512
-                w6 = tf.Variable(tf.truncated_normal([3, 3, 256, 512], stddev=0.1))
-                b6 = tf.Variable(tf.constant(0.0, shape=[512]))
-                h6 = tf.nn.conv2d(mp5, w6, strides=[1, 1, 1, 1], padding='SAME') + b6
-                o6 = tf.maximum(0.01 * h6, h6)
-                num_params = num_params + 3 * 3 * 256 * 512 + 512 * 4
-
-                # 12 max6          2 x 2 / 1    13 x  13 x 512   ->    13 x  13 x 512
-                mp6 = tf.nn.max_pool(o6, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
-
-                # 13 conv7    1024  1 x 1 / 1    13 x  13 x512   ->    13 x  13 x 1024
-                w7 = tf.Variable(tf.truncated_normal([3, 3, 512, 1024], stddev=0.1))
-                b7 = tf.Variable(tf.constant(0.0, shape=[1024]))
-                h7 = tf.nn.conv2d(mp6, w7, strides=[1, 1, 1, 1], padding='SAME') + b7
-                o7 = tf.maximum(0.01 * h7, h7)
-                num_params = num_params + 3 * 3 * 512 * 1024 + 1024 * 4
-
-                # 14 conv8   1024  3 x 3 / 1    13 x  13 x 512   ->    13 x  13 x1024
-                w8 = tf.Variable(tf.truncated_normal([3, 3, 1024, 1024], stddev=0.1))
-                b8 = tf.Variable(tf.constant(0.0, shape=[1024]))
-                h8 = tf.nn.conv2d(o7, w8, strides=[1, 1, 1, 1], padding='SAME') + b8
-                o8 = tf.maximum(0.01 * h8, h8)
-                num_params = num_params + 3 * 3 * 1024 * 1024 + 1024 * 4
-
-                # 15 conv9   125  1 x 1 / 1    13 x  13 x 1024   ->    13 x  13 x125
-                w9 = tf.Variable(tf.truncated_normal([1, 1, 1024, 125], stddev=0.1))
-                b9 = tf.Variable(tf.constant(0.0, shape=[125]))
-                h9 = tf.nn.conv2d(o8, w9, strides=[1, 1, 1, 1], padding='SAME') + b9
-                o9 = h9
-                num_params = num_params + 1 * 1 * 1024 * 125 + 125
-
         # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
 
@@ -156,6 +38,108 @@ class YOLO_V2_TINY(object):
         # build a graph and append the tensors to the returning list for computing intermediate
         # values. One tip is to start adding a placeholder tensor for the first tensor.
         # (Use 1e-5 for the epsilon value of batch normalization layers.)
+
+        # Load weight parameters from a pickle file.
+        with open(self.weight_pickle, 'rb') as h:
+            w = pickle.load(h, encoding='latin1')
+
+        # Set size/stride parameters of conv2d and maxpool
+        conv_stride =    [1, 1, 1, 1, 1, 1, 1, 1, 1]
+        maxpool_size =   [2, 2, 2, 2, 2, 2]
+        maxpool_stride = [2, 2, 2, 2, 2, 1]
+        num_maxpool = 6
+        num_batchnorm = 8
+        num_conv = 9
+
+        # Construct computation graph, following the loaded weight structure
+        tensor_list = []
+        print("Type: {}".format(type(w)))
+        print("Length of list:: {}".format(type(len(w))))
+        print("Type of list element: {}".format(type(w[0])))
+        with self.g.as_default():
+            with tf.device('/'+self.proc):
+
+                # Input placeholder
+                input_tensor = tf.placeholder(tf.float32, shape=in_shape, name="input")
+                x = input_tensor
+
+                for i in range(len(w)):
+                    # What are we assigning?
+                    print("Conv{}".format(i))
+                    for k in w[i].keys():
+                        print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
+
+                    if i < num_maxpool:
+                        # k: kernel, biases, moving_variance, gamma, moving_mean
+                        kernel = w[i]['kernel']
+                        biases = w[i]['biases']
+                        moving_variance = w[i]['moving_variance']
+                        gamma = w[i]['gamma']
+                        moving_mean = w[i]['moving_mean']
+
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
+                                         padding='SAME', name="conv{}_conv2d".format(i))
+                        b = tf.nn.bias_add(input=c, bias=biases, name="conv{}_bias_add".format(i))
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None,
+                                                      scale=gamma, variance_epsilon=1e-5,
+                                                      name="conv{}_batch_norm".format(i))
+                        r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
+                        m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='VALID',
+                                             name="conv{}_max_pool2d".format(i))
+
+                        tensor_list += [c, b, n, r, m]
+                        x = m
+
+                    elif i < num_batchnorm:
+                        # k: kernel, biases, moving_variance, gamma, moving_mean
+                        kernel = w[i]['kernel']
+                        biases = w[i]['biases']
+                        moving_variance = w[i]['moving_variance']
+                        gamma = w[i]['gamma']
+                        moving_mean = w[i]['moving_mean']
+
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
+                                           padding='SAME', name="conv{}_conv2d".format(i))
+                        b = tf.nn.bias_add(input=c, bias=biases, name="conv{}_bias_add".format(i))
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None,
+                                                      scale=gamma, variance_epsilon=1e-5,
+                                                      name="conv{}_batch_norm".format(i))
+                        r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
+
+                        tensor_list += [c, b, n, r]
+                        x = r
+
+                    elif i == num_conv - 2:
+                        # k: kernel, biases
+                        kernel = w[i]['kernel']
+                        biases = w[i]['biases']
+
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
+                                           padding='SAME', name="conv{}_conv2d".format(i))
+                        b = tf.nn.bias_add(input=c, bias=biases, name="conv{}_bias_add".format(i))
+                        r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
+
+                        tensor_list += [c, b, r]
+                        x = r
+
+                    elif i == num_conv - 1:
+                        # k: kernel, biases
+                        kernel = w[i]['kernel']
+                        biases = w[i]['biases']
+
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
+                                           padding='SAME', name="conv{}_conv2d".format(i))
+                        b = tf.nn.bias_add(input=c, bias=biases, name="conv{}_bias_add".format(i))
+                        l = tf.nn.linear(features=n, name="conv{}_linear".format(i))
+
+                        tensor_list += [c, b, l]
+                        x = l
+
+                    else:
+                        raise RuntimeError("conv frame index out of range")
+
+        for op in tf.get_default_graph().get_operations():
+            print(str(op.name))
 
         # Return the start tensor and the list of all tensors.
         return input_tensor, tensor_list
