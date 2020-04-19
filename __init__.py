@@ -85,6 +85,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # TODO: Do the inference.
         # Input: (3, 416, 416) numpy array
         # Output: (1, 125, 13, 13) numpy array
+        print(input_img.shape)
+        raise NotImplementedError
         output = model.inference(input_img)
 
         # Postprocess

@@ -30,24 +30,39 @@ class YOLO_V2_TINY(object):
         with open(self.weight_pickle, 'rb') as h:
             w = pickle.load(h, encoding='latin1')
 
+        # Construct computation graph, following the loaded weight structure
+        tensor_list = []
         print("Type: {}".format(type(w)))
         print("Length of list:: {}".format(type(len(w))))
         print("Type of list element: {}".format(type(w[0])))
-        for i in range(len(w)):
-            print("Conv{}".format(i))
-            for k in w[i].keys():
-                print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
+        with self.g.as_default():
+            with tf.device('/'+self.proc):
+                inp = tf.placeholder(tf.float32, shape=(1, 416, 416, 3), name="input")
+                for i in range(len(w)):
+                    # What are we assigning?
+                    print("Conv{}".format(i))
+                    for k in w[i].keys():
+                        print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
+
+                    # convolutional layer k: kernel, biases
+                    # batch-norm layer k: moving_variance, gamma, moving_mean
+                    kernel = w[i]['kernel']
+                    biases = w[i]['biases']
+                    moving_variance = w[i]['moving_variance']
+                    gamma = w[i]['gamma']
+                    moving_mean = w[i]['moving_mean']
+                    inp = tf.nn.conv2d(input=inp, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="Conv{}_conv2d".format(i))
+                    inp = tf.nn.bias_add(input=inp, bias=biases, name="Conv{}_bias_add".format(i))
+                    inp = tf.nn.batch_normalization(x=inp, mean=moving_mean, variance=moving_variance)
+
 
         raise NotImplementedError
-
-        bn_epsilon = 1e-5
-        n_input_imgs = 1
 
         # Create an empty list for tensors.
         tensor_list = []
         with self.g.as_default():
             with tf.name_scope('input'):
-                input_tensor = tf.placeholder(tf.float32, shape=[n_input_imgs, in_shape[0], in_shape[1], in_shape[2]])
+                input_tensor = tf.placeholder(tf.float32, shape=[1, in_shape[0], in_shape[1], in_shape[2]])
                 # labels = tf.placeholder(tf.float32, shape=[n_input_imgs, 1])
 
                 # 1 conv1     16  3 x 3 / 1   416 x 416 x   3   ->   416 x 416 x  16
