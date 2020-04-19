@@ -87,6 +87,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Do the inference.
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
+        print(input_img)
         out_tensors = model.inference(input_img)
 
         if t == 0:
