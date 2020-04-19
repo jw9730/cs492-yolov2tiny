@@ -137,15 +137,16 @@ class YOLO_V2_TINY(object):
                     else:
                         raise RuntimeError("conv frame index out of range")
 
-        for op in tf.get_default_graph().get_operations():
-            print(str(op.name))
-
         # Return the start tensor and the list of all tensors.
         return input_tensor, tensor_list
 
     def inference(self, img):
         feed_dict = {self.input_tensor: img}
         out_tensors = self.sess.run(self.tensor_list, feed_dict)
+
+        op = self.sess.graph.get_operations()
+        print(m.values() for m in op)
+
         return out_tensors
 
 
