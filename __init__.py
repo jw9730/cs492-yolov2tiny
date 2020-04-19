@@ -59,7 +59,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
     # Create an instance of the YOLO_V2_TINY class.
     # Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
-    model = yolov2tiny.YOLO_V2_TINY(in_shape=(3, 416, 416), weight_pickle="./y2t_weights.pickle", proc=proc)
+    #model = yolov2tiny.YOLO_V2_TINY(in_shape=(3, 416, 416), weight_pickle="./y2t_weights.pickle", proc=proc)
     
     # Start the main loop. For each frame of the video, the loop must do the followings:
     # 1. TODO: Do the inference.
@@ -87,10 +87,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Output: (1, 125, 13, 13) numpy array
         print(input_img.shape)
         raise NotImplementedError
-        output = model.inference(input_img)
+        #output = model.inference(input_img)
 
         # Postprocess
-        bbox_list = yolov2tiny.postprocessing(output, w0, h0)
+        #bbox_list = yolov2tiny.postprocessing(output, w0, h0)
+        bbox_list = []
 
         # Layout on
         for best_class_name, lefttop, rightbottom, color in bbox_list:
@@ -122,6 +123,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Release the opened videos.
     vcap.release()
     out.release()
+
 
 def main():
     if len(sys.argv) < 3:

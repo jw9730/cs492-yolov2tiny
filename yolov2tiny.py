@@ -56,8 +56,6 @@ class YOLO_V2_TINY(object):
                     inp = tf.nn.batch_normalization(x=inp, mean=moving_mean, variance=moving_variance)
 
 
-        raise NotImplementedError
-
         # Create an empty list for tensors.
         tensor_list = []
         with self.g.as_default():
