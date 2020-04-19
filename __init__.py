@@ -74,10 +74,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Main loop
     inference_time = 0
     for t in range(n_frames):
-        inference_start_time = time.time()
-
         # Get an input frame as a (h0, w0, 3) numpy array
         ret, frame = vcap.read()
+
+        # First-end
+        inference_start_time = time.time()
 
         # Pre-processing steps: Resize the input image to a (3, 416, 416) array of type float32.
         input_img = resize_input(frame)  # (3, 416, 416)
@@ -89,6 +90,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         out_tensors = model.inference(input_img)
         out_frame_0 = out_tensors[0:5]
         output = out_tensors[-1].transpose((0, 3, 1, 2))
+        print(len(out_tensors))
+        raise NotImplementedError
 
         # Postprocess
         bbox_list = yolov2tiny.postprocessing(output, w0, h0)
