@@ -70,15 +70,15 @@ class YOLO_V2_TINY(object):
                         moving_mean = w[i]['moving_mean']
 
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
-                        # b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        n = tf.nn.batch_normalization(x=c, mean=moving_mean, variance=moving_variance, offset=biases, scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
+                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
                         r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
                         if i == 5:
-                            m = tf.nn.max_pool2d(r, ksize=2, strides=1, padding='VALID', name="conv{}_max_pool2d".format(i))
+                            m = tf.nn.max_pool2d(r, ksize=2, strides=1, padding='SAME', name="conv{}_max_pool2d".format(i))
                         else:
                             m = tf.nn.max_pool2d(r, ksize=2, strides=2, padding='VALID', name="conv{}_max_pool2d".format(i))
 
-                        tensor_list += [c, n, r, m]
+                        tensor_list += [c, b, n, r, m]
                         x = m
 
                     elif 6 <= i < 8:
@@ -90,11 +90,11 @@ class YOLO_V2_TINY(object):
                         moving_mean = w[i]['moving_mean']
 
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
-                        # b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        n = tf.nn.batch_normalization(x=c, mean=moving_mean, variance=moving_variance, offset=biases, scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
+                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
                         r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
 
-                        tensor_list += [c, n, r]
+                        tensor_list += [c, b, n, r]
                         x = r
 
                     elif i == 8:
