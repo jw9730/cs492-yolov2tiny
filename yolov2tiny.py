@@ -147,6 +147,8 @@ class YOLO_V2_TINY(object):
         op = self.sess.graph.get_operations()
         print(m.values() for m in op)
 
+        raise NotImplementedError
+
         return out_tensors
 
 
