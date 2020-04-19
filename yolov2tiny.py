@@ -43,14 +43,6 @@ class YOLO_V2_TINY(object):
         with open(self.weight_pickle, 'rb') as h:
             w = pickle.load(h, encoding='latin1')
 
-        # Set size/stride parameters of conv2d and maxpool
-        conv_stride = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-        maxpool_size = [2, 2, 2, 2, 2, 2]
-        maxpool_stride = [2, 2, 2, 2, 2, 1]
-        num_maxpool = 6
-        num_batchnorm = 8
-        num_conv = 9
-
         # Construct computation graph, following the loaded weight structure
         tensor_list = list()
         print("Type: {}".format(type(w)))
@@ -69,7 +61,7 @@ class YOLO_V2_TINY(object):
                     for k in w[i].keys():
                         print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
 
-                    if i < num_maxpool:
+                    if 0 <= i < 6:
                         # k: kernel, biases, moving_variance, gamma, moving_mean
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
@@ -77,24 +69,20 @@ class YOLO_V2_TINY(object):
                         gamma = w[i]['gamma']
                         moving_mean = w[i]['moving_mean']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding='SAME', name="conv{}_conv2d".format(i))
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None,
-                                                      scale=gamma, variance_epsilon=1e-5,
-                                                      name="conv{}_batch_norm".format(i))
+                                                      scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
                         r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
-                        if i < num_maxpool - 1:
-                            m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='VALID',
-                                                 name="conv{}_max_pool2d".format(i))
-                        else:
-                            m = tf.nn.max_pool2d(r, ksize=maxpool_size[i], strides=maxpool_stride[i], padding='SAME',
-                                                 name="conv{}_max_pool2d".format(i))
+                        if i != 5:
+                            m = tf.nn.max_pool2d(r, ksize=2, strides=2, padding='VALID', name="conv{}_max_pool2d".format(i))
+                        elif i == 5:
+                            m = tf.nn.max_pool2d(r, ksize=2, strides=1, padding='SAME', name="conv{}_max_pool2d".format(i))
 
                         tensor_list += [c, b, n, r, m]
                         x = m
 
-                    elif i < num_batchnorm:
+                    elif 6 <= i < 8:
                         # k: kernel, biases, moving_variance, gamma, moving_mean
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
@@ -102,38 +90,21 @@ class YOLO_V2_TINY(object):
                         gamma = w[i]['gamma']
                         moving_mean = w[i]['moving_mean']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding='SAME', name="conv{}_conv2d".format(i))
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None,
-                                                      scale=gamma, variance_epsilon=1e-5,
-                                                      name="conv{}_batch_norm".format(i))
+                                                      scale=gamma, variance_epsilon=1e-5, name="conv{}_batch_norm".format(i))
                         r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
 
                         tensor_list += [c, b, n, r]
                         x = r
 
-                    elif i == num_conv - 2:
+                    elif i == 8:
                         # k: kernel, biases
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding='SAME', name="conv{}_conv2d".format(i))
-                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        r = tf.nn.leaky_relu(features=n, name="conv{}_leaky_relu".format(i))
-
-                        tensor_list += [c, b, r]
-                        x = r
-
-                    elif i == num_conv - 1:
-                        # k: kernel, biases
-                        kernel = w[i]['kernel']
-                        biases = w[i]['biases']
-                        # pad = [[0, 0], [1, 1], [1, 1], [0, 0]]
-
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, conv_stride[i], conv_stride[i], 1],
-                                         padding='SAME', name="conv{}_conv2d".format(i))
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
                         b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
 
                         tensor_list += [c, b]
