@@ -71,7 +71,7 @@ class YOLO_V2_TINY(object):
 
                 c4 = tf.nn.conv2d(input=m3, filters=w[4]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
                 b4 = tf.nn.bias_add(value=c4, bias=w[4]['biases'])
-                n4 = tf.nn.batch_normalization(x=b4, mean=w[4]['moving_mean'], variance=w[1]['moving_variance'], offset=None, scale=w[4]['gamma'], variance_epsilon=1e-5)
+                n4 = tf.nn.batch_normalization(x=b4, mean=w[4]['moving_mean'], variance=w[4]['moving_variance'], offset=None, scale=w[4]['gamma'], variance_epsilon=1e-5)
                 r4 = tf.nn.leaky_relu(features=n4, alpha=0.1)
                 m4 = tf.nn.max_pool2d(r4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
