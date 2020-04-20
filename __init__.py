@@ -100,8 +100,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
-            lefttop = [lefttop[0]*w0/416, lefttop[1]*w0/416]
-            rightbottom = [lefttop[0]*w0/416, lefttop[1]*w0/416]
+            lefttop = [int(lefttop[0]*w0/416), int(lefttop[1]*w0/416)]
+            rightbottom = [int(lefttop[0]*w0/416), int(lefttop[1]*w0/416)]
 
             cv2.rectangle(frame, lefttop, rightbottom, color, 1)
             text = best_class_name
