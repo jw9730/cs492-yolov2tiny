@@ -22,9 +22,6 @@ class YOLO_V2_TINY(object):
         # it will be used to inference every frame.
         #
         # Your code from here. You may clear the comments.
-        # #
-        # print('build_graph is not yet implemented')
-        # sys.exit()
 
         # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
@@ -45,42 +42,37 @@ class YOLO_V2_TINY(object):
         tensor_list = list()
         with self.g.as_default():
             with tf.device('/' + self.proc):
-
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
                 x = input_tensor
 
                 for i in range(len(w)):
-
                     if 0 <= i < 6:
                         c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
                         n = tf.nn.batch_normalization(x=b, mean=w[i]['moving_mean'], variance=w[i]['moving_variance'],
-                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-3)
+                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-5)
                         r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         if i == 5:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
                         else:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                         x = m
-
                         tensor_list += [c, b, n, r, m]
 
                     elif 6 <= i < 8:
                         c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
                         n = tf.nn.batch_normalization(x=b, mean=w[i]['moving_mean'], variance=w[i]['moving_variance'],
-                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-3)
+                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-5)
                         r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         x = r
-
                         tensor_list += [c, b, n, r]
 
                     elif i == 8:
                         c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
                         x = b
-
                         tensor_list += [c, b]
 
         # Return the start tensor and the list of all tensors.
