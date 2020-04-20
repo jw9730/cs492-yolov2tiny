@@ -84,7 +84,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         inference_start_time = time.time()
 
         # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
-        input_img = resize_input(frame)  # (1, 416, 416, 3)
+        input_img = np.expand_dims(resize_input(frame), axis=0)  # (1, 416, 416, 3)
 
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
@@ -96,7 +96,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
                 np.save(file='intermediate/layer_{}'.format(idx), arr=out_tensor)
 
         # Postprocess
-        label_boxes = yolov2tiny.postprocessing(output, w0, h0)
+        label_boxes = yolov2tiny.postprocessing(output)
 
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
