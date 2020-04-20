@@ -41,8 +41,6 @@ class YOLO_V2_TINY(object):
         #
         # Your code from here. You may clear the comments.
         #
-        print('build_graph is not yet implemented')
-        sys.exit()
 
         # Load weight parameters from a pickle file.
         with open(self.weight_pickle, 'rb') as h:
