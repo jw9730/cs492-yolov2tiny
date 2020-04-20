@@ -3,9 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_resize.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/yolov2tiny.py" beforeDir="false" afterPath="$PROJECT_DIR$/yolov2tiny.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -18,8 +15,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="390">
-              <caret line="111" column="107" lean-forward="true" selection-start-line="111" selection-start-column="107" selection-end-line="111" selection-end-column="107" />
+            <state relative-caret-position="352">
+              <caret line="109" column="116" selection-start-line="109" selection-start-column="116" selection-end-line="109" selection-end-column="116" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -69,11 +66,10 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-9" />
-    <option name="y" value="-9" />
-    <option name="width" value="1938" />
-    <option name="height" value="1048" />
+  <component name="ProjectFrameBounds">
+    <option name="x" value="952" />
+    <option name="width" value="977" />
+    <option name="height" value="1038" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -137,7 +133,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="72571000" />
+    <option name="totallyTimeSpent" value="72700000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -149,7 +145,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
+    <frame x="762" y="0" width="781" height="830" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.2351314" />
@@ -210,8 +206,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="111" column="107" lean-forward="true" selection-start-line="111" selection-start-column="107" selection-end-line="111" selection-end-column="107" />
+        <state relative-caret-position="352">
+          <caret line="109" column="116" selection-start-line="109" selection-start-column="116" selection-end-line="109" selection-end-column="116" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
