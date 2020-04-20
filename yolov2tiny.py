@@ -6,7 +6,7 @@ import tensorflow as tf
 
 
 def zero_tensor(shape):
-    return tf.Variable(tf.zeros(shape=shape, dtype=tf.float32))
+    return tf.zeros(shape=shape, dtype=tf.float32)
 
 
 def _w_to_tensor(w, i, key_list):
