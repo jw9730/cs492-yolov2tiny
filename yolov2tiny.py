@@ -57,6 +57,7 @@ class YOLO_V2_TINY(object):
                 # Load weight parameters from a pickle file.
                 with open(self.weight_pickle, 'rb') as h:
                     w = pickle.load(h, encoding='latin1')
+
                 for i in range(len(w)):
                     print('Conv{}'.format(i))
                     for k in w[i].keys():
