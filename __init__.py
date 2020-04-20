@@ -90,7 +90,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Output: (1, 125, 13, 13) numpy array
         out_tensors = model.inference(input_img)
         output = out_tensors[-1].transpose((0, 3, 1, 2))
-        print("# output tensors: {}\n".format(len(out_tensors)))
+        print("# output tensors: {}".format(len(out_tensors)))
 
         if t == 0:
             for idx, out_tensor in enumerate(out_tensors):
@@ -98,14 +98,14 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # Postprocess
         label_boxes = yolov2tiny.postprocessing(output, w0, h0)
-        print("# predicted boxes: {}\n".format(len(label_boxes)))
+        print("# predicted boxes: {}".format(len(label_boxes)))
 
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
             try:
                 cv2.rectangle(frame, lefttop, rightbottom, color, 1)
             except TypeError:
-                print(lefttop, rightbottom)
+                print("TypeError: Input coordinates {}, {}".format(lefttop, rightbottom))
                 sys.exit()
 
             text = best_class_name
