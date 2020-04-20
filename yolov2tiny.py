@@ -17,13 +17,13 @@ class YOLO_V2_TINY(object):
         self.input_tensor, self.tensor_list = self.build_graph(in_shape)
 
     def _w_to_tensor(self, w, i, key_list):
-        kernel = tf.constant(w[i]['kernel'], dtype=tf.float32)
-        biases = tf.constant(w[i]['biases'], dtype=tf.float32)
+        kernel = tf.convert_to_tensor(w[i]['kernel'], dtype=tf.float32)
+        biases = tf.convert_to_tensor(w[i]['biases'], dtype=tf.float32)
 
         if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
-            moving_mean = tf.constant(w[i]['moving_mean'], dtype=tf.float32)
-            moving_variance = tf.constant(w[i]['moving_variance'], dtype=tf.float32)
-            gamma = tf.constant(w[i]['gamma'], dtype=tf.float32)
+            moving_mean = tf.convert_to_tensor(w[i]['moving_mean'], dtype=tf.float32)
+            moving_variance = tf.convert_to_tensor(w[i]['moving_variance'], dtype=tf.float32)
+            gamma = tf.convert_to_tensor(w[i]['gamma'], dtype=tf.float32)
 
         else:
             moving_mean = None
@@ -65,12 +65,16 @@ class YOLO_V2_TINY(object):
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
 
+                input_scale = 0.003921568859368563
                 alpha = 0.1
                 bn_eps = 1e-5
 
+                # Scaling
+                scaled_input = input_tensor * input_scale
+
                 # Block 0
                 kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 0, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                c0 = tf.nn.conv2d(input=input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                c0 = tf.nn.conv2d(input=scaled_input, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b0 = tf.nn.bias_add(value=c0, bias=biases)
                 n0 = tf.nn.batch_normalization(x=b0, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
                 r0 = tf.nn.leaky_relu(features=n0, alpha=alpha)
