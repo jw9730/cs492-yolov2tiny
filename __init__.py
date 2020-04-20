@@ -116,7 +116,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         """
 
         # Accumulate final output frame to VideoWriter object
-        out.write(input_img*255)
+        out.write(input_img[0, :, :, :]*255)
 
         inference_time += (time.time() - inference_start_time)
 
