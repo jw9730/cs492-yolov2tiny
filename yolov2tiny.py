@@ -78,7 +78,7 @@ class YOLO_V2_TINY(object):
                 bn0 = tf.nn.batch_normalization(bias0, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((16,)), scale=gamma, variance_epsilon=bn_eps)
                 lr0 = tf.nn.leaky_relu(bn0, alpha=alpha)
-                maxpool0 = tf.nn.max_pool(lr0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                maxpool0 = tf.nn.max_pool2d(lr0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 1, keys_all)
                 conv1 = tf.nn.conv2d(maxpool0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
@@ -86,7 +86,7 @@ class YOLO_V2_TINY(object):
                 bn1 = tf.nn.batch_normalization(bias1, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((32,)), scale=gamma, variance_epsilon=bn_eps)
                 lr1 = tf.nn.leaky_relu(bn1, alpha=alpha)
-                maxpool1 = tf.nn.max_pool(lr1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                maxpool1 = tf.nn.max_pool2d(lr1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 2, keys_all)
                 conv2 = tf.nn.conv2d(maxpool1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
@@ -94,7 +94,7 @@ class YOLO_V2_TINY(object):
                 bn2 = tf.nn.batch_normalization(bias2, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((64,)), scale=gamma, variance_epsilon=bn_eps)
                 lr2 = tf.nn.leaky_relu(bn2, alpha=alpha)
-                maxpool2 = tf.nn.max_pool(lr2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                maxpool2 = tf.nn.max_pool2d(lr2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 3, keys_all)
                 conv3 = tf.nn.conv2d(maxpool2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
@@ -102,7 +102,7 @@ class YOLO_V2_TINY(object):
                 bn3 = tf.nn.batch_normalization(bias3, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((128,)), scale=gamma, variance_epsilon=bn_eps)
                 lr3 = tf.nn.leaky_relu(bn3, alpha=alpha)
-                maxpool3 = tf.nn.max_pool(lr3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                maxpool3 = tf.nn.max_pool2d(lr3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 4, keys_all)
                 conv4 = tf.nn.conv2d(maxpool3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
@@ -110,7 +110,7 @@ class YOLO_V2_TINY(object):
                 bn4 = tf.nn.batch_normalization(bias4, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((256,)), scale=gamma, variance_epsilon=bn_eps)
                 lr4 = tf.nn.leaky_relu(bn4, alpha=alpha)
-                maxpool4 = tf.nn.max_pool(lr4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                maxpool4 = tf.nn.max_pool2d(lr4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 5, keys_all)
                 conv5 = tf.nn.conv2d(maxpool4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
@@ -118,7 +118,7 @@ class YOLO_V2_TINY(object):
                 bn5 = tf.nn.batch_normalization(bias5, mean=moving_mean, variance=moving_variance,
                                                 offset=zero_tensor((512,)), scale=gamma, variance_epsilon=bn_eps)
                 lr5 = tf.nn.leaky_relu(bn5, alpha=alpha)
-                maxpool5 = tf.nn.max_pool(lr5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
+                maxpool5 = tf.nn.max_pool2d(lr5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 6, keys_all)
                 conv6 = tf.nn.conv2d(maxpool5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
