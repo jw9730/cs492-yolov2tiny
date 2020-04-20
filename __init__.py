@@ -83,6 +83,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
         input_img = [resize_input(frame)]  # (1, 416, 416, 3)
 
+        cv2.imwrite('test.jpg', input_img[0])
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        raise NotImplementedError
+
         # Do the inference.
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
