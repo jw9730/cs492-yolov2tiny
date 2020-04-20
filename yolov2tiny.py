@@ -5,6 +5,10 @@ import numpy as np
 import tensorflow as tf
 
 
+def zero_tensor(shape):
+    return tf.Variable(tf.zeros(shape=shape, dtype=tf.float32))
+
+
 def _w_to_tensor(w, i, key_list):
     kernel = tf.constant(w[i]['kernel'], dtype=tf.float32)
     biases = tf.constant(w[i]['biases'], dtype=tf.float32)
@@ -46,10 +50,9 @@ class YOLO_V2_TINY(object):
         # Then you are ready to add tensors to the graph. According to the Yolo v2 tiny model,
         # build a graph and append the tensors to the returning list for computing intermediate
         # values. One tip is to start adding a placeholder tensor for the first tensor.
-        # (Use bn_eps for the epsilon value of batch normalization layers.)
+        # (Use 1e-5 for the epsilon value of batch normalization layers.)
 
         # Construct computation graph, following the loaded weight structure
-        tensor_list = list()
         with self.g.as_default():
             with tf.device('/'+self.proc):
                 # Load weight parameters from a pickle file.
@@ -61,113 +64,81 @@ class YOLO_V2_TINY(object):
                     for k in w[i].keys():
                         print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
 
-                # Input placeholder
-                input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
-
+                keys_all = ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma']
+                bn_eps = 1e-3
                 alpha = 0.1
-                bn_eps = 1e-5
 
-                # Block 0
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 0, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
+                # Input placeholder
+                input_tensor = tf.placeholder(tf.float32, shape=in_shape)
 
-                c0 = tf.nn.conv2d(input=input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b0 = tf.nn.bias_add(value=c0, bias=biases)
-                n0 = tf.nn.batch_normalization(x=b0, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r0 = tf.nn.leaky_relu(features=n0, alpha=alpha)
-                m0 = tf.nn.max_pool2d(r0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                # Graph construction
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 0, keys_all)
+                conv0 = tf.nn.conv2d(input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias0 = tf.nn.bias_add(conv0, bias=biases)
+                bn0 = tf.nn.batch_normalization(bias0, mean=moving_mean, variance=moving_variance, offset=zero_tensor((16,)), scale=gamma, variance_epsilon=bn_eps)
+                lr0 = tf.nn.leaky_relu(bn0, alpha=alpha)
+                maxpool0 = tf.nn.max_pool2d(lr0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-                # Block 1
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 1, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 1, keys_all)
+                conv1 = tf.nn.conv2d(maxpool0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias1 = tf.nn.bias_add(conv1, bias=biases)
+                bn1 = tf.nn.batch_normalization(bias1, mean=moving_mean, variance=moving_variance, offset=zero_tensor((32,)), scale=gamma, variance_epsilon=bn_eps)
+                lr1 = tf.nn.leaky_relu(bn1, alpha=alpha)
+                maxpool1 = tf.nn.max_pool2d(lr1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-                c1 = tf.nn.conv2d(input=m0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b1 = tf.nn.bias_add(value=c1, bias=biases)
-                n1 = tf.nn.batch_normalization(x=b1, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r1 = tf.nn.leaky_relu(features=n1, alpha=alpha)
-                m1 = tf.nn.max_pool2d(r1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 2, keys_all)
+                conv2 = tf.nn.conv2d(maxpool1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias2 = tf.nn.bias_add(conv2, bias=biases)
+                bn2 = tf.nn.batch_normalization(bias2, mean=moving_mean, variance=moving_variance, offset=zero_tensor((64,)), scale=gamma, variance_epsilon=bn_eps)
+                lr2 = tf.nn.leaky_relu(bn2, alpha=alpha)
+                maxpool2 = tf.nn.max_pool2d(lr2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-                # Block 2
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 2, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 3, keys_all)
+                conv3 = tf.nn.conv2d(maxpool2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias3 = tf.nn.bias_add(conv3, bias=biases)
+                bn3 = tf.nn.batch_normalization(bias3, mean=moving_mean, variance=moving_variance, offset=zero_tensor((128,)), scale=gamma, variance_epsilon=bn_eps)
+                lr3 = tf.nn.leaky_relu(bn3, alpha=alpha)
+                maxpool3 = tf.nn.max_pool2d(lr3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-                c2 = tf.nn.conv2d(input=m1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b2 = tf.nn.bias_add(value=c2, bias=biases)
-                n2 = tf.nn.batch_normalization(x=b2, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r2 = tf.nn.leaky_relu(features=n2, alpha=alpha)
-                m2 = tf.nn.max_pool2d(r2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 4, keys_all)
+                conv4 = tf.nn.conv2d(maxpool3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias4 = tf.nn.bias_add(conv4, bias=biases)
+                bn4 = tf.nn.batch_normalization(bias4, mean=moving_mean, variance=moving_variance, offset=zero_tensor((256,)), scale=gamma, variance_epsilon=bn_eps)
+                lr4 = tf.nn.leaky_relu(bn4, alpha=alpha)
+                maxpool4 = tf.nn.max_pool2d(lr4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-                # Block 3
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 3, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 5, keys_all)
+                conv5 = tf.nn.conv2d(maxpool4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias5 = tf.nn.bias_add(conv5, bias=biases)
+                bn5 = tf.nn.batch_normalization(bias5, mean=moving_mean, variance=moving_variance, offset=zero_tensor((512,)), scale=gamma, variance_epsilon=bn_eps)
+                lr5 = tf.nn.leaky_relu(bn5, alpha=alpha)
+                maxpool5 = tf.nn.max_pool2d(lr5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
-                c3 = tf.nn.conv2d(input=m2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b3 = tf.nn.bias_add(value=c3, bias=biases)
-                n3 = tf.nn.batch_normalization(x=b3, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r3 = tf.nn.leaky_relu(features=n3, alpha=alpha)
-                m3 = tf.nn.max_pool2d(r3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 6, keys_all[:-1])
+                conv6 = tf.nn.conv2d(maxpool5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias6 = tf.nn.bias_add(conv6, bias=biases)
+                bn6 = tf.nn.batch_normalization(bias6, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
+                lr6 = tf.nn.leaky_relu(bn6, alpha=alpha)
 
-                # Block 4
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 4, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 7, keys_all[:-1])
+                conv7 = tf.nn.conv2d(lr6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias7 = tf.nn.bias_add(conv7, bias=biases)
+                bn7 = tf.nn.batch_normalization(bias7, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
+                lr7 = tf.nn.leaky_relu(bn7, alpha=alpha)
 
-                c4 = tf.nn.conv2d(input=m3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b4 = tf.nn.bias_add(value=c4, bias=biases)
-                n4 = tf.nn.batch_normalization(x=b4, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r4 = tf.nn.leaky_relu(features=n4, alpha=alpha)
-                m4 = tf.nn.max_pool2d(r4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+                kernel, biases, _, _, _ = _w_to_tensor(w, 0, keys_all[0:2])
+                conv8 = tf.nn.conv2d(lr7, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                bias8 = tf.nn.bias_add(conv8, bias=biases)
 
-                # Block 5
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 5, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
-
-                c5 = tf.nn.conv2d(input=m4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b5 = tf.nn.bias_add(value=c5, bias=biases)
-                n5 = tf.nn.batch_normalization(x=b5, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r5 = tf.nn.leaky_relu(features=n5, alpha=alpha)
-                m5 = tf.nn.max_pool2d(r5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
-
-                # Block 6
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 6, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
-
-                c6 = tf.nn.conv2d(input=m5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b6 = tf.nn.bias_add(value=c6, bias=biases)
-                n6 = tf.nn.batch_normalization(x=b6, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r6 = tf.nn.leaky_relu(features=n6, alpha=alpha)
-
-                # Block 7
-                kernel, biases, moving_mean, moving_variance, gamma =\
-                    _w_to_tensor(w, 7, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                offset = tf.zeros_like(moving_mean, dtype=tf.float32)
-
-                c7 = tf.nn.conv2d(input=r6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b7 = tf.nn.bias_add(value=c7, bias=biases)
-                n7 = tf.nn.batch_normalization(x=b7, mean=moving_mean, variance=moving_variance, offset=offset, scale=gamma, variance_epsilon=bn_eps)
-                r7 = tf.nn.leaky_relu(features=n7, alpha=alpha)
-
-                # Block 8
-                kernel, biases, _, _, _ = _w_to_tensor(w, 8, ['kernel', 'biases'])
-
-                c8 = tf.nn.conv2d(input=r7, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                b8 = tf.nn.bias_add(value=c8, bias=biases)
-
-                tensor_list += [c0, n0, r0, m0]
-                tensor_list += [c1, n1, r1, m1]
-                tensor_list += [c2, n2, r2, m2]
-                tensor_list += [c3, n3, r3, m3]
-                tensor_list += [c4, n4, r4, m4]
-                tensor_list += [c5, n5, r5, m5]
-                tensor_list += [c6, n6, r6]
-                tensor_list += [c7, n7, r7]
-                tensor_list += [c8, b8]
+                tensor_list = [conv0, bias0, bn0, lr0, maxpool0,
+                               conv1, bias1, bn1, lr1, maxpool1,
+                               conv2, bias2, bn2, lr2, maxpool2,
+                               conv3, bias3, bn3, lr3, maxpool3,
+                               conv4, bias4, bn4, lr4, maxpool4,
+                               conv5, bias5, bn5, lr5, maxpool5,
+                               conv6, bias6, bn6, lr6,
+                               conv7, bias7, bn7, lr7,
+                               conv8, bias8]
 
         # Return the start tensor and the list of all tensors.
         return input_tensor, tensor_list
