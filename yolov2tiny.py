@@ -6,16 +6,16 @@ import tensorflow as tf
 
 
 def zero_tensor(shape):
-    return tf.zeros(shape=shape, dtype=tf.float32)
+    return tf.Variable(tf.zeros(shape=shape, dtype=tf.float32))
 
 
 def _w_to_tensor(w, i, key_list):
-    kernel = tf.constant(w[i]['kernel'], dtype=tf.float32)
-    biases = tf.constant(w[i]['biases'], dtype=tf.float32)
+    kernel = tf.Variable(tf.constant(w[i]['kernel'], dtype=tf.float32))
+    biases = tf.Variable(tf.constant(w[i]['biases'], dtype=tf.float32))
     if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
-        moving_mean = tf.constant(w[i]['moving_mean'], dtype=tf.float32)
-        moving_variance = tf.constant(w[i]['moving_variance'], dtype=tf.float32)
-        gamma = tf.constant(w[i]['gamma'], dtype=tf.float32)
+        moving_mean = tf.Variable(tf.constant(w[i]['moving_mean'], dtype=tf.float32))
+        moving_variance = tf.Variable(tf.constant(w[i]['moving_variance'], dtype=tf.float32))
+        gamma = tf.Variable(tf.constant(w[i]['gamma'], dtype=tf.float32))
     else:
         moving_mean = None
         moving_variance = None
@@ -65,7 +65,7 @@ class YOLO_V2_TINY(object):
                         print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
 
                 keys_all = ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma']
-                bn_eps = 1e-3
+                bn_eps = 1e-5
                 alpha = 0.1
 
                 # Input placeholder
