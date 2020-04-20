@@ -102,7 +102,11 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
-            cv2.rectangle(frame, lefttop, rightbottom, color, 1)
+            try:
+                cv2.rectangle(frame, lefttop, rightbottom, color, 1)
+            except TypeError:
+                print(lefttop, rightbottom)
+                sys.exit()
 
             text = best_class_name
             (text_width, text_height) = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1)[0]
