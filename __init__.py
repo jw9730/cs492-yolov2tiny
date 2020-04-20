@@ -36,7 +36,7 @@ def resize_input(im):
     # im: (h0, w0, 3) numpy array
     imsz = np.asarray(cv2.resize(im, (416, 416)), dtype=np.float32)
     imsz = imsz / 255.
-    # imsz = imsz[:, :, ::-1]
+    imsz = imsz[:, :, ::-1]
     imsz = imsz.transpose((2, 0, 1))
     return imsz
 
@@ -68,7 +68,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     #    The coordinates from postprocessing are calculated according to resized input; you must adjust
     #    them to fit into the original video.
     # 3. Measure the end-to-end time and the time spent only for inference.
-    # 4. TODO: Save the intermediate values for the first frame.
+    # 4. Save the intermediate values for the first frame.
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
 
@@ -89,13 +89,12 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
         out_tensors = model.inference(input_img)
+        output = out_tensors[-1].transpose((0, 3, 1, 2))
 
         if t == 0:
             os.mkdir('intermediate/')
             for idx, out_tensor in enumerate(out_tensors):
                 np.save(file='intermediate/layer_{}'.format(idx), arr=out_tensor)
-
-        output = out_tensors[-1].transpose((0, 3, 1, 2))
 
         # Postprocess
         bbox_list = yolov2tiny.postprocessing(output, w0, h0)

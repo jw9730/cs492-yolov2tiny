@@ -45,9 +45,6 @@ class YOLO_V2_TINY(object):
 
         # Construct computation graph, following the loaded weight structure
         tensor_list = list()
-        print("Type: {}".format(type(w)))
-        print("Length of list:: {}".format(type(len(w))))
-        print("Type of list element: {}".format(type(w[0])))
         with self.g.as_default():
             with tf.device('/' + self.proc):
 
@@ -56,60 +53,50 @@ class YOLO_V2_TINY(object):
                 x = input_tensor
 
                 for i in range(len(w)):
-                    # What are we assigning?
-                    print("Conv{}".format(i))
-                    for k in w[i].keys():
-                        print("\tConv{}[{}]: {}".format(i, k, w[i][k].shape))
-
+                    
                     if 0 <= i < 6:
-                        # k: kernel, biases, moving_variance, gamma, moving_mean
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
                         moving_variance = w[i]['moving_variance']
                         gamma = w[i]['gamma']
                         moving_mean = w[i]['moving_mean']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
-                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3, name="conv{}_batch_norm".format(i))
-                        r = tf.nn.leaky_relu(features=n, alpha=0.1, name="conv{}_leaky_relu".format(i))
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=biases)
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         if i == 5:
-                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME', name="conv{}_max_pool2d".format(i))
+                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
                         else:
-                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID', name="conv{}_max_pool2d".format(i))
-
-                        tensor_list += [c, b, n, r, m]
+                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
                         x = m
 
+                        tensor_list += [c, b, n, r, m]
+
                     elif 6 <= i < 8:
-                        # k: kernel, biases, moving_variance, gamma, moving_mean
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
                         moving_variance = w[i]['moving_variance']
                         gamma = w[i]['gamma']
                         moving_mean = w[i]['moving_mean']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
-                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3, name="conv{}_batch_norm".format(i))
-                        r = tf.nn.leaky_relu(features=n, alpha=0.1, name="conv{}_leaky_relu".format(i))
-
-                        tensor_list += [c, b, n, r]
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=biases)
+                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         x = r
 
+                        tensor_list += [c, b, n, r]
+
                     elif i == 8:
-                        # k: kernel, biases
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
 
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME', name="conv{}_conv2d".format(i))
-                        b = tf.nn.bias_add(value=c, bias=biases, name="conv{}_bias_add".format(i))
-
-                        tensor_list += [c, b]
+                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=biases)
                         x = b
 
-                    else:
-                        raise RuntimeError("conv frame index out of range")
+                        tensor_list += [c, b]
 
         # Return the start tensor and the list of all tensors.
         return input_tensor, tensor_list
