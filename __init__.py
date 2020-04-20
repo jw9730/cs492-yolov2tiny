@@ -128,7 +128,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Check the inference performance; end-to-end elapsed time and inference time.
     # Check how many frames are processed per second respectively.
     print("End-to-end time %fs, average inference time %fs/frame" % (end_to_end_time, inference_time_sum/n_frames))
-    print("Average fps = %fframe/s" % (n_frames / inference_time_sum))
+    print("End-to-end fps = %fframe/s" % (n_frames / end_to_end_time))
 
     # Release the opened videos.
     vcap.release()
