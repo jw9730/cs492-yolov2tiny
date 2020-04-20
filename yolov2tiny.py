@@ -250,7 +250,7 @@ def non_maximal_suppression(thresholded_predictions, iou_threshold):
             curr_iou = iou(thresholded_predictions[i][0], nms_predictions[j][0])
             if (curr_iou > iou_threshold):
                 to_delete = True
-            print('Checking box {} vs {}: IOU = {} , To delete = {}'.format(thresholded_predictions[i][0],nms_predictions[j][0],curr_iou,to_delete))
+            # print('Checking box {} vs {}: IOU = {} , To delete = {}'.format(thresholded_predictions[i][0],nms_predictions[j][0],curr_iou,to_delete))
             j = j + 1
 
         if to_delete == False:
