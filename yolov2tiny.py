@@ -16,6 +16,19 @@ class YOLO_V2_TINY(object):
         self.weight_pickle = weight_pickle
         self.input_tensor, self.tensor_list = self.build_graph(in_shape)
 
+    def _w_to_tensor(self, w, i, key_list):
+        kernel = tf.convert_to_tensor(value=w[i]['kernel'])
+        biases = tf.convert_to_tensor(value=w[i]['biases'])
+        if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
+            moving_mean = tf.convert_to_tensor(value=w[i]['moving_mean'])
+            moving_variance = tf.convert_to_tensor(value=w[i]['moving_variance'])
+            gamma = tf.convert_to_tensor(value=w[i]['gamma'])
+        else:
+            moving_mean = None
+            moving_variance = None
+            gamma = None
+        return kernel, biases, moving_mean, moving_variance, gamma
+
     def build_graph(self, in_shape):
         #
         # This function builds a tensor graph. Once created,
@@ -49,12 +62,7 @@ class YOLO_V2_TINY(object):
                 bn_eps = 1e-5
 
                 # Block 0
-                kernel = tf.convert_to_tensor(value=w[0]['kernel'])
-                biases = tf.convert_to_tensor(value=w[0]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[0]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[0]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[0]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 0, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c0 = tf.nn.conv2d(input=input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b0 = tf.nn.bias_add(value=c0, bias=biases)
                 n0 = tf.nn.batch_normalization(x=b0, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -62,12 +70,7 @@ class YOLO_V2_TINY(object):
                 m0 = tf.nn.max_pool2d(r0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 1
-                kernel = tf.convert_to_tensor(value=w[1]['kernel'])
-                biases = tf.convert_to_tensor(value=w[1]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[1]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[1]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[1]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 1, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c1 = tf.nn.conv2d(input=m0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b1 = tf.nn.bias_add(value=c1, bias=biases)
                 n1 = tf.nn.batch_normalization(x=b1, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -75,12 +78,7 @@ class YOLO_V2_TINY(object):
                 m1 = tf.nn.max_pool2d(r1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 2
-                kernel = tf.convert_to_tensor(value=w[2]['kernel'])
-                biases = tf.convert_to_tensor(value=w[2]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[2]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[2]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[2]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 2, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c2 = tf.nn.conv2d(input=m1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b2 = tf.nn.bias_add(value=c2, bias=biases)
                 n2 = tf.nn.batch_normalization(x=b2, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -88,12 +86,7 @@ class YOLO_V2_TINY(object):
                 m2 = tf.nn.max_pool2d(r2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 3
-                kernel = tf.convert_to_tensor(value=w[3]['kernel'])
-                biases = tf.convert_to_tensor(value=w[3]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[3]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[3]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[3]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 3, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c3 = tf.nn.conv2d(input=m2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b3 = tf.nn.bias_add(value=c3, bias=biases)
                 n3 = tf.nn.batch_normalization(x=b3, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -101,12 +94,7 @@ class YOLO_V2_TINY(object):
                 m3 = tf.nn.max_pool2d(r3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 4
-                kernel = tf.convert_to_tensor(value=w[4]['kernel'])
-                biases = tf.convert_to_tensor(value=w[4]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[4]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[4]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[4]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 4, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c4 = tf.nn.conv2d(input=m3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b4 = tf.nn.bias_add(value=c4, bias=biases)
                 n4 = tf.nn.batch_normalization(x=b4, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -114,12 +102,7 @@ class YOLO_V2_TINY(object):
                 m4 = tf.nn.max_pool2d(r4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 5
-                kernel = tf.convert_to_tensor(value=w[5]['kernel'])
-                biases = tf.convert_to_tensor(value=w[5]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[5]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[5]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[5]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 5, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c5 = tf.nn.conv2d(input=m4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b5 = tf.nn.bias_add(value=c5, bias=biases)
                 n5 = tf.nn.batch_normalization(x=b5, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
@@ -127,32 +110,21 @@ class YOLO_V2_TINY(object):
                 m5 = tf.nn.max_pool2d(r5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
                 # Block 6
-                kernel = tf.convert_to_tensor(value=w[6]['kernel'])
-                biases = tf.convert_to_tensor(value=w[6]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[6]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[6]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[6]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 6, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c6 = tf.nn.conv2d(input=m5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b6 = tf.nn.bias_add(value=c6, bias=biases)
                 n6 = tf.nn.batch_normalization(x=b6, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
                 r6 = tf.nn.leaky_relu(features=n6, alpha=alpha)
 
                 # Block 7
-                kernel = tf.convert_to_tensor(value=w[7]['kernel'])
-                biases = tf.convert_to_tensor(value=w[7]['biases'])
-                moving_mean = tf.convert_to_tensor(value=w[7]['moving_mean'])
-                moving_variance = tf.convert_to_tensor(value=w[7]['moving_variance'])
-                gamma = tf.convert_to_tensor(value=w[7]['gamma'])
-
+                kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 7, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c7 = tf.nn.conv2d(input=r6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b7 = tf.nn.bias_add(value=c7, bias=biases)
                 n7 = tf.nn.batch_normalization(x=b7, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
                 r7 = tf.nn.leaky_relu(features=n7, alpha=alpha)
 
                 # Block 8
-                kernel = tf.convert_to_tensor(value=w[8]['kernel'])
-                biases = tf.convert_to_tensor(value=w[8]['biases'])
+                kernel, biases, _, _, _ = self._w_to_tensor(w, 8, ['kernel', 'biases'])
                 c8 = tf.nn.conv2d(input=r7, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b8 = tf.nn.bias_add(value=c8, bias=biases)
 
