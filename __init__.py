@@ -100,14 +100,13 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         print("# predicted boxes: {}".format(len(label_boxes)))
         print(label_boxes[0])
 
-        """
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
             try:
                 cv2.rectangle(frame, lefttop, rightbottom, color, 1)
             except TypeError:
                 print("TypeError: Input coordinates {}, {}".format(lefttop, rightbottom))
-                sys.exit()
+                continue
 
             text = best_class_name
             (text_width, text_height) = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1)[0]
@@ -115,7 +114,6 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
             cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
             cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=1)
-        """
 
         # Accumulate final output frame to VideoWriter object
         out.write(frame)
