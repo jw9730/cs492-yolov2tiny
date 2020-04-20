@@ -41,7 +41,7 @@ class YOLO_V2_TINY(object):
         # Construct computation graph, following the loaded weight structure
         tensor_list = list()
         with self.g.as_default():
-            with tf.device('/' + self.proc):
+            with tf.device(self.proc):
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
 
