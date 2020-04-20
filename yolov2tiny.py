@@ -273,12 +273,6 @@ def postprocessing(predictions, w0, h0):
                     thresholded_predictions.append(
                         [[left, top, right, bottom], final_confidence * best_class_score, classes[best_class]])
 
-                    print("decoded: pos {}".format((center_x, center_y)))
-                    print("decoded: size {}".format((roi_w, roi_h)))
-                    print("decoded: corners {}".format((left, right, top, bottom)))
-                    print("decoded: confidence {}".format(final_confidence))
-                    print("decoded: best class {}".format(best_class))
-
     # Sort the B-boxes by their final score
     thresholded_predictions.sort(key=lambda tup: tup[1], reverse=True)
 
@@ -295,9 +289,6 @@ def postprocessing(predictions, w0, h0):
         lefttop = tuple(nms_predictions[i][0][0:2])
         rightbottom = tuple(nms_predictions[i][0][2:4])
         color = colors[classes.index(nms_predictions[i][2])]
-
-        print("append: best class {}".format(best_class_name))
-        print("append: corner {}".format((lefttop, rightbottom)))
 
         label_boxes.append((best_class_name, lefttop, rightbottom, color))
 
