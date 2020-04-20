@@ -126,7 +126,7 @@ class YOLO_V2_TINY(object):
                 bn7 = tf.nn.batch_normalization(bias7, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
                 lr7 = tf.nn.leaky_relu(bn7, alpha=alpha)
 
-                kernel, biases, _, _, _ = _w_to_tensor(w, 0, keys_all[0:2])
+                kernel, biases, _, _, _ = _w_to_tensor(w, 8, keys_all[0:2])
                 conv8 = tf.nn.conv2d(lr7, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias8 = tf.nn.bias_add(conv8, bias=biases)
 
