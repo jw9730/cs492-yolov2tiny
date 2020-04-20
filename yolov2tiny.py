@@ -50,14 +50,18 @@ class YOLO_V2_TINY(object):
         # values. One tip is to start adding a placeholder tensor for the first tensor.
         # (Use bn_eps for the epsilon value of batch normalization layers.)
 
-        # Load weight parameters from a pickle file.
-        with open(self.weight_pickle, 'rb') as h:
-            w = pickle.load(h, encoding='latin1')
-
         # Construct computation graph, following the loaded weight structure
         tensor_list = list()
         with self.g.as_default():
-            with tf.device(self.proc):
+            with tf.device('/'+self.proc):
+                # Load weight parameters from a pickle file.
+                with open(self.weight_pickle, 'rb') as h:
+                    w = pickle.load(h, encoding='latin1')
+                for i in range(len(w)):
+                    print('Conv{}'.format(i))
+                    for k in w[i].keys():
+                        print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
+
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
 
