@@ -1,16 +1,19 @@
-import os
 import sys
 import numpy as np
-import cv2
+import cv2 as cv2
 import time
 import yolov2tiny
 
 
-def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp4'):
+def open_video_with_opencv(in_video_path, out_video_path):
+    #
+    # This function takes input and output video path and open them.
+    #
+    # Your code from here. You may clear the comments.
+    #
+
     # Open an object of input video using cv2.VideoCapture.
     vcap = cv2.VideoCapture(in_video_path)
-
-    # Get video properties
     if vcap.isOpened():
         width = int(vcap.get(cv2.CAP_PROP_FRAME_WIDTH))  # float
         height = int(vcap.get(cv2.CAP_PROP_FRAME_HEIGHT))  # float
@@ -24,7 +27,6 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
         raise RuntimeError("open_video_with_opencv: Could not open input video")
 
     # Open an object of output video using cv2.VideoWriter.
-    # Same encoding, size, and fps
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(out_video_path, fourcc, fps, (width, height), True)
 
@@ -33,15 +35,18 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
 
 def resize_input(im):
-    # im: (h0, w0, 3) numpy array
     imsz = cv2.resize(im, (416, 416), interpolation=cv2.INTER_CUBIC)
     imsz = imsz / 255.
-    #imsz = imsz[:, :, ::-1]
-    return imsz
+    imsz = imsz[:, :, ::-1]
+    return np.asarray(imsz, dtype=np.float32)
 
 
 def video_object_detection(in_video_path, out_video_path, proc="cpu"):
+    #
     # This function runs the inference for each frame and creates the output video.
+    #
+    # Your code from here. You may clear the comments.
+    #
 
     # Mark current time for end-to-end performance check
     start_time = time.time()
@@ -57,8 +62,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         print('video_object_detection: Output video not opened')
         sys.exit()
 
-    # Create an instance of the YOLO_V2_TINY class.
-    # Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
+    # Create an instance of the YOLO_V2_TINY class. Pass the dimension of
+    # the input, a path to weight file, and which device you will use as arguments.
     model = yolov2tiny.YOLO_V2_TINY(in_shape=(1, 416, 416, 3), weight_pickle="y2t_weights.pickle", proc=proc)
 
     # Start the main loop. For each frame of the video, the loop must do the followings:
@@ -66,12 +71,10 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # 2. Run postprocessing using the inference result, accumulate them through the video writer object.
     #    The coordinates from postprocessing are calculated according to resized input; you must adjust
     #    them to fit into the original video.
-    # 3. Measure the end-to-end time and the time spent only for inference.
-    # 4. Save the intermediate values for the first frame.
+    # 3. Measure the end-to-end time and the time spent only for inferencing.
+    # 4. Save the intermediate values for the first layer.
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
-
-    # Main loop
     inference_time = 0
     for t in range(n_frames):
         # Get an input frame as a (h0, w0, 3) numpy array
@@ -81,17 +84,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         inference_start_time = time.time()
 
         # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
-        input_img = [resize_input(frame)]  # (1, 416, 416, 3)
+        input_img = resize_input(frame)  # (1, 416, 416, 3)
 
-        """
-        cv2.imwrite('test.jpg', frame)
-        cv2.imwrite('test_resize.jpg', input_img[0]*255)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        raise NotImplementedError
-        """
-
-        # Do the inference.
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
         out_tensors = model.inference(input_img)
@@ -117,7 +111,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
             box_coords = ((lefttop[0], rightbottom[1]), (lefttop[0] + text_width + 2, rightbottom[1] - text_height - 2))
 
             cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
-            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=1)
+            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1,
+                        color=(255, 255, 255), thickness=1)
 
         # Accumulate final output frame to VideoWriter object
         out.write(frame)
@@ -128,8 +123,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
             print("Main loop terminated after processing %d frames, %d expected" % (t + 1, n_frames))
             break
 
-    # Check the inference performance; end-to-end elapsed time and inference time.
-    # Check how many frames are processed per second respectively.
+    # Check the inference peformance; end-to-end elapsed time and inferencing time.
+    # Check how many frames are processed per second respectivly.
     elapsed_time = time.time() - start_time  # End-to-end elapsed time, including overhead
     inference_time /= n_frames  # Average inference (model forward + postprocessing) time taken per frame
     frames_per_second = 1 / inference_time

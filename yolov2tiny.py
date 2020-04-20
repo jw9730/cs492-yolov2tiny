@@ -5,10 +5,6 @@ import numpy as np
 import tensorflow as tf
 
 
-def zero_tensor(shape):
-    return tf.zeros(shape=shape, dtype=tf.float32)
-
-
 def _w_to_tensor(w, i, key_list):
     kernel = tf.constant(w[i]['kernel'], dtype=tf.float32)
     biases = tf.constant(w[i]['biases'], dtype=tf.float32)
@@ -21,6 +17,10 @@ def _w_to_tensor(w, i, key_list):
         moving_variance = None
         gamma = None
     return kernel, biases, moving_mean, moving_variance, gamma
+
+
+def zero_tensor(shape):
+    return tf.zeros(shape=shape, dtype=tf.float32)
 
 
 class YOLO_V2_TINY(object):
@@ -40,6 +40,21 @@ class YOLO_V2_TINY(object):
         # it will be used to inference every frame.
         #
         # Your code from here. You may clear the comments.
+        #
+        print('build_graph is not yet implemented')
+        sys.exit()
+
+        # Load weight parameters from a pickle file.
+        with open(self.weight_pickle, 'rb') as h:
+            w = pickle.load(h, encoding='latin1')
+
+        for i in range(len(w)):
+            print('Conv{}'.format(i))
+            for k in w[i].keys():
+                print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
+
+        # Create an empty list for tensors.
+        tensor_list = []
 
         # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
@@ -52,18 +67,8 @@ class YOLO_V2_TINY(object):
         # values. One tip is to start adding a placeholder tensor for the first tensor.
         # (Use 1e-5 for the epsilon value of batch normalization layers.)
 
-        # Construct computation graph, following the loaded weight structure
         with self.g.as_default():
-            with tf.device('/'+self.proc):
-                # Load weight parameters from a pickle file.
-                with open(self.weight_pickle, 'rb') as h:
-                    w = pickle.load(h, encoding='latin1')
-
-                for i in range(len(w)):
-                    print('Conv{}'.format(i))
-                    for k in w[i].keys():
-                        print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
-
+            with tf.device('/' + self.proc):
                 keys_all = ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma']
                 bn_eps = 1e-5
                 alpha = 0.1
@@ -75,55 +80,63 @@ class YOLO_V2_TINY(object):
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 0, keys_all)
                 conv0 = tf.nn.conv2d(input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias0 = tf.nn.bias_add(conv0, bias=biases)
-                bn0 = tf.nn.batch_normalization(bias0, mean=moving_mean, variance=moving_variance, offset=zero_tensor((16,)), scale=gamma, variance_epsilon=bn_eps)
+                bn0 = tf.nn.batch_normalization(bias0, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((16,)), scale=gamma, variance_epsilon=bn_eps)
                 lr0 = tf.nn.leaky_relu(bn0, alpha=alpha)
                 maxpool0 = tf.nn.max_pool2d(lr0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 1, keys_all)
                 conv1 = tf.nn.conv2d(maxpool0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias1 = tf.nn.bias_add(conv1, bias=biases)
-                bn1 = tf.nn.batch_normalization(bias1, mean=moving_mean, variance=moving_variance, offset=zero_tensor((32,)), scale=gamma, variance_epsilon=bn_eps)
+                bn1 = tf.nn.batch_normalization(bias1, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((32,)), scale=gamma, variance_epsilon=bn_eps)
                 lr1 = tf.nn.leaky_relu(bn1, alpha=alpha)
                 maxpool1 = tf.nn.max_pool2d(lr1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 2, keys_all)
                 conv2 = tf.nn.conv2d(maxpool1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias2 = tf.nn.bias_add(conv2, bias=biases)
-                bn2 = tf.nn.batch_normalization(bias2, mean=moving_mean, variance=moving_variance, offset=zero_tensor((64,)), scale=gamma, variance_epsilon=bn_eps)
+                bn2 = tf.nn.batch_normalization(bias2, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((64,)), scale=gamma, variance_epsilon=bn_eps)
                 lr2 = tf.nn.leaky_relu(bn2, alpha=alpha)
                 maxpool2 = tf.nn.max_pool2d(lr2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 3, keys_all)
                 conv3 = tf.nn.conv2d(maxpool2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias3 = tf.nn.bias_add(conv3, bias=biases)
-                bn3 = tf.nn.batch_normalization(bias3, mean=moving_mean, variance=moving_variance, offset=zero_tensor((128,)), scale=gamma, variance_epsilon=bn_eps)
+                bn3 = tf.nn.batch_normalization(bias3, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((128,)), scale=gamma, variance_epsilon=bn_eps)
                 lr3 = tf.nn.leaky_relu(bn3, alpha=alpha)
                 maxpool3 = tf.nn.max_pool2d(lr3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 4, keys_all)
                 conv4 = tf.nn.conv2d(maxpool3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias4 = tf.nn.bias_add(conv4, bias=biases)
-                bn4 = tf.nn.batch_normalization(bias4, mean=moving_mean, variance=moving_variance, offset=zero_tensor((256,)), scale=gamma, variance_epsilon=bn_eps)
+                bn4 = tf.nn.batch_normalization(bias4, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((256,)), scale=gamma, variance_epsilon=bn_eps)
                 lr4 = tf.nn.leaky_relu(bn4, alpha=alpha)
                 maxpool4 = tf.nn.max_pool2d(lr4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 5, keys_all)
                 conv5 = tf.nn.conv2d(maxpool4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias5 = tf.nn.bias_add(conv5, bias=biases)
-                bn5 = tf.nn.batch_normalization(bias5, mean=moving_mean, variance=moving_variance, offset=zero_tensor((512,)), scale=gamma, variance_epsilon=bn_eps)
+                bn5 = tf.nn.batch_normalization(bias5, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((512,)), scale=gamma, variance_epsilon=bn_eps)
                 lr5 = tf.nn.leaky_relu(bn5, alpha=alpha)
                 maxpool5 = tf.nn.max_pool2d(lr5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 6, keys_all)
                 conv6 = tf.nn.conv2d(maxpool5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias6 = tf.nn.bias_add(conv6, bias=biases)
-                bn6 = tf.nn.batch_normalization(bias6, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
+                bn6 = tf.nn.batch_normalization(bias6, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
                 lr6 = tf.nn.leaky_relu(bn6, alpha=alpha)
 
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 7, keys_all)
                 conv7 = tf.nn.conv2d(lr6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias7 = tf.nn.bias_add(conv7, bias=biases)
-                bn7 = tf.nn.batch_normalization(bias7, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
+                bn7 = tf.nn.batch_normalization(bias7, mean=moving_mean, variance=moving_variance,
+                                                offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
                 lr7 = tf.nn.leaky_relu(bn7, alpha=alpha)
 
                 kernel, biases, _, _, _ = _w_to_tensor(w, 8, keys_all[0:2])
@@ -150,28 +163,14 @@ class YOLO_V2_TINY(object):
 
 
 #
-# Codes belows are for postprocessing step. Do not modify. The postprocessing 
+# Codes belows are for postprocessing step. Do not modify. The postprocessing
 # function takes an input of a resulting tensor as an array to parse it to
 # generate the label box positions. It returns a list of the positions which
 # composed of a label, two coordinates of left-top and right-bottom of the box
 # and its color.
 #
 
-def postprocessing(predictions, w0, h0):
-    """
-    :param predictions: (1, 125, 13, 13) numpy array
-        Each grid cell corresponds to 125 channels, made up of the 5 bounding boxes predicted by the grid cell
-        and the 25 data elements that describe each bounding box.
-    :param w0: integer
-        Original video width
-    :param h0: integer
-        Original video height
-    :return: bbox_list: list of tuples (x, y, w, h, text), representing bbox of confidence > 0.25
-        x, y: bbox position in global coordinate, in respect to original image
-        w, h: bbox size in global coordinate, in respect to original image
-        text: box representative text (i.e. semantic category)
-    """
-
+def postprocessing(predictions):
     n_classes = 20
     n_grid_cells = 13
     n_b_boxes = 5
@@ -192,12 +191,7 @@ def postprocessing(predictions, w0, h0):
               (0.0, 254.0, 254), (-14.111111111111118, 211.66666666666669, 127)]
 
     # Pre-computed YOLOv2 shapes of the k=5 B-Boxes
-    """ [p_w, p_h] for first bbox, [p_w, p_h] for second bbox, ... (distance in output cell space)
-    """
     anchors = [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
-
-    """ Image pixel distance per one output cell width / height
-    """
 
     thresholded_predictions = []
 
@@ -214,15 +208,11 @@ def postprocessing(predictions, w0, h0):
                 # IMPORTANT: (416 img size) / (13 grid cells) = 32!
                 # YOLOv2 predicts parametrized coordinates that must be converted to full size
                 # final_coordinates = parametrized_coordinates * 32.0 ( You can see other EQUIVALENT ways to do this...)
-                """ Position in cell space -> Position in original video pixel space
-                """
-                center_x = (float(col) + sigmoid(tx)) * 32.0# * (w0 / 416.)
-                center_y = (float(row) + sigmoid(ty)) * 32.0# * (h0 / 416.)
+                center_x = (float(col) + sigmoid(tx)) * 32.0
+                center_y = (float(row) + sigmoid(ty)) * 32.0
 
-                """ Size in cell space -> Size in original video pixel space
-                """
-                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0# * (w0 / 416.)
-                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0# * (h0 / 416.)
+                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0
+                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0
 
                 final_confidence = sigmoid(tc)
 
@@ -240,7 +230,7 @@ def postprocessing(predictions, w0, h0):
                 top = int(center_y - (roi_h / 2.))
                 bottom = int(center_y + (roi_h / 2.))
 
-                if (final_confidence * best_class_score) > 0.3:
+                if ((final_confidence * best_class_score) > 0.3):
                     thresholded_predictions.append(
                         [[left, top, right, bottom], final_confidence * best_class_score, classes[best_class]])
 
@@ -248,7 +238,7 @@ def postprocessing(predictions, w0, h0):
     thresholded_predictions.sort(key=lambda tup: tup[1], reverse=True)
 
     # Non maximal suppression
-    if len(thresholded_predictions) > 0:
+    if (len(thresholded_predictions) > 0):
         nms_predictions = non_maximal_suppression(thresholded_predictions, 0.3)
     else:
         nms_predictions = []
@@ -318,7 +308,7 @@ def non_maximal_suppression(thresholded_predictions, iou_threshold):
 
 
 def sigmoid(x):
-    return 1 / (1 + np.e ** (-x))
+    return 1 / (1 + np.e ** -x)
 
 
 def softmax(x):
