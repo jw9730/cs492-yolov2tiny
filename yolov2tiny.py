@@ -17,16 +17,19 @@ class YOLO_V2_TINY(object):
         self.input_tensor, self.tensor_list = self.build_graph(in_shape)
 
     def _w_to_tensor(self, w, i, key_list):
-        kernel = tf.convert_to_tensor(value=w[i]['kernel'])
-        biases = tf.convert_to_tensor(value=w[i]['biases'])
+        kernel = tf.convert_to_tensor(value=w[i]['kernel'], dtype=tf.float32)
+        biases = tf.convert_to_tensor(value=w[i]['biases'], dtype=tf.float32)
+
         if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
-            moving_mean = tf.convert_to_tensor(value=w[i]['moving_mean'])
-            moving_variance = tf.convert_to_tensor(value=w[i]['moving_variance'])
-            gamma = tf.convert_to_tensor(value=w[i]['gamma'])
+            moving_mean = tf.convert_to_tensor(value=w[i]['moving_mean'], dtype=tf.float32)
+            moving_variance = tf.convert_to_tensor(value=w[i]['moving_variance'], dtype=tf.float32)
+            gamma = tf.convert_to_tensor(value=w[i]['gamma'], dtype=tf.float32)
+
         else:
             moving_mean = None
             moving_variance = None
             gamma = None
+
         return kernel, biases, moving_mean, moving_variance, gamma
 
     def build_graph(self, in_shape):
