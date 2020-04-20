@@ -37,7 +37,7 @@ def resize_input(im):
     imsz = np.asarray(cv2.resize(im, (416, 416)), dtype=np.float32)
     imsz = imsz / 255.
     imsz = imsz[:, :, ::-1]
-    imsz = imsz.transpose((2, 0, 1))
+    imsz = np.expand_dims(imsz, axis=0)
     return imsz
 
 
@@ -81,9 +81,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # First-end
         inference_start_time = time.time()
 
-        # Pre-processing steps: Resize the input image to a (3, 416, 416) array of type float32.
-        input_img = resize_input(frame)  # (3, 416, 416)
-        input_img = np.expand_dims(input_img.transpose((1, 2, 0)), axis=0)  # (1, 416, 416, 3)
+        # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
+        input_img = resize_input(frame)  # (1, 416, 416, 3)
 
         # Do the inference.
         # Input: (1, 416, 416, 3) numpy array
