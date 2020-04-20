@@ -159,14 +159,14 @@ class YOLO_V2_TINY(object):
                 c8 = tf.nn.conv2d(input=r7, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b8 = tf.nn.bias_add(value=c8, bias=biases)
 
-                tensor_list += [c0, b0, n0, r0, m0]
-                tensor_list += [c1, b1, n1, r1, m1]
-                tensor_list += [c2, b2, n2, r2, m2]
-                tensor_list += [c3, b3, n3, r3, m3]
-                tensor_list += [c4, b4, n4, r4, m4]
-                tensor_list += [c5, b5, n5, r5, m5]
-                tensor_list += [c6, b6, n6, r6]
-                tensor_list += [c7, b7, n7, r7]
+                tensor_list += [c0, n0, r0, m0]
+                tensor_list += [c1, n1, r1, m1]
+                tensor_list += [c2, n2, r2, m2]
+                tensor_list += [c3, n3, r3, m3]
+                tensor_list += [c4, n4, r4, m4]
+                tensor_list += [c5, n5, r5, m5]
+                tensor_list += [c6, n6, r6]
+                tensor_list += [c7, n7, r7]
                 tensor_list += [c8, b8]
 
         # Return the start tensor and the list of all tensors.

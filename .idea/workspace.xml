@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="146" column="22" lean-forward="true" selection-start-line="146" selection-start-column="22" selection-end-line="146" selection-end-column="22" />
+            <state relative-caret-position="361">
+              <caret line="159" column="58" selection-start-line="159" selection-start-column="58" selection-end-line="159" selection-end-column="58" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -138,7 +138,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="63326000" />
+    <option name="totallyTimeSpent" value="63479000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -211,8 +211,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="146" column="22" lean-forward="true" selection-start-line="146" selection-start-column="22" selection-end-line="146" selection-end-column="22" />
+        <state relative-caret-position="361">
+          <caret line="159" column="58" selection-start-line="159" selection-start-column="58" selection-end-line="159" selection-end-column="58" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
