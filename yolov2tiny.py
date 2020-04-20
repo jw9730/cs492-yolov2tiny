@@ -152,6 +152,8 @@ class YOLO_V2_TINY(object):
                 tensor_list += [c6, b6, n6, r6]
                 tensor_list += [c7, b7, n7, r7]
                 tensor_list += [c8, b8]
+                
+                print(tensor_list)
 
         # Return the start tensor and the list of all tensors.
         return input_tensor, tensor_list
