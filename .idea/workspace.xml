@@ -15,8 +15,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="352">
-              <caret line="109" column="116" selection-start-line="109" selection-start-column="116" selection-end-line="109" selection-end-column="116" />
+            <state relative-caret-position="485">
+              <caret line="116" column="8" selection-start-line="116" selection-start-column="8" selection-end-line="116" selection-end-column="8" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -133,7 +133,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="72700000" />
+    <option name="totallyTimeSpent" value="72902000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -206,8 +206,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="352">
-          <caret line="109" column="116" selection-start-line="109" selection-start-column="116" selection-end-line="109" selection-end-column="116" />
+        <state relative-caret-position="485">
+          <caret line="116" column="8" selection-start-line="116" selection-start-column="8" selection-end-line="116" selection-end-column="8" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
