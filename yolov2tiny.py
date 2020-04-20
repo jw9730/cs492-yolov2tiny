@@ -62,7 +62,7 @@ class YOLO_V2_TINY(object):
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=biases)
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
-                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.10000000149011612)
                         if i == 5:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
                         else:
@@ -81,7 +81,7 @@ class YOLO_V2_TINY(object):
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=biases)
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
-                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.10000000149011612)
                         x = r
 
                         tensor_list += [c, b, n, r]
