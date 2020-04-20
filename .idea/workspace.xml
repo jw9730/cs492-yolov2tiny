@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="361">
-              <caret line="136" column="58" lean-forward="true" selection-start-line="136" selection-start-column="58" selection-end-line="136" selection-end-column="58" />
+            <state relative-caret-position="285">
+              <caret line="48" column="29" selection-start-line="48" selection-start-column="29" selection-end-line="48" selection-end-column="29" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -44,6 +44,8 @@
       <find>416</find>
       <find>pickle</find>
       <find>tensor_list</find>
+      <find>0.1</find>
+      <find>1e-5</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -125,7 +127,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="49824000" />
+    <option name="totallyTimeSpent" value="50155000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -189,8 +191,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="361">
-          <caret line="136" column="58" lean-forward="true" selection-start-line="136" selection-start-column="58" selection-end-line="136" selection-end-column="58" />
+        <state relative-caret-position="285">
+          <caret line="48" column="29" selection-start-line="48" selection-start-column="29" selection-end-line="48" selection-end-column="29" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
