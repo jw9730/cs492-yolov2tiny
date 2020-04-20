@@ -34,7 +34,7 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
 def resize_input(im):
     # im: (h0, w0, 3) numpy array
-    imsz = np.asarray(cv2.resize(im, (416, 416)), dtype=np.float32)
+    imsz = np.asarray(cv2.resize(im, (416, 416)), dtype=np.float32, interpolation=cv2.INTER_CUBIC)
     imsz = imsz / 255.
     imsz = imsz[:, :, ::-1]
     return imsz
