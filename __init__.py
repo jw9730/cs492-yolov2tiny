@@ -98,6 +98,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Postprocess
         label_boxes = yolov2tiny.postprocessing(output, w0, h0)
         print("# predicted boxes: {}".format(len(label_boxes)))
+        print(label_boxes)
 
         # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
