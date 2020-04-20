@@ -247,11 +247,6 @@ def postprocessing(predictions, w0, h0):
                 best_class = class_predictions.index(max(class_predictions))
                 best_class_score = class_predictions[best_class]
 
-                print("decoded: pos {}".format((center_x, center_y)))
-                print("decoded: size {}".format((roi_w, roi_h)))
-                print("decoded: confidence {}".format(final_confidence))
-                print("decoded: best class {}".format(best_class))
-
                 # Flip the coordinates on both axes
                 left = int(center_x - (roi_w / 2.))
                 right = int(center_x + (roi_w / 2.))
@@ -278,6 +273,9 @@ def postprocessing(predictions, w0, h0):
         lefttop = tuple(nms_predictions[i][0][0:2])
         rightbottom = tuple(nms_predictions[i][0][2:4])
         color = colors[classes.index(nms_predictions[i][2])]
+
+        print("decoded: best class {}".format(best_class_name))
+        print("decoded: corner {}".format((lefttop, rightbottom)))
 
         label_boxes.append((best_class_name, lefttop, rightbottom, color))
 
