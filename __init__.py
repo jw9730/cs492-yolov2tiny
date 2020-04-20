@@ -95,11 +95,13 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
         # Postprocess
         label_boxes = yolov2tiny.postprocessing(output, w0, h0)
+
+        print([out.mean() for out in out_tensors])
         print("# predicted boxes: {}".format(len(label_boxes)))
         print(label_boxes[0])
 
-        # Layout on unresized video
         """
+        # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
             try:
                 cv2.rectangle(frame, lefttop, rightbottom, color, 1)
