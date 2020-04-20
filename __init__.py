@@ -96,11 +96,10 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
                 np.save(file='intermediate/layer_{}'.format(idx), arr=out_tensor)
 
         # Postprocess
-        bbox_list = yolov2tiny.postprocessing(output, w0, h0)
-        print(len(bbox_list), print(bbox_list))
+        label_boxes = yolov2tiny.postprocessing(output, w0, h0)
 
         # Layout on
-        for best_class_name, lefttop, rightbottom, color in bbox_list:
+        for best_class_name, lefttop, rightbottom, color in label_boxes:
             cv2.rectangle(frame, lefttop, rightbottom, color, 1)
 
             text = best_class_name
@@ -108,12 +107,12 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
             box_coords = ((lefttop[0], rightbottom[1]), (lefttop[0] + text_width + 2, rightbottom[1] - text_height - 2))
 
             cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
-            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, color=(255, 255, 255), thickness=1)
+            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=1)
 
-        inference_time += (time.time() - inference_start_time)
         # Accumulate final output frame to VideoWriter object
         out.write(frame)
+
+        inference_time += (time.time() - inference_start_time)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Main loop terminated after processing %d frames, %d expected" % (t + 1, n_frames))

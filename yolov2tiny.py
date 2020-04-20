@@ -28,12 +28,10 @@ class YOLO_V2_TINY(object):
 
         # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
-
         # Then you need to declare which device to use for tensor computation. The device info
         # is given from the command line argument and stored somewhere in this object.
         # In this project, you may choose CPU or GPU. Consider using the following API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#device
-
         # Then you are ready to add tensors to the graph. According to the Yolo v2 tiny model,
         # build a graph and append the tensors to the returning list for computing intermediate
         # values. One tip is to start adding a placeholder tensor for the first tensor.
@@ -49,7 +47,7 @@ class YOLO_V2_TINY(object):
             with tf.device('/' + self.proc):
 
                 # Input placeholder
-                input_tensor = tf.placeholder(tf.float32, shape=in_shape, name="input")
+                input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
                 x = input_tensor
 
                 for i in range(len(w)):
