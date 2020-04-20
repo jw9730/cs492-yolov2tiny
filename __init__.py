@@ -34,9 +34,9 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
 
 def resize_input(im):
     # im: (h0, w0, 3) numpy array
-    imsz = np.asarray(cv2.resize(im, (416, 416), interpolation=cv2.INTER_CUBIC), dtype=np.float32)
+    imsz = cv2.resize(im, (416, 416), interpolation=cv2.INTER_CUBIC)
     imsz = imsz / 255.
-    imsz = imsz[:, :, ::-1]
+    #imsz = imsz[:, :, ::-1]
     return imsz
 
 
@@ -83,10 +83,13 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
         input_img = [resize_input(frame)]  # (1, 416, 416, 3)
 
-        cv2.imwrite('test.jpg', input_img[0])
+        """
+        cv2.imwrite('test.jpg', frame)
+        cv2.imwrite('test_resize.jpg', input_img[0]*255)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         raise NotImplementedError
+        """
 
         # Do the inference.
         # Input: (1, 416, 416, 3) numpy array

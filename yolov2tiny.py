@@ -69,7 +69,7 @@ class YOLO_V2_TINY(object):
                 alpha = 0.1
 
                 # Input placeholder
-                input_tensor = tf.placeholder(tf.float32, shape=in_shape)
+                input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape)
 
                 # Graph construction
                 kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 0, keys_all)
