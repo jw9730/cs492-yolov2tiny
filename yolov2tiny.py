@@ -44,15 +44,16 @@ class YOLO_V2_TINY(object):
 
         # Load weight parameters from a pickle file.
         with open(self.weight_pickle, 'rb') as h:
-            w = pickle.load(h, encoding='latin1')
+            w = pickle.load(h)
 
         for i in range(len(w)):
             print('Conv{}'.format(i))
             for k in w[i].keys():
                 print('\tConv{}[{}]: {}'.format(i, k, w[i][k].shape))
 
-        # Create an empty list for tensors.
-        tensor_list = []
+        keys_all = ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma']
+        bn_eps = 1e-5
+        alpha = 0.1
 
         # Use self.g as a default graph. Refer to this API.
         ## https://www.tensorflow.org/api_docs/python/tf/Graph#as_default
@@ -67,10 +68,6 @@ class YOLO_V2_TINY(object):
 
         with self.g.as_default():
             with tf.device('/' + self.proc):
-                keys_all = ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma']
-                bn_eps = 1e-5
-                alpha = 0.1
-
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape)
 
