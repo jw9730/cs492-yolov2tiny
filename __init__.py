@@ -26,7 +26,7 @@ def open_video_with_opencv(in_video_path='sample.mp4', out_video_path='output.mp
     # Open an object of output video using cv2.VideoWriter.
     # Same encoding, size, and fps
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(out_video_path, fourcc, fps, (width, height), True)
+    out = cv2.VideoWriter(out_video_path, fourcc, fps, (416, 416), True)
 
     # Return the video objects and anything you want for further process.
     return vcap, out, (width, height, n_frames)
@@ -60,14 +60,6 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Create an instance of the YOLO_V2_TINY class.
     # Pass the dimension of the input, a path to weight file, and which device you will use as arguments.
     model = yolov2tiny.YOLO_V2_TINY(in_shape=(1, 416, 416, 3), weight_pickle="./y2t_weights.pickle", proc=proc)
-
-    print(model.tensor_list)
-    print(model.input_tensor)
-    print(model.weight_pickle)
-    print(model.g)
-    print(model.proc)
-    print(model.sess)
-    raise NotImplementedError
 
     # Start the main loop. For each frame of the video, the loop must do the followings:
     # 1. Do the inference.
@@ -107,6 +99,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         print(label_boxes[0])
 
         # Layout on unresized video
+        """
         for best_class_name, lefttop, rightbottom, color in label_boxes:
             try:
                 cv2.rectangle(frame, lefttop, rightbottom, color, 1)
@@ -120,9 +113,10 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
 
             cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
             cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=1)
+        """
 
         # Accumulate final output frame to VideoWriter object
-        out.write(frame)
+        out.write(input_img*255)
 
         inference_time += (time.time() - inference_start_time)
 
