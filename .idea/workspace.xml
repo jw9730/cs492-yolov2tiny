@@ -2,16 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/dog.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/dog_output.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/net.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/person.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/person_output.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/pjsite.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/test_webcam.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tinyYOLOv2-master/weights_loader.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/yolov2tiny.py" beforeDir="false" afterPath="$PROJECT_DIR$/yolov2tiny.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -37,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="190">
-              <caret line="67" column="29" selection-start-line="67" selection-start-column="29" selection-end-line="67" selection-end-column="29" />
+            <state relative-caret-position="399">
+              <caret line="129" column="82" selection-start-line="129" selection-start-column="82" selection-end-line="129" selection-end-column="82" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -142,7 +132,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="67885000" />
+    <option name="totallyTimeSpent" value="68089000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -215,8 +205,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="190">
-          <caret line="67" column="29" selection-start-line="67" selection-start-column="29" selection-end-line="67" selection-end-column="29" />
+        <state relative-caret-position="399">
+          <caret line="129" column="82" selection-start-line="129" selection-start-column="82" selection-end-line="129" selection-end-column="82" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

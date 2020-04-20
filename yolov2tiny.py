@@ -114,13 +114,13 @@ class YOLO_V2_TINY(object):
                 lr5 = tf.nn.leaky_relu(bn5, alpha=alpha)
                 maxpool5 = tf.nn.max_pool2d(lr5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
-                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 6, keys_all[:-1])
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 6, keys_all)
                 conv6 = tf.nn.conv2d(maxpool5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias6 = tf.nn.bias_add(conv6, bias=biases)
                 bn6 = tf.nn.batch_normalization(bias6, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
                 lr6 = tf.nn.leaky_relu(bn6, alpha=alpha)
 
-                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 7, keys_all[:-1])
+                kernel, biases, moving_mean, moving_variance, gamma = _w_to_tensor(w, 7, keys_all)
                 conv7 = tf.nn.conv2d(lr6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 bias7 = tf.nn.bias_add(conv7, bias=biases)
                 bn7 = tf.nn.batch_normalization(bias7, mean=moving_mean, variance=moving_variance, offset=zero_tensor((1024,)), scale=gamma, variance_epsilon=bn_eps)
