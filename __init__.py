@@ -92,7 +92,6 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         output = out_tensors[-1].transpose((0, 3, 1, 2))
 
         if t == 0:
-            print("# output tensors: {}".format(len(out_tensors)))
             for idx, out_tensor in enumerate(out_tensors):
                 np.save(file='intermediate/layer_{}'.format(idx), arr=out_tensor)
 
