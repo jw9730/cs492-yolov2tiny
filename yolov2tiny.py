@@ -66,7 +66,7 @@ class YOLO_V2_TINY(object):
                         if i == 5:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
                         else:
-                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='VALID')
+                            m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
                         x = m
 
                         tensor_list += [c, b, n, r, m]
