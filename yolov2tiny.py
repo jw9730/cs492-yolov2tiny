@@ -340,7 +340,7 @@ def non_maximal_suppression(thresholded_predictions, iou_threshold):
 
 
 def sigmoid(x):
-    return 1 / (1 + np.e ** -x)
+    return 1 / (1 + np.e ** (-x))
 
 
 def softmax(x):
