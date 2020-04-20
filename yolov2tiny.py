@@ -6,12 +6,12 @@ import tensorflow as tf
 
 
 def _w_to_tensor(w, i, key_list):
-    kernel = tf.convert_to_tensor(w[i]['kernel'], dtype=tf.float32)
-    biases = tf.convert_to_tensor(w[i]['biases'], dtype=tf.float32)
+    kernel = tf.constant(w[i]['kernel'], dtype=tf.float32)
+    biases = tf.constant(w[i]['biases'], dtype=tf.float32)
     if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
-        moving_mean = tf.convert_to_tensor(w[i]['moving_mean'], dtype=tf.float32)
-        moving_variance = tf.convert_to_tensor(w[i]['moving_variance'], dtype=tf.float32)
-        gamma = tf.convert_to_tensor(w[i]['gamma'], dtype=tf.float32)
+        moving_mean = tf.constant(w[i]['moving_mean'], dtype=tf.float32)
+        moving_variance = tf.constant(w[i]['moving_variance'], dtype=tf.float32)
+        gamma = tf.constant(w[i]['gamma'], dtype=tf.float32)
     else:
         moving_mean = None
         moving_variance = None
@@ -245,13 +245,13 @@ def postprocessing(predictions, w0, h0):
                 # final_coordinates = parametrized_coordinates * 32.0 ( You can see other EQUIVALENT ways to do this...)
                 """ Position in cell space -> Position in original video pixel space
                 """
-                center_x = (float(col) + sigmoid(tx)) * 32.0 * (w0 / 416.)
-                center_y = (float(row) + sigmoid(ty)) * 32.0 * (h0 / 416.)
+                center_x = (float(col) + sigmoid(tx)) * 32.0# * (w0 / 416.)
+                center_y = (float(row) + sigmoid(ty)) * 32.0# * (h0 / 416.)
 
                 """ Size in cell space -> Size in original video pixel space
                 """
-                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0 * (w0 / 416.)
-                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0 * (h0 / 416.)
+                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0# * (w0 / 416.)
+                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0# * (h0 / 416.)
 
                 final_confidence = sigmoid(tc)
 
