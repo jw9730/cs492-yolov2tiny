@@ -89,7 +89,7 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
         out_tensors = model.inference(input_img)
-        output = out_tensors[-1].transpose((0, 3, 1, 2))
+        output = out_tensors[len(out_tensors)-1]
 
         if t == 0:
             for idx, out_tensor in enumerate(out_tensors):

@@ -148,7 +148,7 @@ class YOLO_V2_TINY(object):
                                conv7, bias7, bn7, lr7,
                                conv8, bias8]
 
-                init = tf.global_variables_initializer()
+                init = tf.compat.v1.global_variables_initializer()
                 self.sess.run(init)
 
         # Return the start tensor and the list of all tensors.

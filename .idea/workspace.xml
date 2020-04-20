@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/output.mp4" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/yolov2tiny.py" beforeDir="false" afterPath="$PROJECT_DIR$/yolov2tiny.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -15,8 +17,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="219">
-              <caret line="87" lean-forward="true" selection-start-line="87" selection-end-line="87" />
+            <state relative-caret-position="181">
+              <caret line="91" column="48" lean-forward="true" selection-start-line="91" selection-start-column="48" selection-end-line="91" selection-end-column="48" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -27,8 +29,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="266">
-              <caret line="149" selection-start-line="149" selection-end-line="149" />
+            <state relative-caret-position="171">
+              <caret line="150" column="36" selection-start-line="150" selection-start-column="36" selection-end-line="150" selection-end-column="36" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -132,7 +134,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="71034000" />
+    <option name="totallyTimeSpent" value="71430000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -195,8 +197,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="219">
-          <caret line="87" lean-forward="true" selection-start-line="87" selection-end-line="87" />
+        <state relative-caret-position="181">
+          <caret line="91" column="48" lean-forward="true" selection-start-line="91" selection-start-column="48" selection-end-line="91" selection-end-column="48" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -205,8 +207,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="149" selection-start-line="149" selection-end-line="149" />
+        <state relative-caret-position="171">
+          <caret line="150" column="36" selection-start-line="150" selection-start-column="36" selection-end-line="150" selection-end-column="36" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
