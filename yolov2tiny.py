@@ -65,19 +65,16 @@ class YOLO_V2_TINY(object):
                 # Input placeholder
                 input_tensor = tf.compat.v1.placeholder(tf.float32, shape=in_shape, name="input")
 
-                input_scale = 0.003921568859368563
                 alpha = 0.1
                 bn_eps = 1e-5
 
-                # Scaling
-                scaled_input = input_tensor * input_scale
-
                 # Block 0
                 kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 0, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
-                c0 = tf.nn.conv2d(input=scaled_input, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
+                c0 = tf.nn.conv2d(input=input_tensor, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b0 = tf.nn.bias_add(value=c0, bias=biases)
                 n0 = tf.nn.batch_normalization(x=b0, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r0 = tf.nn.leaky_relu(features=n0, alpha=alpha)
+                r0 = tf.maximum(alpha * n0, n0)
+                # r0 = tf.nn.leaky_relu(features=n0, alpha=alpha)
                 m0 = tf.nn.max_pool2d(r0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 1
@@ -85,7 +82,8 @@ class YOLO_V2_TINY(object):
                 c1 = tf.nn.conv2d(input=m0, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b1 = tf.nn.bias_add(value=c1, bias=biases)
                 n1 = tf.nn.batch_normalization(x=b1, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r1 = tf.nn.leaky_relu(features=n1, alpha=alpha)
+                r1 = tf.maximum(alpha * n1, n1)
+                # r1 = tf.nn.leaky_relu(features=n1, alpha=alpha)
                 m1 = tf.nn.max_pool2d(r1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 2
@@ -93,7 +91,8 @@ class YOLO_V2_TINY(object):
                 c2 = tf.nn.conv2d(input=m1, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b2 = tf.nn.bias_add(value=c2, bias=biases)
                 n2 = tf.nn.batch_normalization(x=b2, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r2 = tf.nn.leaky_relu(features=n2, alpha=alpha)
+                r2 = tf.maximum(alpha * n2, n2)
+                # r2 = tf.nn.leaky_relu(features=n2, alpha=alpha)
                 m2 = tf.nn.max_pool2d(r2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 3
@@ -101,7 +100,8 @@ class YOLO_V2_TINY(object):
                 c3 = tf.nn.conv2d(input=m2, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b3 = tf.nn.bias_add(value=c3, bias=biases)
                 n3 = tf.nn.batch_normalization(x=b3, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r3 = tf.nn.leaky_relu(features=n3, alpha=alpha)
+                r3 = tf.maximum(alpha * n3, n3)
+                # r3 = tf.nn.leaky_relu(features=n3, alpha=alpha)
                 m3 = tf.nn.max_pool2d(r3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 4
@@ -109,7 +109,8 @@ class YOLO_V2_TINY(object):
                 c4 = tf.nn.conv2d(input=m3, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b4 = tf.nn.bias_add(value=c4, bias=biases)
                 n4 = tf.nn.batch_normalization(x=b4, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r4 = tf.nn.leaky_relu(features=n4, alpha=alpha)
+                r4 = tf.maximum(alpha * n4, n4)
+                # r4 = tf.nn.leaky_relu(features=n4, alpha=alpha)
                 m4 = tf.nn.max_pool2d(r4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
                 # Block 5
@@ -117,7 +118,8 @@ class YOLO_V2_TINY(object):
                 c5 = tf.nn.conv2d(input=m4, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b5 = tf.nn.bias_add(value=c5, bias=biases)
                 n5 = tf.nn.batch_normalization(x=b5, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r5 = tf.nn.leaky_relu(features=n5, alpha=alpha)
+                r5 = tf.maximum(alpha * n5, n5)
+                # r5 = tf.nn.leaky_relu(features=n5, alpha=alpha)
                 m5 = tf.nn.max_pool2d(r5, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
 
                 # Block 6
@@ -125,14 +127,16 @@ class YOLO_V2_TINY(object):
                 c6 = tf.nn.conv2d(input=m5, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b6 = tf.nn.bias_add(value=c6, bias=biases)
                 n6 = tf.nn.batch_normalization(x=b6, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r6 = tf.nn.leaky_relu(features=n6, alpha=alpha)
+                r6 = tf.maximum(alpha * n6, n6)
+                # r6 = tf.nn.leaky_relu(features=n6, alpha=alpha)
 
                 # Block 7
                 kernel, biases, moving_mean, moving_variance, gamma = self._w_to_tensor(w, 7, ['kernel', 'biases', 'moving_mean', 'moving_variance', 'gamma'])
                 c7 = tf.nn.conv2d(input=r6, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                 b7 = tf.nn.bias_add(value=c7, bias=biases)
                 n7 = tf.nn.batch_normalization(x=b7, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=bn_eps)
-                r7 = tf.nn.leaky_relu(features=n7, alpha=alpha)
+                r7 = tf.maximum(alpha * n7, n7)
+                # r7 = tf.nn.leaky_relu(features=n7, alpha=alpha)
 
                 # Block 8
                 kernel, biases, _, _, _ = self._w_to_tensor(w, 8, ['kernel', 'biases'])
