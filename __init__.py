@@ -66,6 +66,10 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # the input, a path to weight file, and which device you will use as arguments.
     model = yolov2tiny.YOLO_V2_TINY(in_shape=(1, 416, 416, 3), weight_pickle="y2t_weights.pickle", proc=proc)
 
+    # First-end
+    inference_time_sum = 0
+    end_to_end_start_time = time.time()
+
     # Start the main loop. For each frame of the video, the loop must do the followings:
     # 1. Do the inference.
     # 2. Run postprocessing using the inference result, accumulate them through the video writer object.
@@ -75,21 +79,20 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # 4. Save the intermediate values for the first layer.
     # Note that your input must be adjusted to fit into the algorithm,
     # including resizing the frame and changing the dimension.
-    inference_time = 0
     for t in range(n_frames):
         # Get an input frame as a (h0, w0, 3) numpy array
         ret, frame = vcap.read()
 
-        # First-end
-        inference_start_time = time.time()
-
         # Pre-processing steps: Resize the input image to a (1, 416, 416, 3) array of type float32.
         input_img = np.expand_dims(resize_input(frame), axis=0)  # (1, 416, 416, 3)
 
+        inference_start_time = time.time()
         # Input: (1, 416, 416, 3) numpy array
         # Output: (1, 125, 13, 13) numpy array
         out_tensors = model.inference(input_img)
-        output = out_tensors[len(out_tensors)-1]
+        inference_time_sum += (time.time() - inference_start_time)
+
+        output = out_tensors[len(out_tensors) - 1]
 
         if t == 0:
             for idx, out_tensor in enumerate(out_tensors):
@@ -98,23 +101,20 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
         # Postprocess
         label_boxes = yolov2tiny.postprocessing(output)
 
-        # Layout on unresized video
         for best_class_name, lefttop, rightbottom, color in label_boxes:
             # Compensate input resizing
-            lefttop = (int(lefttop[0]*w0/416), int(lefttop[1]*h0/416))
-            rightbottom = (int(rightbottom[0]*w0/416), int(rightbottom[1]*h0/416))
+            lefttop = (int(lefttop[0] * w0 / 416), int(lefttop[1] * h0 / 416))
+            rightbottom = (int(rightbottom[0] * w0 / 416), int(rightbottom[1] * h0 / 416))
 
+            # Show in unresized image frame
             cv2.rectangle(frame, lefttop, rightbottom, color, 1)
             text = best_class_name
             (text_width, text_height) = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, thickness=1)[0]
-            box_coords = ((lefttop[0], rightbottom[1]), (lefttop[0] + text_width + 2, rightbottom[1] + text_height + 2))
+            box_coords = (lefttop, (lefttop[0] + text_width + 2, lefttop[1] - text_height - 2))
             cv2.rectangle(frame, box_coords[0], box_coords[1], color, cv2.FILLED)
-            cv2.putText(frame, text, (lefttop[0], rightbottom[1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1,
+            cv2.putText(frame, text, lefttop, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1,
                         color=(255, 255, 255), thickness=1)
 
-        # Second-end
-        inference_time += (time.time() - inference_start_time)
-        
         # Accumulate final output frame to VideoWriter object
         out.write(frame)
 
@@ -122,12 +122,13 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
             print("Main loop terminated after processing %d frames, %d expected" % (t + 1, n_frames))
             break
 
-    # Check the inference peformance; end-to-end elapsed time and inferencing time.
-    # Check how many frames are processed per second respectivly.
-    elapsed_time = time.time() - start_time  # End-to-end elapsed time, including overhead
-    inference_time /= n_frames  # Average inference (model forward + postprocessing) time taken per frame
-    frames_per_second = 1 / inference_time
-    print("End-to-end elapsed time %f sec, processed %f frame/sec in average" % (elapsed_time, frames_per_second))
+    # Second-end: Accumulate end-to-end inference time
+    end_to_end_time = (time.time() - end_to_end_start_time)
+
+    # Check the inference performance; end-to-end elapsed time and inference time.
+    # Check how many frames are processed per second respectively.
+    print("End-to-end time %fs, average inference time %fs/frame" % (end_to_end_time, inference_time_sum/n_frames))
+    print("Average fps = %fframe/s" % (n_frames / inference_time_sum))
 
     # Release the opened videos.
     vcap.release()
