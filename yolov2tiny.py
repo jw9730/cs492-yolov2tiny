@@ -6,7 +6,7 @@ import tensorflow as tf
 
 
 def _w_to_tensor(w, i, key_list):
-    kernel = tf.convert_to_tensor(w[i]['kernel'], dtype=tf.float32)
+    kernel = tf.convert_to_tensor(w[i]['kernel'].transpose((1, 0, 2, 3)), dtype=tf.float32)
     biases = tf.convert_to_tensor(w[i]['biases'], dtype=tf.float32)
     if ('moving_mean' in key_list) and ('moving_variance' in key_list) and ('gamma' in key_list):
         moving_mean = tf.convert_to_tensor(w[i]['moving_mean'], dtype=tf.float32)
