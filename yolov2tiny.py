@@ -229,13 +229,13 @@ def postprocessing(predictions, w0, h0):
                 # final_coordinates = parametrized_coordinates * 32.0 ( You can see other EQUIVALENT ways to do this...)
                 """ Position in cell space -> Position in original video pixel space
                 """
-                center_x = (float(col) + sigmoid(tx)) * 32.0 * (w0 / 416)
-                center_y = (float(row) + sigmoid(ty)) * 32.0 * (h0 / 416)
+                center_x = (float(col) + sigmoid(tx)) * 32.0 * (w0 / 416.)
+                center_y = (float(row) + sigmoid(ty)) * 32.0 * (h0 / 416.)
 
                 """ Size in cell space -> Size in original video pixel space
                 """
-                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0 * (w0 / 416)
-                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0 * (h0 / 416)
+                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0 * (w0 / 416.)
+                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0 * (h0 / 416.)
 
                 final_confidence = sigmoid(tc)
 
@@ -246,6 +246,11 @@ def postprocessing(predictions, w0, h0):
                 class_predictions = tuple(class_predictions)
                 best_class = class_predictions.index(max(class_predictions))
                 best_class_score = class_predictions[best_class]
+
+                print("decoded: pos {}".format((center_x, center_y)))
+                print("decoded: size {}".format((roi_w, roi_h)))
+                print("decoded: confidence {}".format(final_confidence))
+                print("decoded: best class {}".format(best_class))
 
                 # Flip the coordinates on both axes
                 left = int(center_x - (roi_w / 2.))
