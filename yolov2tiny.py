@@ -53,15 +53,10 @@ class YOLO_V2_TINY(object):
                 for i in range(len(w)):
 
                     if 0 <= i < 6:
-                        kernel = w[i]['kernel']
-                        biases = w[i]['biases']
-                        moving_variance = w[i]['moving_variance']
-                        gamma = w[i]['gamma']
-                        moving_mean = w[i]['moving_mean']
-
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                        b = tf.nn.bias_add(value=c, bias=biases)
-                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
+                        c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
+                        n = tf.nn.batch_normalization(x=b, mean=w[i]['moving_mean'], variance=w[i]['moving_variance'],
+                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-3)
                         r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         if i == 5:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
@@ -72,26 +67,18 @@ class YOLO_V2_TINY(object):
                         tensor_list += [c, b, n, r, m]
 
                     elif 6 <= i < 8:
-                        kernel = w[i]['kernel']
-                        biases = w[i]['biases']
-                        moving_variance = w[i]['moving_variance']
-                        gamma = w[i]['gamma']
-                        moving_mean = w[i]['moving_mean']
-
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                        b = tf.nn.bias_add(value=c, bias=biases)
-                        n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
+                        c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
+                        n = tf.nn.batch_normalization(x=b, mean=w[i]['moving_mean'], variance=w[i]['moving_variance'],
+                                                      offset=None, scale=w[i]['gamma'], variance_epsilon=1e-3)
                         r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         x = r
 
                         tensor_list += [c, b, n, r]
 
                     elif i == 8:
-                        kernel = w[i]['kernel']
-                        biases = w[i]['biases']
-
-                        c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
-                        b = tf.nn.bias_add(value=c, bias=biases)
+                        c = tf.nn.conv2d(input=x, filters=w[i]['kernel'], strides=[1, 1, 1, 1], padding='SAME')
+                        b = tf.nn.bias_add(value=c, bias=w[i]['biases'])
                         x = b
 
                         tensor_list += [c, b]
@@ -172,13 +159,13 @@ def postprocessing(predictions, w0, h0):
                 # final_coordinates = parametrized_coordinates * 32.0 ( You can see other EQUIVALENT ways to do this...)
                 """ Position in cell space -> Position in original video pixel space
                 """
-                center_x = (float(col) + sigmoid(tx)) * 32.0# * (w0 / 416)
-                center_y = (float(row) + sigmoid(ty)) * 32.0# * (h0 / 416)
+                center_x = (float(col) + sigmoid(tx)) * 32.0 * (w0 / 416)
+                center_y = (float(row) + sigmoid(ty)) * 32.0 * (h0 / 416)
 
                 """ Size in cell space -> Size in original video pixel space
                 """
-                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0# * (w0 / 416)
-                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0# * (h0 / 416)
+                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0 * (w0 / 416)
+                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0 * (h0 / 416)
 
                 final_confidence = sigmoid(tc)
 
@@ -263,7 +250,7 @@ def non_maximal_suppression(thresholded_predictions, iou_threshold):
             curr_iou = iou(thresholded_predictions[i][0], nms_predictions[j][0])
             if (curr_iou > iou_threshold):
                 to_delete = True
-            # print('Checking box {} vs {}: IOU = {} , To delete = {}'.format(thresholded_predictions[i][0],nms_predictions[j][0],curr_iou,to_delete))
+            print('Checking box {} vs {}: IOU = {} , To delete = {}'.format(thresholded_predictions[i][0],nms_predictions[j][0],curr_iou,to_delete))
             j = j + 1
 
         if to_delete == False:
