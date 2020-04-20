@@ -53,7 +53,7 @@ class YOLO_V2_TINY(object):
                 x = input_tensor
 
                 for i in range(len(w)):
-                    
+
                     if 0 <= i < 6:
                         kernel = w[i]['kernel']
                         biases = w[i]['biases']
