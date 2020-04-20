@@ -62,7 +62,7 @@ class YOLO_V2_TINY(object):
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=biases)
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
-                        r = tf.nn.leaky_relu(features=n, alpha=0.10000000149011612)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         if i == 5:
                             m = tf.nn.max_pool2d(r, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')
                         else:
@@ -81,7 +81,7 @@ class YOLO_V2_TINY(object):
                         c = tf.nn.conv2d(input=x, filters=kernel, strides=[1, 1, 1, 1], padding='SAME')
                         b = tf.nn.bias_add(value=c, bias=biases)
                         n = tf.nn.batch_normalization(x=b, mean=moving_mean, variance=moving_variance, offset=None, scale=gamma, variance_epsilon=1e-3)
-                        r = tf.nn.leaky_relu(features=n, alpha=0.10000000149011612)
+                        r = tf.nn.leaky_relu(features=n, alpha=0.1)
                         x = r
 
                         tensor_list += [c, b, n, r]
@@ -172,13 +172,13 @@ def postprocessing(predictions, w0, h0):
                 # final_coordinates = parametrized_coordinates * 32.0 ( You can see other EQUIVALENT ways to do this...)
                 """ Position in cell space -> Position in original video pixel space
                 """
-                center_x = (float(col) + sigmoid(tx)) * 32.0 * (w0 / 416)
-                center_y = (float(row) + sigmoid(ty)) * 32.0 * (h0 / 416)
+                center_x = (float(col) + sigmoid(tx)) * 32.0# * (w0 / 416)
+                center_y = (float(row) + sigmoid(ty)) * 32.0# * (h0 / 416)
 
                 """ Size in cell space -> Size in original video pixel space
                 """
-                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0 * (w0 / 416)
-                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0 * (h0 / 416)
+                roi_w = np.exp(tw) * anchors[2 * b + 0] * 32.0# * (w0 / 416)
+                roi_h = np.exp(th) * anchors[2 * b + 1] * 32.0# * (h0 / 416)
 
                 final_confidence = sigmoid(tc)
 
