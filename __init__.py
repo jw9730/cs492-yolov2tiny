@@ -48,9 +48,6 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     # Your code from here. You may clear the comments.
     #
 
-    # Mark current time for end-to-end performance check
-    start_time = time.time()
-
     # Open video using open_video_with_opencv.
     vcap, out, (w0, h0, n_frames) = open_video_with_opencv(in_video_path, out_video_path)
 
