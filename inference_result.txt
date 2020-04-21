@@ -1,0 +1,7 @@
+Finished: 453 frames processed
+End-to-end time 22.189241s, inference-only time 6.974397s
+End-to-end fps = 20.415300frame/s, average inference-only fps = 64.951848frame/s
+
+Finished: 453 frames processed
+End-to-end time 42.044892s, inference-only time 24.510050s
+End-to-end fps = 10.774198frame/s, average inference-only fps = 18.482214frame/s

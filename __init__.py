@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import cv2 as cv2
@@ -47,6 +48,8 @@ def video_object_detection(in_video_path, out_video_path, proc="cpu"):
     #
     # Your code from here. You may clear the comments.
     #
+    if not os.path.exists('./intermediate/'):
+        os.makedirs('./intermediate/')
 
     # Open video using open_video_with_opencv.
     vcap, out, (w0, h0, n_frames) = open_video_with_opencv(in_video_path, out_video_path)
