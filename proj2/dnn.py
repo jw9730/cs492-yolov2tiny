@@ -202,7 +202,7 @@ class BiasAdd(DnnNode):
 
         # check biases shape
         print(list(biases.shape))
-        print(list(prev_out_shape[-1]))
+        print(list(prev_out_shape[-1:]))
         assert list(biases.shape) == list(prev_out_shape[-1:])
 
         # set output shape
