@@ -130,7 +130,7 @@ class Conv2D(DnnNode):
 
         # check types
         assert isinstance(self.in_node, DnnNode)
-        assert (type(self.kernel) is np.ndarray)
+        assert (type(self.kernel) is np.memmap) or (type(self.kernel) is np.ndarray)
         # check strides (an int or list of ints with length 1, 2 or 4)
         assert (type(self.strides) is int) or ((type(self.strides) is list) and (len(self.strides) in [1, 2, 4]))
         # check kernel dimension (h, w, in_channels, out_channels)
@@ -195,7 +195,7 @@ class BiasAdd(DnnNode):
 
         # check types
         assert isinstance(self.in_node, DnnNode)
-        assert type(self.biases) is np.ndarray
+        assert (type(self.biases) is np.memmap) or (type(self.biases) is np.ndarray)
 
         # get input shape
         prev_out_shape = self.in_node.in_shape  # (B, ...)
@@ -292,7 +292,9 @@ class BatchNorm(DnnNode):
 
         # check types
         assert isinstance(self.in_node, DnnNode)
-        assert (type(self.mean) is np.ndarray) and (type(self.variance) is np.ndarray) and (type(self.gamma) is np.ndarray)
+        assert (type(self.mean) is np.memmap) or (type(self.mean) is np.ndarray)
+        assert (type(self.variance) is np.memmap) or (type(self.variance) is np.ndarray)
+        assert (type(self.gamma) is np.memmap) or (type(self.gamma) is np.ndarray)
         assert type(self.epsilon) is float
 
         # get input shape
