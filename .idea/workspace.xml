@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="380">
-              <caret line="35" column="29" selection-start-line="35" selection-start-column="29" selection-end-line="35" selection-end-column="29" />
+            <state relative-caret-position="447">
+              <caret line="168" lean-forward="true" selection-start-line="168" selection-end-line="168" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -194,12 +194,12 @@
       <workItem from="1587473573842" duration="668000" />
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
-      <workItem from="1588144182407" duration="9393000" />
+      <workItem from="1588144182407" duration="9558000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="89682000" />
+    <option name="totallyTimeSpent" value="89847000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -296,8 +296,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="380">
-          <caret line="35" column="29" selection-start-line="35" selection-start-column="29" selection-end-line="35" selection-end-column="29" />
+        <state relative-caret-position="447">
+          <caret line="168" lean-forward="true" selection-start-line="168" selection-end-line="168" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

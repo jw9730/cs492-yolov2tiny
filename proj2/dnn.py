@@ -156,13 +156,9 @@ class Conv2D(DnnNode):
         if type(self.strides) is int:
             s_h = s_w = self.strides
         elif len(self.strides) == 2:
-            s_h = self.strides[0]
-            s_w = self.strides[1]
+            s_h, s_w = self.strides
         elif len(self.strides) == 4:
-            s_b = self.strides[0]
-            s_h = self.strides[1]
-            s_w = self.strides[2]
-            s_c = self.strides[3]
+            s_b, s_h, s_w, s_c = self.strides
         else: raise AttributeError
 
         # compute padding
@@ -240,13 +236,9 @@ class MaxPool2D(DnnNode):
         if type(self.ksize) is int:
             k_h = k_w = self.ksize
         elif len(self.ksize) == 2:
-            k_h = self.ksize[0]
-            k_w = self.ksize[1]
+            k_h, k_w = self.ksize
         elif len(self.ksize) == 4:
-            k_b = self.ksize[0]
-            k_h = self.ksize[1]
-            k_w = self.ksize[2]
-            k_c = self.ksize[3]
+            k_b, k_h, k_w, k_c = self.ksize
         else: raise AttributeError
 
         # parse strides
@@ -254,13 +246,9 @@ class MaxPool2D(DnnNode):
         if type(self.strides) is int:
             s_h = s_w = self.strides
         elif len(self.strides) == 2:
-            s_h = self.strides[0]
-            s_w = self.strides[1]
+            s_h, s_w = self.strides
         elif len(self.strides) == 4:
-            s_b = self.strides[0]
-            s_h = self.strides[1]
-            s_w = self.strides[2]
-            s_c = self.strides[3]
+            s_b, s_h, s_w, s_c = self.strides
         else: raise AttributeError
 
         # compute padding
