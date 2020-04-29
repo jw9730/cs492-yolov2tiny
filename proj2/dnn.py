@@ -176,12 +176,11 @@ class Conv2D(DnnNode):
         n_h = (h + p_h - k_h) // s_h + 1
         n_w = (w + p_w - k_w) // s_w + 1
         n_c = k_out
-        self.in_shape = [n_b, n_h, n_w, n_c]
 
         if padding == 'SAME': assert n_h == h and n_w == w
 
         # set output shape
-        self.in_shape = self.in_node.in_shape
+        self.in_shape = [n_b, n_h, n_w, n_c]
 
         print(self.name, self.in_shape)
 
