@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="373">
-              <caret line="335" column="21" lean-forward="true" selection-start-line="335" selection-start-column="21" selection-end-line="335" selection-end-column="21" />
+            <state relative-caret-position="304">
+              <caret line="137" column="23" lean-forward="true" selection-start-line="137" selection-start-column="23" selection-end-line="137" selection-end-column="23" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -97,6 +97,11 @@
       <find>print</find>
       <find>expected input shape</find>
       <find>inferred output shape</find>
+      <find>n_b</find>
+      <find>n_h</find>
+      <find>n_w</find>
+      <find>n_h,</find>
+      <find>n_c</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -189,12 +194,12 @@
       <workItem from="1587473573842" duration="668000" />
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
-      <workItem from="1588144182407" duration="9022000" />
+      <workItem from="1588144182407" duration="9138000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="89311000" />
+    <option name="totallyTimeSpent" value="89427000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -291,8 +296,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="373">
-          <caret line="335" column="21" lean-forward="true" selection-start-line="335" selection-start-column="21" selection-end-line="335" selection-end-column="21" />
+        <state relative-caret-position="304">
+          <caret line="137" column="23" lean-forward="true" selection-start-line="137" selection-start-column="23" selection-end-line="137" selection-end-column="23" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

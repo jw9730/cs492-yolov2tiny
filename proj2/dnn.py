@@ -120,8 +120,8 @@ Use multiprocessing library to improve the performance using, for example, batch
 """
 class Conv2D(DnnNode):
     def __init__(self, name, in_node, kernel, strides, padding):
-        # Given an input tensor of shape [batch, in_height, in_width, in_channels]
-        # and a filter / kernel tensor of shape [filter_height, filter_width, in_channels, out_channels]
+        # Given an input tensor of shape [batch, in_height, inew_width, inew_channels]
+        # and a filter / kernel tensor of shape [filter_height, filter_width, inew_channels, out_channels]
         self.name = name
         self.in_node = in_node
         self.kernel = kernel
@@ -133,7 +133,7 @@ class Conv2D(DnnNode):
         assert (type(self.kernel) is np.memmap) or (type(self.kernel) is np.ndarray)
         # check strides (an int or list of ints with length 1, 2 or 4)
         assert (type(self.strides) is int) or ((type(self.strides) is list) and (len(self.strides) in [1, 2, 4]))
-        # check kernel dimension (h, w, in_channels, out_channels)
+        # check kernel dimension (h, w, inew_channels, out_channels)
         assert (len(self.kernel.shape) == 4)
         # check padding
         assert self.padding in ['SAME', 'VALID']
@@ -171,15 +171,15 @@ class Conv2D(DnnNode):
             p_w = w * (s_w - 1) + k_w - s_w
 
         # compute output shape
-        n_b = (b - 1) // s_b + 1
-        n_h = (h + p_h - k_h) // s_h + 1
-        n_w = (w + p_w - k_w) // s_w + 1
-        n_c = k_out
+        new_b = (b - 1) // s_b + 1
+        new_h = (h + p_h - k_h) // s_h + 1
+        new_w = (w + p_w - k_w) // s_w + 1
+        new_c = k_out
 
-        if padding == 'SAME': assert n_h == h and n_w == w
+        if padding == 'SAME': assert new_h == h and new_w == w
 
         # set output shape
-        self.in_shape = [n_b, n_h, n_w, n_c]
+        self.in_shape = [new_b, new_h, new_w, new_c]
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
@@ -269,11 +269,11 @@ class MaxPool2D(DnnNode):
             p_w = w * (s_w - 1) + k_w - s_w
 
         # compute output shape
-        n_b = (b - k_b) // s_b + 1
-        n_h = (h + p_h - k_h) // s_h + 1
-        n_w = (w + p_w - k_w) // s_w + 1
-        n_c = (c - k_c) // s_c + 1
-        self.in_shape = [n_b, n_h, n_w, n_c]
+        new_b = (b - k_b) // s_b + 1
+        new_h = (h + p_h - k_h) // s_h + 1
+        new_w = (w + p_w - k_w) // s_w + 1
+        new_c = (c - k_c) // s_c + 1
+        self.in_shape = [new_b, new_h, new_w, new_c]
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
