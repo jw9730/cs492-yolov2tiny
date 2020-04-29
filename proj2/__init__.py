@@ -5,6 +5,14 @@ import time
 
 import yolov2tiny
 
+"""
+In this project, everything is ready for you except internal computations in the nodes.
+(1) __init__.py takes an image input and inferences with YOLO V2 tiny class to produce an output image.
+(2) yolov2tiny.py builds a graph based on the YOLOv2 tiny algorithm with a DNN inferecne engine using networkx library.
+(3) Code in build graph will be similar to what you've done in the rst project.
+(4) There are tons of create methods which appends DNN nodes to the computational graph.
+"""
+
 def resize_input(im):
     imsz = cv2.resize(im, (416, 416))
     imsz = imsz / 255.

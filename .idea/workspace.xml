@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj2/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj2/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj2/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj2/dnn.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -12,11 +15,23 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/__init__.py">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/proj2/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="200">
-              <caret line="138" selection-start-line="138" selection-end-line="155" selection-end-column="10" />
+            <state relative-caret-position="238">
+              <caret line="15" column="21" lean-forward="true" selection-start-line="15" selection-start-column="21" selection-end-line="15" selection-end-column="21" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1188">
+              <caret line="179" column="58" lean-forward="true" selection-start-line="179" selection-start-column="58" selection-end-line="179" selection-end-column="58" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -25,10 +40,34 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
+        <entry file="file://$PROJECT_DIR$/proj2/yolov2tiny.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2375">
-              <caret line="125" column="36" selection-start-line="125" selection-start-column="34" selection-end-line="125" selection-end-column="36" />
+            <state relative-caret-position="661">
+              <caret line="77" column="34" lean-forward="true" selection-start-line="77" selection-start-column="34" selection-end-line="77" selection-end-column="34" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/proj1/__init__.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret line="21" column="78" lean-forward="true" selection-start-line="21" selection-start-column="78" selection-end-line="21" selection-end-column="78" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/proj1/yolov2tiny.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2812">
+              <caret line="148" column="44" lean-forward="true" selection-start-line="148" selection-start-column="44" selection-end-line="148" selection-end-column="44" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -55,6 +94,7 @@
       <find>nn.max_pool</find>
       <find>mkdir</find>
       <find>argv</find>
+      <find>prev_output_shape</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -65,13 +105,15 @@
       <list>
         <option value="$PROJECT_DIR$/yolov2tiny.py" />
         <option value="$PROJECT_DIR$/__init__.py" />
+        <option value="$PROJECT_DIR$/proj2/__init__.py" />
+        <option value="$PROJECT_DIR$/proj2/dnn.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-8" />
-    <option name="width" value="977" />
-    <option name="height" value="1038" />
+    <option name="x" value="-9" />
+    <option name="width" value="978" />
+    <option name="height" value="1039" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -85,6 +127,16 @@
             <path>
               <item name="cs492-yolov2tiny" type="b2602c69:ProjectViewProjectNode" />
               <item name="cs492-yolov2tiny" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cs492-yolov2tiny" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cs492-yolov2tiny" type="462c0819:PsiDirectoryNode" />
+              <item name="proj1" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cs492-yolov2tiny" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cs492-yolov2tiny" type="462c0819:PsiDirectoryNode" />
+              <item name="proj2" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -135,11 +187,12 @@
       <workItem from="1587473573842" duration="668000" />
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
+      <workItem from="1588144182407" duration="5977000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="80289000" />
+    <option name="totallyTimeSpent" value="86266000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -154,7 +207,7 @@
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23458445" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.11394102" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -169,7 +222,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.3201133" />
-      <window_info anchor="bottom" id="Python Console" order="12" weight="0.32808024" />
+      <window_info anchor="bottom" id="Python Console" order="12" weight="0.32719547" />
       <window_info anchor="bottom" id="File Transfer" order="13" weight="0.3286119" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -192,20 +245,52 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tinyYOLOv2-master/weights_loader.py" />
-    <entry file="file://$PROJECT_DIR$/__init__.py">
+    <entry file="file://$PROJECT_DIR$/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/yolov2tiny.py" />
+    <entry file="file://$PROJECT_DIR$/proj2/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="138" selection-start-line="138" selection-end-line="155" selection-end-column="10" />
+        <state relative-caret-position="238">
+          <caret line="15" column="21" lean-forward="true" selection-start-line="15" selection-start-column="21" selection-end-line="15" selection-end-column="21" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proj1/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret line="21" column="78" lean-forward="true" selection-start-line="21" selection-start-column="78" selection-end-line="21" selection-end-column="78" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/yolov2tiny.py">
+    <entry file="file://$PROJECT_DIR$/proj1/yolov2tiny.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2375">
-          <caret line="125" column="36" selection-start-line="125" selection-start-column="34" selection-end-line="125" selection-end-column="36" />
+        <state relative-caret-position="2812">
+          <caret line="148" column="44" lean-forward="true" selection-start-line="148" selection-start-column="44" selection-end-line="148" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proj2/yolov2tiny.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="661">
+          <caret line="77" column="34" lean-forward="true" selection-start-line="77" selection-start-column="34" selection-end-line="77" selection-end-column="34" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1188">
+          <caret line="179" column="58" lean-forward="true" selection-start-line="179" selection-start-column="58" selection-end-line="179" selection-end-column="58" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
