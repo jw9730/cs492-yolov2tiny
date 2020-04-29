@@ -186,7 +186,15 @@ class Conv2D(DnnNode):
 
     def run(self):
         # strides along each dimension
-        s_b, s_h, s_w, s_c = self.parsed_padding
+        s_b, s_h, s_w, s_c = self.strides
+        # padding along each dimension
+        p_h, p_w = self.parsed_padding
+        # caution: tensorflow implementation pads more on rightmost
+        # https://intellipaat.com/community/558/what-is-the-difference-between-same-and-valid-padding-in-tf-nn-maxpool-of-tensorflow
+        p_h_left = p_h // 2
+        p_h_right = (p_h + 1) // 2
+        p_w_left = p_w // 2
+        p_w_right = (p_w + 1) // 2
         # output dimension (to be iterated over)
         out_b, out_h, out_w, out_c = self.in_shape
         pass
@@ -267,6 +275,7 @@ class MaxPool2D(DnnNode):
         if padding == 'SAME':
             p_h = h * (s_h - 1) + k_h - s_h
             p_w = w * (s_w - 1) + k_w - s_w
+        self.parsed_padding = [p_h, p_w]
 
         # compute output shape
         out_b = (b - k_b) // s_b + 1
@@ -283,6 +292,13 @@ class MaxPool2D(DnnNode):
         k_b, k_h, k_w, k_c = self.parsed_ksize
         # strides along each dimension
         s_b, s_h, s_w, s_c = self.parsed_ksize
+        # padding along each dimension
+        p_h, p_w = self.parsed_padding
+        # caution: tensorflow implementation pads more on rightmost
+        p_h_left = p_h // 2
+        p_h_right = (p_h + 1) // 2
+        p_w_left = p_w // 2
+        p_w_right = (p_w + 1) // 2
         # output dimension (to be iterated over)
         out_b, out_h, out_w, out_c = self.in_shape
         pass
