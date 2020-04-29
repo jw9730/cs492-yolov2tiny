@@ -181,7 +181,6 @@ class Conv2D(DnnNode):
         # set output shape
         self.in_shape = [n_b, n_h, n_w, n_c]
 
-        print(self.strides)
         print(self.name, self.in_shape)
 
     def run(self):
@@ -208,7 +207,6 @@ class BiasAdd(DnnNode):
         # set output shape
         self.in_shape = prev_out_shape
 
-        print(self.biases.shape)
         print(self.name, self.in_shape)
 
     def run(self):
@@ -277,7 +275,6 @@ class MaxPool2D(DnnNode):
         n_c = (c - k_c) // s_c + 1
         self.in_shape = [n_b, n_h, n_w, n_c]
 
-        print(self.ksize, self.strides)
         print(self.name, self.in_shape)
         
     def run(self):
