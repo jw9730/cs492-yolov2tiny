@@ -203,7 +203,7 @@ class BiasAdd(DnnNode):
         # check biases shape
         print(list(biases.shape))
         print(list(prev_out_shape[-1]))
-        assert list(biases.shape) == list(prev_out_shape[-1])
+        assert list(biases.shape) == list(prev_out_shape[-1:])
 
         # set output shape
         self.in_shape = prev_out_shape
@@ -304,8 +304,8 @@ class BatchNorm(DnnNode):
         print(list(mean.shape))
         print(list(variance.shape))
         print(list(gamma.shape))
-        print(list(prev_out_shape[-1]))
-        assert list(mean.shape) == list(variance.shape) == list(gamma.shape) == list(prev_out_shape[-1])
+        print(list(prev_out_shape[-1:]))
+        assert list(mean.shape) == list(variance.shape) == list(gamma.shape) == list(prev_out_shape[-1:])
 
         # set output shape
         self.in_shape = prev_out_shape
