@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="132" column="46" selection-start-line="132" selection-start-column="37" selection-end-line="132" selection-end-column="46" />
+            <state relative-caret-position="392">
+              <caret line="307" column="68" selection-start-line="307" selection-start-column="68" selection-end-line="307" selection-end-column="68" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -94,6 +94,7 @@
       <find>prev_output_shape</find>
       <find>np.ndarray</find>
       <find>np.memmap</find>
+      <find>print</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -186,12 +187,12 @@
       <workItem from="1587473573842" duration="668000" />
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
-      <workItem from="1588144182407" duration="6977000" />
+      <workItem from="1588144182407" duration="7079000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="87266000" />
+    <option name="totallyTimeSpent" value="87368000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -288,8 +289,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="132" column="46" selection-start-line="132" selection-start-column="37" selection-end-line="132" selection-end-column="46" />
+        <state relative-caret-position="392">
+          <caret line="307" column="68" selection-start-line="307" selection-start-column="68" selection-end-line="307" selection-end-column="68" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
