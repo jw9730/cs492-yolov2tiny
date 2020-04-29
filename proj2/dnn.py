@@ -181,7 +181,8 @@ class Conv2D(DnnNode):
         # set output shape
         self.in_shape = [n_b, n_h, n_w, n_c]
 
-        print(self.name, self.in_shape)
+        print(self.name)
+        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -200,14 +201,13 @@ class BiasAdd(DnnNode):
         prev_out_shape = self.in_node.in_shape  # (B, ...)
 
         # check biases shape
-        print(list(biases.shape))
-        print(list(prev_out_shape[-1:]))
         assert list(biases.shape) == list(prev_out_shape[-1:])
 
         # set output shape
         self.in_shape = prev_out_shape
 
-        print(self.name, self.in_shape)
+        print(self.name)
+        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -275,7 +275,8 @@ class MaxPool2D(DnnNode):
         n_c = (c - k_c) // s_c + 1
         self.in_shape = [n_b, n_h, n_w, n_c]
 
-        print(self.name, self.in_shape)
+        print(self.name)
+        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
         
     def run(self):
         pass
@@ -300,16 +301,13 @@ class BatchNorm(DnnNode):
         prev_out_shape = self.in_node.in_shape  # (B, ...)
 
         # check mean, variance, gamma shape
-        print(list(mean.shape))
-        print(list(variance.shape))
-        print(list(gamma.shape))
-        print(list(prev_out_shape[-1:]))
         assert list(mean.shape) == list(variance.shape) == list(gamma.shape) == list(prev_out_shape[-1:])
 
         # set output shape
         self.in_shape = prev_out_shape
 
-        print(self.name, self.in_shape)
+        print(self.name)
+        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -327,7 +325,8 @@ class LeakyReLU(DnnNode):
         # set output shape
         self.in_shape = prev_out_shape
 
-        print(self.name, self.in_shape)
+        print(self.name)
+        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
 
     def run(self):
         pass
