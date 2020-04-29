@@ -182,7 +182,7 @@ class Conv2D(DnnNode):
         self.in_shape = [n_b, n_h, n_w, n_c]
 
         print(self.name)
-        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
+        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -207,7 +207,7 @@ class BiasAdd(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
+        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -276,7 +276,7 @@ class MaxPool2D(DnnNode):
         self.in_shape = [n_b, n_h, n_w, n_c]
 
         print(self.name)
-        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
+        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
         
     def run(self):
         pass
@@ -307,7 +307,7 @@ class BatchNorm(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
+        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         pass
@@ -326,7 +326,7 @@ class LeakyReLU(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: expected input shape " + str(prev_out_shape) + ", inferred output shape" + str(self.in_shape))
+        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         pass
