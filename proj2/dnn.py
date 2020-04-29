@@ -301,11 +301,11 @@ class BatchNorm(DnnNode):
         prev_out_shape = self.in_node.in_shape  # (B, ...)
 
         # check mean, variance, gamma shape
-        print(mean.shape)
-        print(variance.shape)
-        print(gamma.shape)
-        print(np.array(prev_out_shape[1:]))
-        assert 0 not in (mean.shape == variance.shape == gamma.shape == np.array(prev_out_shape[1:]))
+        print(list(mean.shape))
+        print(list(variance.shape))
+        print(list(gamma.shape))
+        print(list(prev_out_shape[-1]))
+        assert list(mean.shape) == list(variance.shape) == list(gamma.shape) == list(prev_out_shape[-1])
 
         # set output shape
         self.in_shape = prev_out_shape
