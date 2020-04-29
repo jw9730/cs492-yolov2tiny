@@ -121,8 +121,8 @@ Use multiprocessing library to improve the performance using, for example, batch
 """
 class Conv2D(DnnNode):
     def __init__(self, name, in_node, kernel, strides, padding):
-        # Given an input tensor of shape [batch, in_height, inew_width, inew_channels]
-        # and a filter / kernel tensor of shape [filter_height, filter_width, inew_channels, out_channels]
+        # Given an input tensor of shape [batch, in_height, iout_width, iout_channels]
+        # and a filter / kernel tensor of shape [filter_height, filter_width, iout_channels, out_channels]
         self.name = name
         self.in_node = in_node
         self.kernel = kernel
@@ -134,7 +134,7 @@ class Conv2D(DnnNode):
         assert (type(self.kernel) is np.memmap) or (type(self.kernel) is np.ndarray)
         # check strides (an int or list of ints with length 1, 2 or 4)
         assert (type(self.strides) is int) or ((type(self.strides) is list) and (len(self.strides) in [1, 2, 4]))
-        # check kernel dimension (h, w, inew_channels, out_channels)
+        # check kernel dimension (h, w, iout_channels, out_channels)
         assert (len(self.kernel.shape) == 4)
         # check padding
         assert self.padding in ['SAME', 'VALID']
@@ -150,6 +150,7 @@ class Conv2D(DnnNode):
         k_in = kernel.shape[2]
         k_out = kernel.shape[3]
         assert k_in == c
+        self.parsed_ksize = [k_h, k_w, k_in, k_out]
 
         # parse strides
         s_b = s_h = s_w = s_c = 1
@@ -160,28 +161,34 @@ class Conv2D(DnnNode):
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
         else: raise AttributeError
+        self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
         p_h, p_w = 0, 0
         if padding == 'SAME':
             p_h = h * (s_h - 1) + k_h - s_h
             p_w = w * (s_w - 1) + k_w - s_w
+        self.parsed_padding = [p_h, p_w]
 
         # compute output shape
-        new_b = (b - 1) // s_b + 1
-        new_h = (h + p_h - k_h) // s_h + 1
-        new_w = (w + p_w - k_w) // s_w + 1
-        new_c = k_out
+        out_b = (b - 1) // s_b + 1
+        out_h = (h + p_h - k_h) // s_h + 1
+        out_w = (w + p_w - k_w) // s_w + 1
+        out_c = k_out
 
-        if padding == 'SAME': assert new_h == h and new_w == w
+        if padding == 'SAME': assert out_h == h and out_w == w
 
         # set output shape
-        self.in_shape = [new_b, new_h, new_w, new_c]
+        self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.parsed_padding
+        # output dimension (to be iterated over)
+        out_b, out_h, out_w, out_c = self.in_shape
         pass
 
 class BiasAdd(DnnNode):
@@ -207,6 +214,8 @@ class BiasAdd(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        # biases should be broadcasted for b, w and h dimensions
+        # e.g. input (1, 416, 416, 256), biases dimension (256,)
         pass
 
 class MaxPool2D(DnnNode):
@@ -240,6 +249,7 @@ class MaxPool2D(DnnNode):
         elif len(self.ksize) == 4:
             k_b, k_h, k_w, k_c = self.ksize
         else: raise AttributeError
+        self.parsed_ksize = [k_b, k_h, k_w, k_c]
 
         # parse strides
         s_b = s_h = s_w = s_c = 1
@@ -250,6 +260,7 @@ class MaxPool2D(DnnNode):
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
         else: raise AttributeError
+        self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
         p_h, p_w = 0, 0
@@ -258,16 +269,22 @@ class MaxPool2D(DnnNode):
             p_w = w * (s_w - 1) + k_w - s_w
 
         # compute output shape
-        new_b = (b - k_b) // s_b + 1
-        new_h = (h + p_h - k_h) // s_h + 1
-        new_w = (w + p_w - k_w) // s_w + 1
-        new_c = (c - k_c) // s_c + 1
-        self.in_shape = [new_b, new_h, new_w, new_c]
+        out_b = (b - k_b) // s_b + 1
+        out_h = (h + p_h - k_h) // s_h + 1
+        out_w = (w + p_w - k_w) // s_w + 1
+        out_c = (c - k_c) // s_c + 1
+        self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
         
     def run(self):
+        # pooling size along each dimension
+        k_b, k_h, k_w, k_c = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.parsed_ksize
+        # output dimension (to be iterated over)
+        out_b, out_h, out_w, out_c = self.in_shape
         pass
 
 class BatchNorm(DnnNode):
@@ -299,6 +316,8 @@ class BatchNorm(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        # mean, variance, and gamma should be broadcasted for b, w and h dimensions
+        # e.g. input (1, 416, 416, 256), mean dimension (256,)
         pass
 
 class LeakyReLU(DnnNode):
@@ -325,12 +344,12 @@ class LeakyReLU(DnnNode):
 class Input(DnnNode):
     def __init__(self, name, in_shape):
         self.name = name
-        self.in_shape = in_shape 
+        self.in_shape = in_shape
         self.result = np.ndarray(self.in_shape)
 
     def set_input(self, tensor):
         assert tuple(self.in_shape) == tuple(tensor.shape)
-        self.result = tensor 
+        self.result = tensor
 
     def run(self):
         pass
