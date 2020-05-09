@@ -373,7 +373,7 @@ class MaxPool2D(DnnNode):
         print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        if k_b != 0 or k_c != 0: raise NotImplementedError('pooling across batches or channels not allowed')
+        if k_b != 1 or k_c != 1: raise NotImplementedError('pooling across batches or channels not allowed')
 
         # prepare
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
