@@ -228,8 +228,7 @@ class Conv2D(DnnNode):
         kernel_2d = self.kernel.reshape((-1, out_c))
         b_stride = np.arange(0, in_b, s_b)
         c_stride = np.arange(0, in_c, s_c)
-        print(c_stride)
-        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
+        assert b_stride.shape[0] == out_b and c_stride.shape[0] == k_in
         # Loop over output pixels
         mark = time.time()
         for y in range(out_h):
@@ -377,7 +376,7 @@ class MaxPool2D(DnnNode):
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         b_stride = np.arange(0, in_b, s_b)
         c_stride = np.arange(0, in_c, s_c)
-        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
+        assert b_stride.shape[0] == out_b
 
         mark = time.time()
         # loop over output pixels
