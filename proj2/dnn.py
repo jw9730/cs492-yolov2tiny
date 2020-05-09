@@ -408,12 +408,12 @@ class MaxPool2D(DnnNode):
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
+                # vectorized max
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
-                res = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
+                res = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
 
                 if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
-                    print(input_rf)
-                assert not np.isnan(input_rf).any()
+                    print(input_rf[:, :, :, 0:2])
                 if not np.isfinite(res).all():
                     print(res)
                     raise RuntimeError
