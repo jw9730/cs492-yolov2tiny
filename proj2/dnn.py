@@ -409,10 +409,9 @@ class MaxPool2D(DnnNode):
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 # vectorized max
-                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
-                print(padded_input.shape)
-                print(b_stride.shape)
-                print(c_stride.shape)
+                input_rf = padded_input[:, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), :]
+                print(input_rf.shape)
+                input_rf = input_rf[b_stride, :, :, c_stride]
                 print(input_rf.shape)
                 res = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
 
