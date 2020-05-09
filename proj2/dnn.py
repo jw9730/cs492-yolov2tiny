@@ -214,9 +214,9 @@ class Conv2D(DnnNode):
         assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
         assert k_in == in_c and k_out == out_c
 
-        print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)", in_b, in_h, in_w, in_c)
-        print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)", k_h, k_w, k_in, k_out)
-        print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)", out_b, out_h, out_w, out_c)
+        print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)" % (k_h, k_w, k_in, k_out))
+        print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
 
         # zero-pad feature map
         padded_input = np.zeros((in_b, p_h + in_h, p_w + in_w, in_c), dtype=np.float32)
@@ -362,8 +362,8 @@ class MaxPool2D(DnnNode):
         assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
         assert k_c == in_c
 
-        print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)", in_b, in_h, in_w, in_c)
-        print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)", out_b, out_h, out_w, out_c)
+        print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
 
         # zero-pad feature map
         padded_input = np.zeros((in_b, p_h + in_h, p_w + in_w, in_c), dtype=np.float32)
