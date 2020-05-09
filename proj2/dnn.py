@@ -175,11 +175,10 @@ class Conv2D(DnnNode):
         # compute padding
         p_h, p_w = 0, 0
         if padding == 'SAME':
-            p_h = h * (s_h - 1) + k_h - s_h
-            p_w = w * (s_w - 1) + k_w - s_w
+            p_h = int(h * (s_h - 1) + k_h - s_h)
+            p_w = int(w * (s_w - 1) + k_w - s_w)
         self.parsed_padding = [p_h, p_w]
-        print(self.parsed_padding)
-
+        
         # compute output shape
         out_b = (b - 1) // s_b + 1
         out_h = (h + p_h - k_h) // s_h + 1
