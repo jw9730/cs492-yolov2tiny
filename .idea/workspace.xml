@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/proj2/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj2/dnn.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -27,8 +28,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="390">
-              <caret line="412" column="16" selection-start-line="412" selection-start-column="16" selection-end-line="412" selection-end-column="16" />
+            <state relative-caret-position="428">
+              <caret line="414" column="36" selection-start-line="414" selection-start-column="36" selection-end-line="414" selection-end-column="36" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#599#1541#0" />
@@ -202,12 +203,12 @@
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
       <workItem from="1588144182407" duration="11208000" />
-      <workItem from="1588990086926" duration="18459000" />
+      <workItem from="1588990086926" duration="18593000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="109956000" />
+    <option name="totallyTimeSpent" value="110090000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -304,8 +305,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="412" column="16" selection-start-line="412" selection-start-column="16" selection-end-line="412" selection-end-column="16" />
+        <state relative-caret-position="428">
+          <caret line="414" column="36" selection-start-line="414" selection-start-column="36" selection-end-line="414" selection-end-column="36" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#599#1541#0" />
