@@ -237,7 +237,7 @@ class Conv2D(DnnNode):
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary
-                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
@@ -331,8 +331,8 @@ class MaxPool2D(DnnNode):
         # compute padding
         p_h, p_w = 0, 0
         if padding == 'SAME':
-            p_h = k_h - 1
-            p_w = k_w - 1
+            p_h = (h // s_h) * (s_h - 1) + k_h - s_h
+            p_w = (w // s_w) * (s_w - 1) + k_w - s_w
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
@@ -341,8 +341,6 @@ class MaxPool2D(DnnNode):
         out_w = (w + p_w - k_w) // s_w + 1
         out_c = (c - k_c) // s_c + 1
         self.in_shape = [out_b, out_h, out_w, out_c]
-        print(self.in_node.in_shape)
-        print(self.in_shape)
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
