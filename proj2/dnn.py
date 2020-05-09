@@ -225,7 +225,7 @@ class Conv2D(DnnNode):
 
         # Initialise the array
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        
+
         mark = time.time()
         # Loop over output pixels
         for n in range(out_b):
@@ -364,7 +364,6 @@ class MaxPool2D(DnnNode):
         out_b, out_h, out_w, out_c = self.in_shape
 
         assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
-        assert k_c == in_c
 
         print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
         print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
