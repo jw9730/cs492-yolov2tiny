@@ -245,8 +245,8 @@ class Conv2D(DnnNode):
                                    (y * s_h):(y * s_h + k_h),
                                    (x * s_w):(x * s_w + k_w),
                                    :].flatten()
-                        dot_product = np.dot(kernel_1d, input_1d)
-
+                        self.result[n, y, x, m] = np.dot(kernel_1d, input_1d)
+                        """
                         # Loop over kernel pixels
                         for c in range(k_in):
                             for i in range(k_h):
@@ -255,8 +255,10 @@ class Conv2D(DnnNode):
                                     # corresponding pos on input: (n * s_b, y * s_h, x * s_w, c * s_c) + (0, i, j, 0)
                                     self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+
                         assert dot_product == self.result[n, y, x, m]
-                        raise NotImplementedError
+                        """
+
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
