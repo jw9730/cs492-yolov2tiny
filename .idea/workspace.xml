@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="542">
-              <caret line="255" column="49" selection-start-line="255" selection-start-column="49" selection-end-line="255" selection-end-column="49" />
+            <state relative-caret-position="561">
+              <caret line="256" column="68" lean-forward="true" selection-start-line="256" selection-start-column="68" selection-end-line="256" selection-end-column="68" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#599#1541#0" />
@@ -203,12 +203,12 @@
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
       <workItem from="1588144182407" duration="11208000" />
-      <workItem from="1588990086926" duration="6657000" />
+      <workItem from="1588990086926" duration="6767000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="98154000" />
+    <option name="totallyTimeSpent" value="98264000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -305,8 +305,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="542">
-          <caret line="255" column="49" selection-start-line="255" selection-start-column="49" selection-end-line="255" selection-end-column="49" />
+        <state relative-caret-position="561">
+          <caret line="256" column="68" lean-forward="true" selection-start-line="256" selection-start-column="68" selection-end-line="256" selection-end-column="68" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#599#1541#0" />

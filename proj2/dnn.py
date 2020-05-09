@@ -241,7 +241,7 @@ class Conv2D(DnnNode):
                         # (n, y, x, m) for batch, row, column and channel of output feature map
                         # convolve with kernel using 1d dot product
                         kernel_1d = self.kernel.reshape((-1,))
-                        input_1d = padded_input[n * s_b, y * s_h:y * s_h + k_h, x * s_w + k_w, m * s_c].reshape((-1,))
+                        input_1d = padded_input[n * s_b, y * s_h:y * s_h + k_h, x * s_w + k_w, m * s_c.neshape((-1,))
                         dot_product = np.dot(kernel_1d, input_1d)
 
                         # Loop over kernel pixels
