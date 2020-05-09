@@ -195,7 +195,7 @@ class Conv2D(DnnNode):
 
     def run(self):
         assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
-        
+
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
@@ -276,10 +276,7 @@ class BiasAdd(DnnNode):
 
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
-
-        # Add the bias
         self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
-
         return self.result
 
 
@@ -433,16 +430,9 @@ class BatchNorm(DnnNode):
 
         # mean, variance, and gamma should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
-
-        # intitialise the tensor
-        self.result = np.zeros(self.in_shape, dtype=np.float32)
-
-        # iterate over the shape of the vector / number of channels
-        for i in range(self.in_shape[3]):
-            # normalize with mean and variance, multiply with gamma
-            self.result[:, :, :, i] = self.gamma[i] * \
-                                      (self.in_node.result[:, :, :, i] - self.mean[i]) / \
-                                      math.sqrt(self.variance[i] + self.epsilon)
+        self.result = self.gamma.reshape((1, 1, 1, -1)) * \
+                      (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
+                      math.sqrt(self.variance.reshape((1, 1, 1, -1)) + self.epsilon)
         return self.result
 
 

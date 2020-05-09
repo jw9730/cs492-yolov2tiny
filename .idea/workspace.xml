@@ -27,13 +27,12 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="200">
-              <caret line="197" column="8" selection-start-line="197" selection-start-column="8" selection-end-line="197" selection-end-column="8" />
+            <state relative-caret-position="430">
+              <caret line="120" column="77" lean-forward="true" selection-start-line="120" selection-start-column="77" selection-end-line="120" selection-end-column="77" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#599#1541#0" />
                 <element signature="e#1578#3563#0" />
-                <element signature="e#3592#3675#0" />
               </folding>
             </state>
           </provider>
@@ -79,7 +78,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>416</find>
       <find>pickle</find>
       <find>tensor_list</find>
       <find>0.1</find>
@@ -109,6 +107,7 @@
       <find>=float</find>
       <find>assert k_c</find>
       <find>s_c</find>
+      <find>self.result =</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -203,12 +202,12 @@
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
       <workItem from="1588144182407" duration="11208000" />
-      <workItem from="1588990086926" duration="12274000" />
+      <workItem from="1588990086926" duration="12697000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="103771000" />
+    <option name="totallyTimeSpent" value="104194000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -305,13 +304,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="200">
-          <caret line="197" column="8" selection-start-line="197" selection-start-column="8" selection-end-line="197" selection-end-column="8" />
+        <state relative-caret-position="430">
+          <caret line="120" column="77" lean-forward="true" selection-start-line="120" selection-start-column="77" selection-end-line="120" selection-end-column="77" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#599#1541#0" />
             <element signature="e#1578#3563#0" />
-            <element signature="e#3592#3675#0" />
           </folding>
         </state>
       </provider>
