@@ -331,8 +331,8 @@ class MaxPool2D(DnnNode):
         # compute padding
         p_h, p_w = 0, 0
         if padding == 'SAME':
-            p_h = h * (s_h - 1) + k_h - s_h
-            p_w = w * (s_w - 1) + k_w - s_w
+            p_h = k_h - 1
+            p_w = k_w - 1
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
@@ -343,7 +343,6 @@ class MaxPool2D(DnnNode):
         self.in_shape = [out_b, out_h, out_w, out_c]
         print(self.in_node.in_shape)
         print(self.in_shape)
-        print(h, p_h, k_h, s_h, out_h)
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
