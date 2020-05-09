@@ -194,8 +194,8 @@ class Conv2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("Conv2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_shape) + tuple(self.in_node.result.shape)))
-        assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
+        print("Conv2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # padding along each dimension
         p_h, p_w = self.parsed_padding
@@ -273,7 +273,8 @@ class BiasAdd(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
+        print("BiasAdd: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
@@ -345,7 +346,8 @@ class MaxPool2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
+        print("MaxPool2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # padding along each dimension
         p_h, p_w = self.parsed_padding
@@ -427,7 +429,8 @@ class BatchNorm(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
+        print("BatchNorm: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # mean, variance, and gamma should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
@@ -454,7 +457,8 @@ class LeakyReLU(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
+        print("LeakyReLU: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         return self.result
