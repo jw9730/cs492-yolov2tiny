@@ -272,14 +272,18 @@ class BiasAdd(DnnNode):
     def run(self):
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
+
         # Initialise the array
         bias = np.zeros(self.in_shape, dtype=np.float32)
+
         # iterate over the shape of the vector / number of channels
         for i in range(self.in_shape[3]):
             # Fill the entire feature map/channel with the corresponding bias
             bias[:, :, :, i].fill(self.biases[i])
+
         # Add the bias
         self.result = self.in_node.result + bias
+
         return self.result
 
 
@@ -394,7 +398,7 @@ class MaxPool2D(DnnNode):
                                                   (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1, out_c)),
                                                   axis=1)
 
-        print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
+        print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
