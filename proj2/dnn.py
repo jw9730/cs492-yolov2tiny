@@ -228,16 +228,21 @@ class Conv2D(DnnNode):
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
 
         mark = time.time()
+        kernel_2d = self.kernel.reshape((-1, out_c))
         # Loop over output pixels
-        for n in range(out_b):
-            for m in range(out_c):
-                for y in range(out_h):
-                    for x in range(out_w):
-                        # test for boundary
-                        # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
-                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
-                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
+        for y in range(out_h):
+            for x in range(out_w):
+                # test for boundary
+                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
+                assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
+                # vectorized convolution
+                input_receptive_field = padded_input[:, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), :].reshape((in_b, -1))
+                vec_res = np.matmul(input_receptive_field, kernel_2d)
+
+                for n in range(out_b):
+                    for m in range(out_c):
                         # (n, y, x, m) for batch, row, column and channel of output feature map
                         # convolve with kernel using 1d dot product
                         kernel_1d = self.kernel[:, :, :, m].flatten()
@@ -246,18 +251,9 @@ class Conv2D(DnnNode):
                                    (x * s_w):(x * s_w + k_w),
                                    :].flatten()
                         self.result[n, y, x, m] = np.dot(kernel_1d, input_1d)
-                        """
-                        # Loop over kernel pixels
-                        for c in range(k_in):
-                            for i in range(k_h):
-                                for j in range(k_w):
-                                    # (i, j, c, m) for row, column, in_channel and out_channel of kernel
-                                    # corresponding pos on input: (n * s_b, y * s_h, x * s_w, c * s_c) + (0, i, j, 0)
-                                    self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
-                                                               padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
 
-                        assert dot_product == self.result[n, y, x, m]
-                        """
+                assert self.result[:, y, x, :] == vec_res
+                raise NotImplementedError
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
