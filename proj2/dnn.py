@@ -238,12 +238,14 @@ class Conv2D(DnnNode):
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary tightness
-                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 # vectorized convolution
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1))
+                print(input_rf)
+                assert np.isnan(input_rf).any()
                 self.result[:, y, x, :] = np.matmul(input_rf, kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
