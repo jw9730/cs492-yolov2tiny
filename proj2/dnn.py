@@ -194,13 +194,11 @@ class Conv2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("Conv2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
-        # https://intellipaat.com/community/558/what-is-the-difference-between-same-and-valid-padding-in-tf-nn-maxpool-of-tensorflow
         p_h_left = p_h // 2
         p_h_right = (p_h + 1) // 2
         p_w_left = p_w // 2
@@ -216,40 +214,32 @@ class Conv2D(DnnNode):
         # output dimension
         out_b, out_h, out_w, out_c = self.in_shape
         assert k_in == in_c and k_out == out_c
+        assert in_b == out_b
 
         # zero-pad feature map
         padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32)
         padded_input[:, p_h_left:(in_h + p_h) - p_h_right, p_w_left:(in_w + p_w) - p_w_right, :] = self.in_node.result
 
-        print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
-        print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)" % (k_h, k_w, k_in, k_out))
-        print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
-        print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
+        # print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        # print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)" % (k_h, k_w, k_in, k_out))
+        # print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
+        # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
         # initialization
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        kernel_2d = self.kernel.reshape((-1, out_c))
-        b_stride = np.arange(0, in_b, s_b)
-        c_stride = np.arange(0, in_c, s_c)
-        assert b_stride.shape[0] == out_b and c_stride.shape[0] == k_in
+        kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
 
-        # Loop over output pixels
-        mark = time.time()
+        # mark = time.time()
+        # loop over output pixels
         for y in range(out_h):
             for x in range(out_w):
-                # test for boundary tightness
-                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
-                assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
-                assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
-
                 # vectorized convolution
+                # todo: explicitly compute using nested loops. basically, same implementation as before should work
+                # todo: to test correctness, add an assertion that checks if (result from vectorized implementation - result from nested loops).mean() < 1e-5
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 self.result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
 
-        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
-
-        assert not np.isnan(self.result).any()
-
+        # print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
@@ -276,14 +266,11 @@ class BiasAdd(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("BiasAdd: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
         self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
-
-        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -357,7 +344,6 @@ class MaxPool2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("MaxPool2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # padding along each dimension
@@ -382,35 +368,26 @@ class MaxPool2D(DnnNode):
         padded_input = - (np.ones((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) * np.inf)
         padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
 
-        print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
-        print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
-        print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
+        # print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        # print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
+        # print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        if k_b != 1 or k_c != 1: raise NotImplementedError('pooling across batches or channels not allowed')
-
-        # prepare
+        # initialise
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        b_stride = np.arange(0, in_b, s_b)
-        c_stride = np.arange(0, in_c, s_c)
-        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
 
-        mark = time.time()
+        # mark = time.time()
         # loop over output pixels
         for y in range(out_h):
             for x in range(out_w):
-                # test for boundary tightness
-                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
-                assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
-                assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
-
                 # vectorized max
+                # problem: this implementation assumes k_b == 1 and k_c == 1
+                # todo: allow pooling across batches or channels, that is, k_b != 1 or k_c != 1 conditions
+                # for that, you can add additional loop over batches and channels and
+                # extend input_rf over batch and channel dimension
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
 
-        print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
-
-        assert not np.isnan(self.result).any()
-
+        # print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
@@ -443,7 +420,6 @@ class BatchNorm(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("BatchNorm: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         # mean, variance, and gamma should be broadcasted for b, w and h dimensions
@@ -451,8 +427,6 @@ class BatchNorm(DnnNode):
         self.result = self.gamma.reshape((1, 1, 1, -1)) * \
                       (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                       (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon)
-
-        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -474,12 +448,9 @@ class LeakyReLU(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        print("LeakyReLU: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_node.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
-
-        assert not np.isnan(self.result).any()
 
         return self.result
 
