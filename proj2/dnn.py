@@ -436,7 +436,7 @@ class BatchNorm(DnnNode):
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
         self.result = self.gamma.reshape((1, 1, 1, -1)) * \
                       (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
-                      math.sqrt(self.variance + self.epsilon).reshape((1, 1, 1, -1))
+                      math.sqrt(self.variance + np.ndarray(self.epsilon)).reshape((1, 1, 1, -1))
         return self.result
 
 
