@@ -13,6 +13,7 @@ Every intermediate DNN node must contain in node and result.
 The in node is a previous node that feeds a tensor to the current node through result.
 """
 
+
 class DnnInferenceEngine(object):
     def __init__(self, graph):
         self.g = graph
@@ -42,14 +43,15 @@ class DnnInferenceEngine(object):
             currents = nexts
         return out
 
+
 class DnnGraphBuilder(object):
     def __init__(self):
         self.G = nx.DiGraph()
-        self.name_num = {"conv2d": 0, 
-                         "bias_add": 0, 
-                         "max_pool2d": 0, 
-                         "batch_norm": 0, 
-                         "leaky_relu": 0, 
+        self.name_num = {"conv2d": 0,
+                         "bias_add": 0,
+                         "max_pool2d": 0,
+                         "batch_norm": 0,
+                         "leaky_relu": 0,
                          "input": 0}
         self.in_node = None
         self.out_node = None
@@ -95,18 +97,21 @@ class DnnGraphBuilder(object):
 
     def create_input(self, in_shape):
         out_node = Input(self.get_name("input"), in_shape)
-        self.G.add_node(out_node) 
+        self.G.add_node(out_node)
         self.set_in_node(out_node)  # Assume there's only one input
         return out_node
+
 
 class DnnNode(object):
     def __init__(self):
         pass
 
     def run(self):
-        self.result = None 
+        self.result = None
 
-#
+    #
+
+
 # Complete below classes.
 #
 """
@@ -119,6 +124,8 @@ save the value at self.result for further computations.
 In the run, there must be nested loops which take really long time.
 Use multiprocessing library to improve the performance using, for example, batching technique.
 """
+
+
 class Conv2D(DnnNode):
     def __init__(self, name, in_node, kernel, strides, padding):
         # Given an input tensor of shape [batch, in_height, iout_width, iout_channels]
@@ -160,7 +167,8 @@ class Conv2D(DnnNode):
             s_h, s_w = self.strides
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
@@ -185,38 +193,53 @@ class Conv2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-		# strides along each dimension
-		s_b, s_h, s_w, s_c = self.strides
-		# padding along each dimension
-		p_h, p_w = self.parsed_padding
-		k_h, k_w, k_in, k_out = self.parsed_ksize
-		# caution: tensorflow implementation pads more on rightmost
-		# https://intellipaat.com/community/558/what-is-the-difference-between-same-and-valid-padding-in-tf-nn-maxpool-of-tensorflow
-		p_h_left = p_h // 2
-		p_h_right = (p_h + 1) // 2
-		p_w_left = p_w // 2
-		p_w_right = (p_w + 1) // 2
-		# output dimension (to be iterated over)
-		out_b, out_h, out_w, out_c = self.in_shape
-		# Initialise the array
-		self.result = np.zeros((out_b,out_h,out_w,out_c),dtype=np.float32)
-		# For each output image/ output batch
-		for n in range(out_b):
-			# for each output channel
-			for m in range(out_c):
-				# for each input channel
-				for c in range(k_in):
-					# for each row of output feature map
-					for y in range(out_h):
-						# for each column of input feature map
-						for x in range(out_w):
-							# for each column of kernal
-							for j in range(k_w):
-								# for each row of kernal
-								for i in range(k_h): 
-									# Really unsure about this
-									self.result[n,y,x,m] += self.kernel[i,j,c,m] * self.in_node.result[n*s_b,y*s_h+i,x*s_w+j,c*s_c];
-		return self.result
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.strides
+        # padding along each dimension
+        p_h, p_w = self.parsed_padding
+        # caution: tensorflow implementation pads more on rightmost
+        # https://intellipaat.com/community/558/what-is-the-difference-between-same-and-valid-padding-in-tf-nn-maxpool-of-tensorflow
+        p_h_left = p_h // 2
+        p_h_right = (p_h + 1) // 2
+        p_w_left = p_w // 2
+        p_w_right = (p_w + 1) // 2
+
+        # input dimension
+        in_b, in_h, in_w, in_c = self.in_node.in_shape
+        # kernel size
+        k_h, k_w, k_in, k_out = self.parsed_ksize
+        # output dimension
+        out_b, out_h, out_w, out_c = self.in_shape
+
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
+        assert k_in == in_c and k_out == out_c
+
+        print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)", in_b, in_h, in_w, in_c)
+        print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)", k_h, k_w, k_in, k_out)
+        print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)", out_b, out_h, out_w, out_c)
+
+        # zero-pad feature map
+        padded_input = np.zeros((in_b, p_h + in_h, p_w + in_w, in_c), dtype=np.float32)
+        padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
+
+        # Initialise the array
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        # Loop over output pixels
+        for n in range(out_b):
+            for m in range(out_c):
+                for y in range(out_h):
+                    for x in range(out_w):
+                        # (n, y, x, m) for batch, row, column and channel of output feature map
+                        # Loop over kernel pixels
+                        for c in range(k_in):
+                            for i in range(k_h):
+                                for j in range(k_w):
+                                    # (i, j, c, m) for row, column, in_channel and out_channel of kernel
+                                    # corresponding pos on input: (n * s_b, y * s_h, x * s_w, c * s_c) + (0, i, j, 0)
+                                    self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
+                                                               padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+        return self.result
+
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
@@ -244,14 +267,15 @@ class BiasAdd(DnnNode):
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
         # Initialise the array
-        bias = np.zeros(self.in_shape,dtype=float32)
+        bias = np.zeros(self.in_shape, dtype=float32)
         # iterate over the shape of the vector / number of channels
         for i in range(self.in_shape[3]):
-        	# Fill the entire feature map/channel with the corresponding bias
-        	bias[:,:,:,i].fill(self.biases[i])
+            # Fill the entire feature map/channel with the corresponding bias
+            bias[:, :, :, i].fill(self.biases[i])
         # Add the bias
         self.result = self.in_node.result + bias
         return self.result
+
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
@@ -283,7 +307,8 @@ class MaxPool2D(DnnNode):
             k_h, k_w = self.ksize
         elif len(self.ksize) == 4:
             k_b, k_h, k_w, k_c = self.ksize
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_ksize = [k_b, k_h, k_w, k_c]
 
         # parse strides
@@ -294,7 +319,8 @@ class MaxPool2D(DnnNode):
             s_h, s_w = self.strides
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
@@ -313,28 +339,48 @@ class MaxPool2D(DnnNode):
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
-        
+
     def run(self):
-		# pooling size along each dimension
-		k_b, k_h, k_w, k_c = self.parsed_ksize
-		# strides along each dimension
-		s_b, s_h, s_w, s_c = self.parsed_ksize
-		# padding along each dimension
-		p_h, p_w = self.parsed_padding
-		# caution: tensorflow implementation pads more on rightmost
-		p_h_left = p_h // 2
-		p_h_right = (p_h + 1) // 2
-		p_w_left = p_w // 2
-		p_w_right = (p_w + 1) // 2
-		# output dimension (to be iterated over)
-		out_b, out_h, out_w, out_c = self.in_shape
-		self.result = np.zeros(self.in_shape,dtype=np.float32)
-		for n in range(out_b):
-			for m in range(out_c):
-				for y in range(out_h):
-					for x in range(out_w):
-						self.result[n,y,x,m] = np.amax(self.in_node.result[(n*s_b):(n*s_b+k_b),(y*s_h):(y*s_h+k_h),(x*s_w):(x*s_w+k_w),(m*s_c):(m*s_c+k_c)])
-		return self.result
+        # pooling size along each dimension
+        k_b, k_h, k_w, k_c = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.parsed_strides
+
+        # padding along each dimension
+        p_h, p_w = self.parsed_padding
+        # caution: tensorflow implementation pads more on rightmost
+        p_h_left = p_h // 2
+        p_h_right = (p_h + 1) // 2
+        p_w_left = p_w // 2
+        p_w_right = (p_w + 1) // 2
+
+        # input dimension
+        in_b, in_h, in_w, in_c = self.in_node.in_shape
+        # output dimension
+        out_b, out_h, out_w, out_c = self.in_shape
+
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
+        assert k_c == in_c
+
+        print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)", in_b, in_h, in_w, in_c)
+        print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)", out_b, out_h, out_w, out_c)
+
+        # zero-pad feature map
+        padded_input = np.zeros((in_b, p_h + in_h, p_w + in_w, in_c), dtype=np.float32)
+        padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
+
+        # Initialise the array
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        # loop over output pixels
+        for n in range(out_b):
+            for m in range(out_c):
+                for y in range(out_h):
+                    for x in range(out_w):
+                        self.result[n, y, x, m] = np.amax(padded_input[(n * s_b):(n * s_b + k_b),
+                                                          (y * s_h):(y * s_h + k_h),
+                                                          (x * s_w):(x * s_w + k_w),
+                                                          (m * s_c):(m * s_c + k_c)])
+        return self.result
 
 
 class BatchNorm(DnnNode):
@@ -366,17 +412,18 @@ class BatchNorm(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-		# mean, variance, and gamma should be broadcasted for b, w and h dimensions
-		# e.g. input (1, 416, 416, 256), mean dimension (256,)
-		# intitialise the tensor
-		self.result = np.zeros(self.in_shape,dtype=np.float32)
-		# iterate over the shape of the vector / number of channels
-		for i in range(self.in_shape[3]):
-			# normalize with mean and variance
-			x_hat = (self.in_node.result[:,:,:,i] - self.mean[i])/math.sqrt((self.variance[i]+self.epsilon))
-			# multiply with gamma
-			self.result[:,:,:,i] = self.gamma[i]*x_hat
-		return self.result
+        # mean, variance, and gamma should be broadcasted for b, w and h dimensions
+        # e.g. input (1, 416, 416, 256), mean dimension (256,)
+        # intitialise the tensor
+        self.result = np.zeros(self.in_shape, dtype=np.float32)
+        # iterate over the shape of the vector / number of channels
+        for i in range(self.in_shape[3]):
+            # normalize with mean and variance
+            x_hat = (self.in_node.result[:, :, :, i] - self.mean[i]) / math.sqrt((self.variance[i] + self.epsilon))
+            # multiply with gamma
+            self.result[:, :, :, i] = self.gamma[i] * x_hat
+        return self.result
+
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -395,8 +442,9 @@ class LeakyReLU(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-		self.result = np.maximum(0.1*self.in_node.result,self.in_node.result)
-		return self.result
+        self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
+        return self.result
+
 
 # Do not modify below
 class Input(DnnNode):
@@ -411,4 +459,3 @@ class Input(DnnNode):
 
     def run(self):
         pass
-
