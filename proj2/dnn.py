@@ -237,7 +237,7 @@ class Conv2D(DnnNode):
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary
-                print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
@@ -336,8 +336,8 @@ class MaxPool2D(DnnNode):
         elif padding == 'VALID':
             target_out_h = np.ceil(float(h - k_h + 1) / float(s_h))
             target_out_w = np.ceil(float(w - k_w + 1) / float(s_w))
-        p_h = (target_out_h - 1) * s_h + k_h - h
-        p_w = (target_out_w - 1) * s_w + k_w - w
+        p_h = np.ceil((target_out_h - 1) * s_h + k_h - h)
+        p_w = np.ceil((target_out_w - 1) * s_w + k_w - w)
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
