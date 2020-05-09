@@ -373,7 +373,7 @@ class MaxPool2D(DnnNode):
         out_b, out_h, out_w, out_c = self.in_shape
 
         # zero-pad feature map
-        padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) - np.inf
+        padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) - 1e10
         padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
 
         print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
