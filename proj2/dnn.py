@@ -413,6 +413,8 @@ class MaxPool2D(DnnNode):
                 res = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
 
                 if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
+                    print(b_stride)
+                    print(c_stride)
                     print(input_rf.shape)
                     print(input_rf.reshape((out_b, k_h * k_w, out_c))[0, :, 0:4])
                 if not np.isfinite(res).all():
