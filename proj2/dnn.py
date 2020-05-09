@@ -336,9 +336,9 @@ class MaxPool2D(DnnNode):
         elif padding == 'VALID':
             target_out_h = np.ceil(float(h - k_h + 1) / float(s_h))
             target_out_w = np.ceil(float(w - k_w + 1) / float(s_w))
-        p_h = np.ceil((target_out_h - 1) * s_h + k_h - h)
-        p_w = np.ceil((target_out_w - 1) * s_w + k_w - w)
-        self.parsed_padding = [int(p_h), int(p_w)]
+        p_h = int(np.ceil((target_out_h - 1) * s_h + k_h - h))
+        p_w = int(np.ceil((target_out_w - 1) * s_w + k_w - w))
+        self.parsed_padding = [p_h, p_w]
 
         # compute output shape
         out_b = (b - k_b) // s_b + 1
