@@ -329,10 +329,15 @@ class MaxPool2D(DnnNode):
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
-        p_h, p_w = 0, 0
+        target_out_h = target_out_w = 1
         if padding == 'SAME':
-            p_h = (h // s_h) * (s_h - 1) + k_h - s_h
-            p_w = (w // s_w) * (s_w - 1) + k_w - s_w
+            target_out_h = np.ceil(float(h) / float(s_h))
+            target_out_w = np.ceil(float(w) / float(s_w))
+        elif padding == 'VALID':
+            target_out_h = np.ceil(float(h - k_h + 1) / float(s_h))
+            target_out_w = np.ceil(float(w - k_w + 1) / float(s_w))
+        p_h = (target_out_h - 1) * s_h + k_h - h
+        p_w = (target_out_w - 1) * s_w + k_w - w
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
@@ -368,7 +373,7 @@ class MaxPool2D(DnnNode):
         out_b, out_h, out_w, out_c = self.in_shape
 
         # zero-pad feature map
-        padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32)
+        padded_input = np.ones((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) * (-np.inf)
         padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
 
         print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
