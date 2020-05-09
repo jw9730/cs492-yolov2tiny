@@ -191,7 +191,7 @@ class Conv2D(DnnNode):
         self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
@@ -263,7 +263,7 @@ class BiasAdd(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
@@ -341,7 +341,7 @@ class MaxPool2D(DnnNode):
         self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
@@ -417,7 +417,7 @@ class BatchNorm(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
@@ -445,7 +445,7 @@ class LeakyReLU(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
