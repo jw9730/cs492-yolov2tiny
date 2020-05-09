@@ -234,7 +234,7 @@ class Conv2D(DnnNode):
                 for y in range(out_h):
                     for x in range(out_w):
                         # test for boundary
-                        print("input pool range: x (%d to %d), y (%d to %d)" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                        # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                         assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                         assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
@@ -388,8 +388,8 @@ class MaxPool2D(DnnNode):
             for m in range(out_c):
                 for y in range(out_h):
                     for x in range(out_w):
-                        print("input pool range: x (%d to %d), y (%d to %d)" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                         # test for boundary
+                        # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                         assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                         assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
