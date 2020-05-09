@@ -401,11 +401,15 @@ class MaxPool2D(DnnNode):
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary tightness
-                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
+
+                print(input_rf)
+                assert not np.isnan(input_rf).any()
+
                 self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
 
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
@@ -451,7 +455,7 @@ class BatchNorm(DnnNode):
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
         self.result = self.gamma.reshape((1, 1, 1, -1)) * \
                       (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
-                      np.sqrt(self.variance + self.epsilon).reshape((1, 1, 1, -1))
+                      (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon)
 
         assert not np.isnan(self.result).any()
 
