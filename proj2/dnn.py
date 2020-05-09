@@ -235,8 +235,8 @@ class Conv2D(DnnNode):
                     for x in range(out_w):
                         # test for boundary
                         print("input pool range: x (%d to %d), y (%d to %d)" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
-                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1] - 1)
-                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2] - 1)
+                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
+                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                         # (n, y, x, m) for batch, row, column and channel of output feature map
                         # Loop over kernel pixels
@@ -390,8 +390,8 @@ class MaxPool2D(DnnNode):
                     for x in range(out_w):
                         print("input pool range: x (%d to %d), y (%d to %d)" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                         # test for boundary
-                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1] - 1)
-                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2] - 1)
+                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
+                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                         self.result[n, y, x, m] = np.amax(padded_input[(n * s_b):(n * s_b + k_b),
                                                           (y * s_h):(y * s_h + k_h),
