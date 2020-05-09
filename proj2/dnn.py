@@ -178,6 +178,7 @@ class Conv2D(DnnNode):
             p_h = h * (s_h - 1) + k_h - s_h
             p_w = w * (s_w - 1) + k_w - s_w
         self.parsed_padding = [p_h, p_w]
+        print(self.parsed_padding)
 
         # compute output shape
         out_b = (b - 1) // s_b + 1
