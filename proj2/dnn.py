@@ -226,25 +226,25 @@ class Conv2D(DnnNode):
         print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # prepare
+        # initialization
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         kernel_2d = self.kernel.reshape((-1, out_c))
         b_stride = np.arange(0, in_b, s_b)
         c_stride = np.arange(0, in_c, s_c)
         assert b_stride.shape[0] == out_b and c_stride.shape[0] == k_in
+
         # Loop over output pixels
         mark = time.time()
         for y in range(out_h):
             for x in range(out_w):
-                # test for boundary
+                # test for boundary tightness
                 # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 # vectorized convolution
-                self.result[:, y, x, :] = np.matmul(padded_input[b_stride, (y * s_h):(y * s_h + k_h),
-                                                    (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1)),
-                                                    kernel_2d)
+                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1))
+                self.result[:, y, x, :] = np.matmul(input_rf, kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
@@ -329,7 +329,7 @@ class MaxPool2D(DnnNode):
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
-        target_out_h = target_out_w = 1
+        target_out_h = target_out_w = 0
         if padding == 'SAME':
             target_out_h = np.ceil(float(h) / float(s_h))
             target_out_w = np.ceil(float(w) / float(s_w))
@@ -373,7 +373,7 @@ class MaxPool2D(DnnNode):
         out_b, out_h, out_w, out_c = self.in_shape
 
         # zero-pad feature map
-        padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) - 1e10
+        padded_input = - (np.ones((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) * np.inf)
         padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
 
         print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
@@ -392,14 +392,13 @@ class MaxPool2D(DnnNode):
         # loop over output pixels
         for y in range(out_h):
             for x in range(out_w):
-                # test for boundary
+                # test for boundary tightness
                 # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
-                self.result[:, y, x, :] = np.amax(padded_input[b_stride, (y * s_h):(y * s_h + k_h),
-                                                  (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1, out_c)),
-                                                  axis=1)
+                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
+                self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
 
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
