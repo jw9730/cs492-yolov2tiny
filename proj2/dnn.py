@@ -273,16 +273,8 @@ class BiasAdd(DnnNode):
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
 
-        # Initialise the array
-        bias = np.zeros(self.in_shape, dtype=np.float32)
-
-        # iterate over the shape of the vector / number of channels
-        for i in range(self.in_shape[3]):
-            # Fill the entire feature map/channel with the corresponding bias
-            bias[:, :, :, i].fill(self.biases[i])
-
         # Add the bias
-        self.result = self.in_node.result + bias
+        self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
 
         return self.result
 
