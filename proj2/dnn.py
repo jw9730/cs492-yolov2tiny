@@ -239,8 +239,9 @@ class Conv2D(DnnNode):
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 # vectorized convolution
-                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1))
-                self.result[:, y, x, :] = np.matmul(input_rf, kernel_2d)
+                self.result[:, y, x, :] = np.matmul(padded_input[b_stride, (y * s_h):(y * s_h + k_h),
+                                                    (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1)),
+                                                    kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
@@ -372,11 +373,13 @@ class MaxPool2D(DnnNode):
         print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
+        if k_b != 0 or k_c != 0: raise NotImplementedError('pooling across batches or channels not allowed')
+
         # prepare
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         b_stride = np.arange(0, in_b, s_b)
         c_stride = np.arange(0, in_c, s_c)
-        assert b_stride.shape[0] == out_b
+        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
 
         mark = time.time()
         # loop over output pixels
@@ -387,8 +390,9 @@ class MaxPool2D(DnnNode):
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
-                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1, out_c))
-                self.result[:, y, x, :] = np.amax(input_rf, axis=1)
+                self.result[:, y, x, :] = np.amax(padded_input[b_stride, (y * s_h):(y * s_h + k_h),
+                                                  (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1, out_c)),
+                                                  axis=1)
 
         print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
         return self.result
@@ -425,14 +429,16 @@ class BatchNorm(DnnNode):
     def run(self):
         # mean, variance, and gamma should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
+
         # intitialise the tensor
         self.result = np.zeros(self.in_shape, dtype=np.float32)
+
         # iterate over the shape of the vector / number of channels
         for i in range(self.in_shape[3]):
-            # normalize with mean and variance
-            x_hat = (self.in_node.result[:, :, :, i] - self.mean[i]) / math.sqrt((self.variance[i] + self.epsilon))
-            # multiply with gamma
-            self.result[:, :, :, i] = self.gamma[i] * x_hat
+            # normalize with mean and variance, multiply with gamma
+            self.result[:, :, :, i] = self.gamma[i] * \
+                                      (self.in_node.result[:, :, :, i] - self.mean[i]) / \
+                                      math.sqrt(self.variance[i] + self.epsilon)
         return self.result
 
 
