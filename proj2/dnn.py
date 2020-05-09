@@ -247,6 +247,9 @@ class Conv2D(DnnNode):
                 self.result[:, y, x, :] = np.matmul(input_rf, kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
+
+        assert np.isnan(self.result).any()
+
         return self.result
 
 
@@ -279,6 +282,9 @@ class BiasAdd(DnnNode):
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
         self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
+
+        assert np.isnan(self.result).any()
+
         return self.result
 
 
@@ -401,6 +407,9 @@ class MaxPool2D(DnnNode):
                 self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
 
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
+
+        assert np.isnan(self.result).any()
+
         return self.result
 
 
@@ -441,6 +450,9 @@ class BatchNorm(DnnNode):
         self.result = self.gamma.reshape((1, 1, 1, -1)) * \
                       (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                       np.sqrt(self.variance + self.epsilon).reshape((1, 1, 1, -1))
+
+        assert np.isnan(self.result).any()
+
         return self.result
 
 
@@ -465,6 +477,9 @@ class LeakyReLU(DnnNode):
         assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
 
         self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
+
+        assert np.isnan(self.result).any()
+
         return self.result
 
 
