@@ -415,7 +415,7 @@ class MaxPool2D(DnnNode):
                 if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
                     print(input_rf[:, :, 0:2])
                 if not np.isfinite(res).all():
-                    print(res)
+                    print(res[0, 0:8])
                     raise RuntimeError
 
                 self.result[:, y, x, :] = res
