@@ -245,12 +245,12 @@ class Conv2D(DnnNode):
                 # vectorized convolution
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
                 print(input_rf)
-                assert np.isnan(input_rf).any()
+                assert not np.isnan(input_rf).any()
                 self.result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
 
-        assert np.isnan(self.result).any()
+        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -285,7 +285,7 @@ class BiasAdd(DnnNode):
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
         self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
 
-        assert np.isnan(self.result).any()
+        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -410,7 +410,7 @@ class MaxPool2D(DnnNode):
 
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
 
-        assert np.isnan(self.result).any()
+        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -453,7 +453,7 @@ class BatchNorm(DnnNode):
                       (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                       np.sqrt(self.variance + self.epsilon).reshape((1, 1, 1, -1))
 
-        assert np.isnan(self.result).any()
+        assert not np.isnan(self.result).any()
 
         return self.result
 
@@ -480,7 +480,7 @@ class LeakyReLU(DnnNode):
 
         self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
 
-        assert np.isnan(self.result).any()
+        assert not np.isnan(self.result).any()
 
         return self.result
 
