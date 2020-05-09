@@ -228,7 +228,7 @@ class Conv2D(DnnNode):
         kernel_2d = self.kernel.reshape((-1, out_c))
         b_stride = np.arange(0, in_b, s_b)
         c_stride = np.arange(0, in_c, s_c)
-        print(b_stride.shape)
+        print(c_stride)
         assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
         # Loop over output pixels
         mark = time.time()
