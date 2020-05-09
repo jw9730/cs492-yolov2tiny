@@ -413,7 +413,7 @@ class MaxPool2D(DnnNode):
                 res = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
 
                 if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
-                    print(input_rf[:, :, 0:2])
+                    print(input_rf.reshape((out_b, k_h * k_w, out_c))[0, :, 0:8])
                 if not np.isfinite(res).all():
                     print(res[0, 0:8])
                     raise RuntimeError
