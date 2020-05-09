@@ -181,8 +181,8 @@ class Conv2D(DnnNode):
 
         # compute output shape
         out_b = (b - 1) // s_b + 1
-        out_h = (h + p_h - k_h) // s_h + 1
-        out_w = (w + p_w - k_w) // s_w + 1
+        out_h = int((h + p_h - k_h) // s_h + 1)
+        out_w = int((w + p_w - k_w) // s_w + 1)
         out_c = k_out
 
         if padding == 'SAME': assert out_h == h and out_w == w
