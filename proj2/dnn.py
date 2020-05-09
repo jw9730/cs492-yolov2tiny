@@ -3,6 +3,7 @@ import sys
 import math
 import networkx as nx
 import numpy as np
+import time
 
 """
 The class DNNInferenceEngine will take a graph of DNN nodes to produce its computation result.
@@ -224,6 +225,8 @@ class Conv2D(DnnNode):
 
         # Initialise the array
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        
+        mark = time.time()
         # Loop over output pixels
         for n in range(out_b):
             for m in range(out_c):
@@ -238,6 +241,7 @@ class Conv2D(DnnNode):
                                     # corresponding pos on input: (n * s_b, y * s_h, x * s_w, c * s_c) + (0, i, j, 0)
                                     self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
@@ -267,7 +271,7 @@ class BiasAdd(DnnNode):
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
         # Initialise the array
-        bias = np.zeros(self.in_shape, dtype=float32)
+        bias = np.zeros(self.in_shape, dtype=np.float32)
         # iterate over the shape of the vector / number of channels
         for i in range(self.in_shape[3]):
             # Fill the entire feature map/channel with the corresponding bias
@@ -371,6 +375,8 @@ class MaxPool2D(DnnNode):
 
         # Initialise the array
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+
+        mark = time.time()
         # loop over output pixels
         for n in range(out_b):
             for m in range(out_c):
@@ -380,6 +386,7 @@ class MaxPool2D(DnnNode):
                                                           (y * s_h):(y * s_h + k_h),
                                                           (x * s_w):(x * s_w + k_w),
                                                           (m * s_c):(m * s_c + k_c)])
+        print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
         return self.result
 
 
