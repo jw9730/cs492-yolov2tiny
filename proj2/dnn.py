@@ -241,6 +241,9 @@ class Conv2D(DnnNode):
                                     # corresponding pos on input: (n * s_b, y * s_h, x * s_w, c * s_c) + (0, i, j, 0)
                                     self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+                        # test for boundary
+                        assert y != out_h - 1 or y * s_h + k_h == padded_input.shape[1] - 1
+                        assert x != out_w - 1 or x * s_w + k_w == padded_input.shape[2] - 1
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
@@ -385,6 +388,10 @@ class MaxPool2D(DnnNode):
                                                           (y * s_h):(y * s_h + k_h),
                                                           (x * s_w):(x * s_w + k_w),
                                                           (m * s_c):(m * s_c + k_c)])
+                        # test for boundary
+                        assert y != out_h - 1 or y * s_h + k_h == padded_input.shape[1] - 1
+                        assert x != out_w - 1 or x * s_w + k_w == padded_input.shape[2] - 1
+
         print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
         return self.result
 
