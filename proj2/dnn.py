@@ -227,9 +227,9 @@ class Conv2D(DnnNode):
         # Initialise the array
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
 
+        # Loop over output pixels
         mark = time.time()
         kernel_2d = self.kernel.reshape((-1, out_c))
-        # Loop over output pixels
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary
@@ -239,21 +239,7 @@ class Conv2D(DnnNode):
 
                 # vectorized convolution
                 input_receptive_field = padded_input[:, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), :].reshape((in_b, -1))
-                vec_res = np.matmul(input_receptive_field, kernel_2d)
-
-                for n in range(out_b):
-                    for m in range(out_c):
-                        # (n, y, x, m) for batch, row, column and channel of output feature map
-                        # convolve with kernel using 1d dot product
-                        kernel_1d = self.kernel[:, :, :, m].flatten()
-                        input_1d = padded_input[(n * s_b),
-                                   (y * s_h):(y * s_h + k_h),
-                                   (x * s_w):(x * s_w + k_w),
-                                   :].flatten()
-                        self.result[n, y, x, m] = np.dot(kernel_1d, input_1d)
-
-                print((self.result[:, y, x, :] - vec_res).sum())
-                raise NotImplementedError
+                self.result[:, y, x, :] = np.matmul(input_receptive_field, kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
@@ -392,19 +378,21 @@ class MaxPool2D(DnnNode):
 
         mark = time.time()
         # loop over output pixels
-        for n in range(out_b):
-            for m in range(out_c):
-                for y in range(out_h):
-                    for x in range(out_w):
-                        # test for boundary
-                        # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
-                        assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
-                        assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
+        for y in range(out_h):
+            for x in range(out_w):
+                # test for boundary
+                # print("input pool range: w [%d:%d], h [%d:%d]" % (x * s_w, x * s_w + k_w, y * s_h, y * s_h + k_h))
+                assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
+                assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
-                        self.result[n, y, x, m] = np.amax(padded_input[(n * s_b):(n * s_b + k_b),
-                                                          (y * s_h):(y * s_h + k_h),
-                                                          (x * s_w):(x * s_w + k_w),
-                                                          (m * s_c):(m * s_c + k_c)])
+                for n in range(out_b):
+                    for m in range(out_c):
+                        input_receptive_field = padded_input[
+                                                (n * s_b):(n * s_b + k_b),
+                                                (y * s_h):(y * s_h + k_h),
+                                                (x * s_w):(x * s_w + k_w),
+                                                (m * s_c):(m * s_c + k_c)]
+                        self.result[n, y, x, m] = np.amax(input_receptive_field)
 
         print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
         return self.result
