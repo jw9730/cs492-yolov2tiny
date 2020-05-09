@@ -194,8 +194,6 @@ class Conv2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        # strides along each dimension
-        s_b, s_h, s_w, s_c = self.strides
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
@@ -204,15 +202,16 @@ class Conv2D(DnnNode):
         p_h_right = (p_h + 1) // 2
         p_w_left = p_w // 2
         p_w_right = (p_w + 1) // 2
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
 
         # input dimension
         in_b, in_h, in_w, in_c = self.in_node.in_shape
         # kernel size
         k_h, k_w, k_in, k_out = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.strides
         # output dimension
         out_b, out_h, out_w, out_c = self.in_shape
-
-        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
         assert k_in == in_c and k_out == out_c
 
         # zero-pad feature map
@@ -224,12 +223,14 @@ class Conv2D(DnnNode):
         print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # Initialise the array
+        # prepare
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-
+        kernel_2d = self.kernel.reshape((-1, out_c))
+        b_stride = np.arange(0, in_b, s_b)
+        c_stride = np.arange(0, in_c, s_c)
+        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
         # Loop over output pixels
         mark = time.time()
-        kernel_2d = self.kernel.reshape((-1, out_c))
         for y in range(out_h):
             for x in range(out_w):
                 # test for boundary
@@ -238,8 +239,8 @@ class Conv2D(DnnNode):
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 # vectorized convolution
-                input_receptive_field = padded_input[:, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), :].reshape((in_b, -1))
-                self.result[:, y, x, :] = np.matmul(input_receptive_field, kernel_2d)
+                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1))
+                self.result[:, y, x, :] = np.matmul(input_rf, kernel_2d)
 
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
@@ -345,11 +346,6 @@ class MaxPool2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        # pooling size along each dimension
-        k_b, k_h, k_w, k_c = self.parsed_ksize
-        # strides along each dimension
-        s_b, s_h, s_w, s_c = self.parsed_strides
-
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
@@ -357,13 +353,16 @@ class MaxPool2D(DnnNode):
         p_h_right = (p_h + 1) // 2
         p_w_left = p_w // 2
         p_w_right = (p_w + 1) // 2
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
 
         # input dimension
         in_b, in_h, in_w, in_c = self.in_node.in_shape
+        # pooling size along each dimension
+        k_b, k_h, k_w, k_c = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.parsed_strides
         # output dimension
         out_b, out_h, out_w, out_c = self.in_shape
-
-        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
 
         # zero-pad feature map
         padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32)
@@ -373,8 +372,11 @@ class MaxPool2D(DnnNode):
         print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # Initialise the array
+        # prepare
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        b_stride = np.arange(0, in_b, s_b)
+        c_stride = np.arange(0, in_c, s_c)
+        assert b_stride.shape[0] == out_b and c_stride.shape[0] == out_c
 
         mark = time.time()
         # loop over output pixels
@@ -385,14 +387,8 @@ class MaxPool2D(DnnNode):
                 assert (y < out_h - 1) or (y == out_h - 1 and y * s_h + k_h == padded_input.shape[1])
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
-                for n in range(out_b):
-                    for m in range(out_c):
-                        input_receptive_field = padded_input[
-                                                (n * s_b):(n * s_b + k_b),
-                                                (y * s_h):(y * s_h + k_h),
-                                                (x * s_w):(x * s_w + k_w),
-                                                (m * s_c):(m * s_c + k_c)]
-                        self.result[n, y, x, m] = np.amax(input_receptive_field)
+                input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride].reshape((out_b, -1, out_c))
+                self.result[:, y, x, :] = np.amax(input_rf, axis=1)
 
         print("MaxPool2D: elapsed time %.2f" % (time.time() - mark))
         return self.result
