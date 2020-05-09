@@ -341,6 +341,8 @@ class MaxPool2D(DnnNode):
         out_w = (w + p_w - k_w) // s_w + 1
         out_c = (c - k_c) // s_c + 1
         self.in_shape = [out_b, out_h, out_w, out_c]
+        print(self.in_node.in_shape)
+        print(self.in_shape)
 
         print(self.name)
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
