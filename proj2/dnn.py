@@ -194,6 +194,7 @@ class Conv2D(DnnNode):
         print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        print("Conv2D: input shape (%d, %d, %d, %d), got (%d, %d, %d, %d)" % (tuple(self.in_shape) + tuple(self.in_node.result.shape)))
         assert tuple(self.in_shape) == tuple(self.in_node.result.shape)
 
         # padding along each dimension
