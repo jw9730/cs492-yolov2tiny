@@ -244,9 +244,10 @@ class Conv2D(DnnNode):
 
                 # vectorized convolution
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
-                if x == 0 or y == 0 or y == out_h - 1 or x == out_w - 1:
+                if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
                     print(input_rf)
                 assert not np.isnan(input_rf).any()
+                assert np.isfinite(input_rf).all()
 
                 self.result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
 
@@ -408,11 +409,16 @@ class MaxPool2D(DnnNode):
                 assert (x < out_w - 1) or (x == out_w - 1 and x * s_w + k_w == padded_input.shape[2])
 
                 input_rf = padded_input[b_stride, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), c_stride]
-                if x == 0 or y == 0 or y == out_h - 1 or x == out_w - 1:
+                res = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
+
+                if int(x == 0) + int(y == 0) + int(y == out_h - 1) + int(x == out_w - 1) >= 2:
                     print(input_rf)
                 assert not np.isnan(input_rf).any()
+                if not np.isfinite(res).all():
+                    print(res)
+                    raise RuntimeError
 
-                self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, -1, out_c)), axis=1)
+                self.result[:, y, x, :] = res
 
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
 
