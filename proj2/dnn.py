@@ -263,8 +263,8 @@ class Conv2D(DnnNode):
 
             # start thread
             p = mp.Process(target=run_split, args=(q, c_idx, padded_input, self.kernel[:, :, :, c_start:c_end], c_start, c_end))
-            p_list.append(p)
             p.start()
+            p_list.append(p)
 
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         # join threads
