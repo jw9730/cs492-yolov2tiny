@@ -250,8 +250,8 @@ class Conv2D(DnnNode):
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # assign max number of splits per each dimension
-        n_max_c = min(64, out_c // 16)
-        n_max_h = 2 if (out_h > 128 and n_max_c <= 16) else 1
+        print("cpu_count: %d" % mp.cpu_count())
+        n_max_c, n_max_h, n_max_w = 16, 2, 2
         n_max_w = 2 if (out_w > 128 and n_max_c <= 16) else 1
         # length of chunk per each dimension
         c_per_split = math.ceil(out_c / n_max_c)
