@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/proj2/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj2/dnn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj2/proj2.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/proj2/proj2.pdf" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="164">
-              <caret line="189" column="26" lean-forward="true" selection-start-line="189" selection-start-column="26" selection-end-line="189" selection-end-column="26" />
+            <state relative-caret-position="316">
+              <caret line="206" lean-forward="true" selection-start-line="206" selection-end-line="206" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
                 <element signature="e#599#1541#0" />
@@ -202,12 +202,12 @@
       <workItem from="1587529649472" duration="168000" />
       <workItem from="1587638408985" duration="1183000" />
       <workItem from="1588144182407" duration="11208000" />
-      <workItem from="1588990086926" duration="20789000" />
+      <workItem from="1588990086926" duration="21403000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="112286000" />
+    <option name="totallyTimeSpent" value="112900000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -220,7 +220,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.05697051" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -304,8 +303,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/proj2/dnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="164">
-          <caret line="189" column="26" lean-forward="true" selection-start-line="189" selection-start-column="26" selection-end-line="189" selection-end-column="26" />
+        <state relative-caret-position="316">
+          <caret line="206" lean-forward="true" selection-start-line="206" selection-end-line="206" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
             <element signature="e#599#1541#0" />
