@@ -227,20 +227,20 @@ class Conv2D(DnnNode):
         # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
         ################################################################################################################
-        def run_split(queue, padded_input, kernel, start, end, idx):
+        def run_split(queue, padded_input, kernel, c_start, c_end, idx):
             mark = time.time()
-            result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+            result = np.zeros((out_b, out_h, out_w, c_end - c_start), dtype=np.float32)
             # loop over output pixels
             for n in range(out_b):
-                for m in range(start, end):
+                for m in range(c_end - c_start):
                     for y in range(out_h):
                         for x in range(out_w):
                             for c in range(k_in):
                                 for i in range(k_h):
                                     for j in range(k_w):
-                                        result[n, y, x, m] += kernel[i, j, c, m] * \
+                                        result[n, y, x, m] += kernel[i, j, c, c_start + m] * \
                                                               padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-            queue.put(result)
+            queue.put([c_start, c_end, result])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # parallelization should be done across batches, output pixels and channels
@@ -264,23 +264,23 @@ class Conv2D(DnnNode):
         # get results from queue
         cnt = 0
         while cnt < num_splits:
-            self.result += q.get()
+            c_start, c_end, result = q.get()
+            self.result[:, :, :, c_start:c_end] = result
             cnt += 1
         # join threads
         for p in p_list:
             p.join()
         ################################################################################################################
-
+        # vectorized version (as baseline)
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
         vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         mark = time.time()
         for y in range(out_h):
             for x in range(out_w):
-                # vectorized convolution
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert (self.result-vectorized_result).mean() < 1e-5
-        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
+        print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
 
         return self.result
 
