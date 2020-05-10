@@ -247,7 +247,7 @@ class Conv2D(DnnNode):
                                         ret[n, y, x, m] += kernel[i, j, c, m] * \
                                                            padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
             queue.put([ret, idx, bounds])
-            print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
+            # print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # assign max number of splits per each dimension
         print("cpu_count: %d" % mp.cpu_count())
@@ -271,7 +271,7 @@ class Conv2D(DnnNode):
                     c_end = min(c_start + c_per_split, out_c)
                     h_end = min(h_start + h_per_split, out_h)
                     w_end = min(w_start + w_per_split, out_w)
-                    print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
+                    # print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
                     bounds = (h_start, h_end, w_start, w_end, c_start, c_end)
 
                     # start thread with split input and kernel
@@ -293,7 +293,7 @@ class Conv2D(DnnNode):
             ret, idx, bounds = q.get()
             h_start, h_end, w_start, w_end, c_start, c_end = bounds
             self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += ret
-            print("[%d] deque" % idx)
+            # print("[%d] deque" % idx)
             cnt += 1
         for p in p_list:
             p.join()
@@ -307,8 +307,8 @@ class Conv2D(DnnNode):
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert (self.result-vectorized_result).mean() < 1e-5
-        print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
-        print(self.name + ": passed correctness check")
+        # print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
+        # print(self.name + ": passed correctness check")
 
         return self.result
 
