@@ -227,9 +227,9 @@ class Conv2D(DnnNode):
         # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
         ################################################################################################################
-        mp_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        def run_split(padded_input, kernel, start, end, result, thread_idx):
+        def run_split(queue, padded_input, kernel, start, end, idx):
             mark = time.time()
+            result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
             # loop over output pixels
             for n in range(out_b):
                 for m in range(start, end):
@@ -239,21 +239,29 @@ class Conv2D(DnnNode):
                                 for i in range(k_h):
                                     for j in range(k_w):
                                         result[n, y, x, m] += kernel[i, j, c, m] * \
-                                                                   padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-            print("Conv2D mp: [%d] elapsed time %.2fsec" % (thread_idx, time.time() - mark))
+                                                              padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+            queue.put(result)
+            print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # parallelization should be done across batches, output pixels and channels
-        c_per_split = 16
-        num_splits = math.ceil(out_c / c_per_split)
+        q = mp.Queue()
         p_list = list()
-        for thread_idx in range(num_splits):
-            start = thread_idx * c_per_split
+
+        c_per_split = 8
+        num_splits = math.ceil(out_c / c_per_split)
+        for split_idx in range(num_splits):
+            start = split_idx * c_per_split
             end = min(start + c_per_split, out_c)
-            print("[%d] %d:%d" % (thread_idx, start, end))
-            p = mp.Process(target=run_split, args=(padded_input, self.kernel, start, end, mp_result, thread_idx))
+            print("[%d] %d:%d" % (split_idx, start, end))
+
+            p = mp.Process(target=run_split, args=(q, padded_input, self.kernel, start, end, split_idx))
             p_list.append(p)
             p.start()
 
+        cnt = 0
+        mp_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        while cnt < num_splits:
+            mp_result += q.get()
         for p in p_list:
             p.join()
         ################################################################################################################
