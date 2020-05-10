@@ -250,7 +250,7 @@ class Conv2D(DnnNode):
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # should be done across batches, output pixels and channels
-        n_max_c, n_max_h, n_max_w = 8, 2, 2
+        n_max_c, n_max_h, n_max_w = 4, 2, 2
         c_per_split = math.ceil(out_c / n_max_c)
         h_per_split = math.ceil(out_h / n_max_h)
         w_per_split = math.ceil(out_w / n_max_w)
@@ -281,7 +281,7 @@ class Conv2D(DnnNode):
         while cnt < n_split_c * n_split_h * n_split_w:
             result, idx, bounds = q.get()
             h_start, h_end, w_start, w_end, c_start, c_end = bounds
-            self.result[:, :, :, c_start:c_end] += result
+            self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += result
             print("[%d] deque" % idx)
             cnt += 1
         for p in p_list:
