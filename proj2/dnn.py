@@ -4,6 +4,7 @@ import math
 import networkx as nx
 import numpy as np
 import time
+import multiprocessing as mp
 
 """
 The class DNNInferenceEngine will take a graph of DNN nodes to produce its computation result.
@@ -225,11 +226,53 @@ class Conv2D(DnnNode):
         # print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # initialization
-        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        ################################################################################################################
+        mp_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        def run_split(padded_input, kernel, start, end, result, thread_idx):
+            mark = time.time()
+            # loop over output pixels
+            for n in range(out_b):
+                for m in range(start, end):
+                    for y in range(out_h):
+                        for x in range(out_w):
+                            for c in range(k_in):
+                                for i in range(k_h):
+                                    for j in range(k_w):
+                                        result[n, y, x, m] += kernel[i, j, c, m] * \
+                                                                   padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+            print("Conv2D mp: [%d] elapsed time %.2fsec" % (thread_idx, time.time() - mark))
+
+        # parallelization should be done across batches, output pixels and channels
+        c_per_split = 16
+        num_splits = math.ceil(out_c / c_per_split)
+        p_list = list()
+        for thread_idx in range(num_splits):
+            start = thread_idx * c_per_split
+            end = min(start + c_per_split, out_c)
+            print("[%d] %d:%d" % (thread_idx, start, end))
+            p = mp.Process(target=run_split, args=(padded_input, self.kernel, start, end, mp_result, thread_idx))
+            p_list.append(p)
+            p.start()
+
+        for p in p_list:
+            p.join()
+        ################################################################################################################
+
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
         vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        mark = time.time()
+        for y in range(out_h):
+            for x in range(out_w):
+                # vectorized convolution
+                input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
+                vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
+        assert (mp_result-vectorized_result).mean() < 1e-5
+        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
 
+        raise NotImplementedError
+
+        # initialization
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         mark = time.time()
         # loop over output pixels
         for n in range(out_b):
@@ -242,15 +285,6 @@ class Conv2D(DnnNode):
                                     self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
                                                                 padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
         print("Conv2D long: elapsed time %.2fsec" % (time.time() - mark))
-        for y in range(out_h):
-            for x in range(out_w):
-                # vectorized convolution
-                # todo: explicitly compute using nested loops. basically, same implementation as before should work
-                # todo: to test correctness, add an assertion that checks if (result from vectorized implementation - result from nested loops).mean() < 1e-5
-                input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
-                vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
-        assert (self.result-vectorized_result).mean() < 1e-5
-        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
