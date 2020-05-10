@@ -249,11 +249,10 @@ class Conv2D(DnnNode):
             queue.put([ret, idx, bounds])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
-            #(y + h_start) * s_h + i:
-            #(x + w_start) * s_w + j:
-
-        # max number of splits per each dimension
-        n_max_c, n_max_h, n_max_w = 16, 2, 2
+        # assign max number of splits per each dimension
+        n_max_c = min(64, int(math.log(out_c, 2)))
+        n_max_h = 2 if (out_h > 128 and n_max_c <= 16) else 1
+        n_max_w = 2 if (out_w > 128 and n_max_c <= 16) else 1
         # length of chunk per each dimension
         c_per_split = math.ceil(out_c / n_max_c)
         h_per_split = math.ceil(out_h / n_max_h)
