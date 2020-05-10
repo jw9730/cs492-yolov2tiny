@@ -247,7 +247,7 @@ class Conv2D(DnnNode):
         q = mp.Queue()
         p_list = list()
 
-        c_per_split = 8
+        c_per_split = 3
         num_splits = math.ceil(out_c / c_per_split)
         for split_idx in range(num_splits):
             start = split_idx * c_per_split
