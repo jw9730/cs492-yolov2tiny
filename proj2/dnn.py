@@ -468,7 +468,7 @@ class MaxPool2D(DnnNode):
                                         self.result[n,y,x,m] = max(self.result[n,y,x,m],padded_input[n*s_b+i,y*s_h+j,x*s_w+k,m*s_c+l])
                                         # input_rf = padded_input[(n*s_b):(n*s_b+k_b), (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), (m*s_c):(m*s_c+k_c)]
                                         # self.result[n, y, x, m] = np.amax(input_rf)
-                        if abs(self.result[n,y,x,m]-vectorized_result[n,y,x,m]) < 1e-5:
+                        if abs(self.result[n,y,x,m]-vectorized_result[n,y,x,m]) > 1e-5:
                             print(self.result[n,y,x,m],vectorized_result[n,y,x,m])
         print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
         
