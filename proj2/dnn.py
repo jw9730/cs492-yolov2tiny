@@ -243,7 +243,7 @@ class Conv2D(DnnNode):
                             for c in range(k_in):
                                 for i in range(k_h):
                                     for j in range(k_w):
-                                        ret[n, y, x, m] += kernel[i, j, c, c_start + m] * \
+                                        ret[n, y, x, m] += kernel[i, j, c, m] * \
                                                            padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
             queue.put([ret, c_start, c_end])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
@@ -253,16 +253,16 @@ class Conv2D(DnnNode):
         n_split_c = math.ceil(out_c / n_max_c)
 
         c_idx = 0
-        end = 0
-        while end != out_c:
+        c_end = 0
+        while c_end != out_c:
             # determine channel split
-            start = c_idx * n_split_c
-            end = min(start + n_split_c, out_c)
+            c_start = c_idx * n_split_c
+            c_end = min(c_start + n_split_c, out_c)
             c_idx += 1
-            print("[%d] %d:%d" % (c_idx, start, end))
+            print("[%d] %d:%d" % (c_idx, c_start, c_end))
 
             # start thread
-            p = mp.Process(target=run_split, args=(q, c_idx, padded_input, self.kernel, start, end))
+            p = mp.Process(target=run_split, args=(q, c_idx, padded_input, self.kernel[:, :, :, c_start:c_end], c_start, c_end))
             p_list.append(p)
             p.start()
 
