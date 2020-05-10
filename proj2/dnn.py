@@ -227,9 +227,14 @@ class Conv2D(DnnNode):
         # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
         ################################################################################################################
-        def run_split(queue, padded_input, kernel, c_start, c_end, idx):
+        # initialize
+        q = mp.Queue()
+        p_list = list()
+
+        # running convolution for limited output pixels
+        def run_split(queue, idx, padded_input, kernel, c_start, c_end):
             mark = time.time()
-            result = np.zeros((out_b, out_h, out_w, c_end - c_start), dtype=np.float32)
+            ret = np.zeros((out_b, out_h, out_w, c_end - c_start), dtype=np.float32)
             # loop over output pixels
             for n in range(out_b):
                 for m in range(c_end - c_start):
@@ -238,33 +243,33 @@ class Conv2D(DnnNode):
                             for c in range(k_in):
                                 for i in range(k_h):
                                     for j in range(k_w):
-                                        result[n, y, x, m] += kernel[i, j, c, c_start + m] * \
-                                                              padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-            queue.put([c_start, c_end, result])
+                                        ret[n, y, x, m] += kernel[i, j, c, c_start + m] * \
+                                                           padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+            queue.put([ret, c_start, c_end])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
-        # parallelization should be done across batches, output pixels and channels
-        q = mp.Queue()
-        p_list = list()
-        # determine number of splits to run
-        c_per_split = 4
-        num_splits = math.ceil(out_c / c_per_split)
-        for split_idx in range(num_splits):
+        # should be done across batches, output pixels and channels
+        n_max_c = 16
+        n_split_c = math.ceil(out_c / n_max_c)
+
+        c_idx = 0
+        end = 0
+        while end != out_c:
             # determine channel split
-            start = split_idx * c_per_split
-            end = min(start + c_per_split, out_c)
-            print("[%d] %d:%d" % (split_idx, start, end))
+            start = c_idx * n_split_c
+            end = min(start + n_split_c, out_c)
+            c_idx += 1
+            print("[%d] %d:%d" % (c_idx, start, end))
 
             # start thread
-            p = mp.Process(target=run_split, args=(q, padded_input, self.kernel, start, end, split_idx))
+            p = mp.Process(target=run_split, args=(q, c_idx, padded_input, self.kernel, start, end))
             p_list.append(p)
             p.start()
 
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        # get results from queue
         cnt = 0
-        while cnt < num_splits:
-            c_start, c_end, result = q.get()
+        while cnt < c_idx:
+            result, c_start, c_end = q.get()
             self.result[:, :, :, c_start:c_end] = result
             cnt += 1
         # join threads
