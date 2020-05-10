@@ -249,16 +249,17 @@ class Conv2D(DnnNode):
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # should be done across batches, output pixels and channels
-        n_max_c = 16
-        n_split_c = math.ceil(out_c / n_max_c)
-
-        c_idx = 0
-        c_end = 0
-        while c_end != out_c:
-            # determine channel split
-            c_start = c_idx * n_split_c
-            c_end = min(c_start + n_split_c, out_c)
-            c_idx += 1
+        n_max_c, n_max_h, n_max_w = 16, 16, 16
+        c_per_split = math.ceil(out_c / n_max_c)
+        h_per_split = math.ceil(out_h / n_max_h)
+        w_per_split = math.ceil(out_w / n_max_w)
+        n_split_c = math.ceil(out_c / c_per_split)
+        n_split_h = math.ceil(out_h / h_per_split)
+        n_split_w = math.ceil(out_w / w_per_split)
+        c_idx, h_idx, w_idx = 0, 0, 0
+        for c_idx in range(n_split_c):
+            c_start = c_idx * c_per_split
+            c_end = min((c_idx + 1) + c_per_split, out_c)
             print("[%d] %d:%d" % (c_idx, c_start, c_end))
 
             # start thread
