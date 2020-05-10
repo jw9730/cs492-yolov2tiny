@@ -441,19 +441,8 @@ class MaxPool2D(DnnNode):
         # print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         # print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # initialise
-        self.result = -100*np.ones((out_b, out_h, out_w, out_c), dtype=np.float32)
-        mark = time.time()
-        vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        # loop over output pixels
-        for y in range(out_h):
-            for x in range(out_w):
-                # vectorized max
-                # caution: this implementation assumes k_b == 1 and k_c == 1
-                input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
-                vectorized_result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
-        #print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
-        
+        ################################################################################################################
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         mark = time.time()
         # loop over output pixels
         for n in range(out_b):
@@ -465,14 +454,21 @@ class MaxPool2D(DnnNode):
                                 for k in range(k_w):
                                     for l in range(k_c):
                                         self.result[n,y,x,m] = max(self.result[n,y,x,m], padded_input[n*s_b+i,y*s_h+j,x*s_w+k,m*s_c+l])
-                                        # input_rf = padded_input[(n*s_b):(n*s_b+k_b), (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), (m*s_c):(m*s_c+k_c)]
-                                        # self.result[n, y, x, m] = np.amax(input_rf)
-                        #if abs(self.result[n,y,x,m]-vectorized_result[n,y,x,m]) > 1e-5:
-                        #    print(self.result[n,y,x,m],vectorized_result[n,y,x,m])
+        #print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
+        ################################################################################################################
+        if k_b == 1 and k_c == 1:
+            # vectorized version (as baseline), caution: this implementation assumes k_b == 1 and k_c == 1
+            mark = time.time()
+            vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+            # loop over output pixels
+            for y in range(out_h):
+                for x in range(out_w):
+                    # vectorized max
+                    input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
+                    vectorized_result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
+            # print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
+            assert (vectorized_result - self.result).mean() < 1e-5
 
-        assert (vectorized_result - self.result).mean() < 1e-5
-        print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
-        
         return self.result
 
 
