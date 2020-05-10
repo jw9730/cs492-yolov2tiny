@@ -456,8 +456,9 @@ class MaxPool2D(DnnNode):
                                         self.result[n,y,x,m] = max(self.result[n,y,x,m], padded_input[n*s_b+i,y*s_h+j,x*s_w+k,m*s_c+l])
         #print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
         ################################################################################################################
+        # vectorized version (as baseline)
+        # caution: this implementation assumes k_b == 1 and k_c == 1
         if k_b == 1 and k_c == 1:
-            # vectorized version (as baseline), caution: this implementation assumes k_b == 1 and k_c == 1
             mark = time.time()
             vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
             # loop over output pixels
