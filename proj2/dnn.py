@@ -251,8 +251,7 @@ class Conv2D(DnnNode):
 
         # assign max number of splits per each dimension
         # print("cpu_count: %d" % mp.cpu_count())
-        n_max_c, n_max_h, n_max_w = 4, 1, 1
-        n_max_w = 2 if (out_w > 128 and n_max_c <= 16) else 1
+        n_max_c, n_max_h, n_max_w = 16, 2, 2
         # length of chunk per each dimension
         c_per_split = math.ceil(out_c / n_max_c)
         h_per_split = math.ceil(out_h / n_max_h)
