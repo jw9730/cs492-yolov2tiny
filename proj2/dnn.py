@@ -268,14 +268,11 @@ class Conv2D(DnnNode):
             p.start()
 
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        cnt = 0
-        while cnt < c_idx:
-            result, c_start, c_end = q.get()
-            self.result[:, :, :, c_start:c_end] = result
-            cnt += 1
         # join threads
         for p in p_list:
             p.join()
+            result, c_start, c_end = q.get()
+            self.result[:, :, :, c_start:c_end] = result
         ################################################################################################################
         # vectorized version (as baseline)
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
