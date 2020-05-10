@@ -305,7 +305,7 @@ class Conv2D(DnnNode):
             for x in range(out_w):
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
-        assert (self.result-vectorized_result).mean() < 1e-5
+        assert ( self.result- vectorized_result ).mean() < 1e-5
         # print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
         # print(self.name + ": passed correctness check")
 
@@ -457,6 +457,7 @@ class MaxPool2D(DnnNode):
                         input_rf = padded_input[(n*s_b):(n*s_b+k_b), (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), (m*s_c):(m*s_c+k_c)]
                         self.result[n, y, x, m] = np.amax(input_rf)
         print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
+        vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         # loop over output pixels
         for y in range(out_h):
             for x in range(out_w):
@@ -466,7 +467,7 @@ class MaxPool2D(DnnNode):
                 # for that, you can add additional loop over batches and channels and
                 # extend input_rf over batch and channel dimension
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
-                self.result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
+                vectorized_result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
         assert (self.result-vectorized_result).mean()<1e-5
         print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
