@@ -232,20 +232,21 @@ class Conv2D(DnnNode):
         p_list = list()
 
         # running convolution for limited output pixels
-        def run_split(queue, idx, padded_input, kernel, c_start, c_end):
+        def run_split(queue, idx, padded_input, kernel, bounds):
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
             mark = time.time()
-            ret = np.zeros((out_b, out_h, out_w, c_end - c_start), dtype=np.float32)
+            ret = np.zeros((out_b, h_end - h_start, w_end - w_start, c_end - c_start), dtype=np.float32)
             # loop over output pixels
             for n in range(out_b):
                 for m in range(c_end - c_start):
-                    for y in range(out_h):
-                        for x in range(out_w):
+                    for y in range(h_end - h_start):
+                        for x in range(w_end - w_start):
                             for c in range(k_in):
                                 for i in range(k_h):
                                     for j in range(k_w):
                                         ret[n, y, x, m] += kernel[i, j, c, m] * \
-                                                           padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-            queue.put([ret, idx, c_start, c_end])
+                                                           padded_input[n * s_b, (y + h_start) * s_h + i, (x + w_start) * s_w + j, c * s_c]
+            queue.put([ret, idx, bounds])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # should be done across batches, output pixels and channels
@@ -256,21 +257,31 @@ class Conv2D(DnnNode):
         n_split_c = math.ceil(out_c / c_per_split)
         n_split_h = math.ceil(out_h / h_per_split)
         n_split_w = math.ceil(out_w / w_per_split)
+        q_idx = 0
         for c_idx in range(n_split_c):
-            c_start = c_idx * c_per_split
-            c_end = min(c_start + c_per_split, out_c)
-            print("[%d] %d:%d" % (c_idx, c_start, c_end))
+            for h_idx in range(n_split_h):
+                for w_idx in range(n_split_w):
+                    c_start, h_start, w_start = c_idx * c_per_split, h_idx * h_per_split, w_idx * w_per_split
+                    c_end = min(c_start + c_per_split, out_c)
+                    h_end = min(h_start + h_per_split, out_h)
+                    w_end = min(w_start + w_per_split, out_w)
+                    print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
 
-            # start thread
-            p = mp.Process(target=run_split, args=(q, c_idx, padded_input, self.kernel[:, :, :, c_start:c_end], c_start, c_end))
-            p.start()
-            p_list.append(p)
+                    bounds = (h_start, h_end, w_start, w_end, c_start, c_end)
+
+                    # start thread
+                    p = mp.Process(target=run_split,
+                                   args=(q, q_idx, padded_input, self.kernel[:, :, :, c_start:c_end], bounds))
+                    p.start()
+                    p_list.append(p)
+                    q_idx += 1
 
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         cnt = 0
-        while cnt < n_split_c:
-            result, idx, c_start, c_end = q.get()
-            self.result[:, :, :, c_start:c_end] = result
+        while cnt < n_split_c * n_split_h * n_split_w:
+            result, idx, bounds = q.get()
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
+            self.result[:, :, :, c_start:c_end] += result
             print("[%d] deque" % idx)
             cnt += 1
         for p in p_list:
