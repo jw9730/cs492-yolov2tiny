@@ -256,10 +256,9 @@ class Conv2D(DnnNode):
         n_split_c = math.ceil(out_c / c_per_split)
         n_split_h = math.ceil(out_h / h_per_split)
         n_split_w = math.ceil(out_w / w_per_split)
-        c_idx, h_idx, w_idx = 0, 0, 0
         for c_idx in range(n_split_c):
             c_start = c_idx * c_per_split
-            c_end = min((c_idx + 1) + c_per_split, out_c)
+            c_end = min(c_start + c_per_split, out_c)
             print("[%d] %d:%d" % (c_idx, c_start, c_end))
 
             # start thread
