@@ -230,18 +230,18 @@ class Conv2D(DnnNode):
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
         vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
 
-        # mark = time.time()
+        mark = time.time()
         # loop over output pixels
-        for n in range(out_b):
-            for m in range(out_c):
-                for y in range(out_h):
-                    for x in range(out_w):
-                        for c in range(k_in):
-                            for i in range(k_h):
-                                for j in range(k_w):
+		for n in range(out_b):
+			for m in range(out_c):
+				for y in range(out_h):
+					for x in range(out_w):
+						for c in range(k_in):
+							for i in range(k_h):
+								for j in range(k_w):
 									self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
-                                                               padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-
+																padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+        print("Conv2D long: elapsed time %.2fsec" % (time.time() - mark))
         for y in range(out_h):
             for x in range(out_w):
                 # vectorized convolution
@@ -250,7 +250,7 @@ class Conv2D(DnnNode):
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert (self.result-vectorized_result).mean() < 1e-5
-        # print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
+        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
