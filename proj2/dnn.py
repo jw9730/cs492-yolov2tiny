@@ -246,23 +246,27 @@ class Conv2D(DnnNode):
         # parallelization should be done across batches, output pixels and channels
         q = mp.Queue()
         p_list = list()
-
-        c_per_split = 3
+        # determine number of splits to run
+        c_per_split = 4
         num_splits = math.ceil(out_c / c_per_split)
         for split_idx in range(num_splits):
+            # determine channel split
             start = split_idx * c_per_split
             end = min(start + c_per_split, out_c)
             print("[%d] %d:%d" % (split_idx, start, end))
 
+            # start thread
             p = mp.Process(target=run_split, args=(q, padded_input, self.kernel, start, end, split_idx))
             p_list.append(p)
             p.start()
 
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        # get results from queue
         cnt = 0
-        mp_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         while cnt < num_splits:
-            mp_result += q.get()
+            self.result += q.get()
             cnt += 1
+        # join threads
         for p in p_list:
             p.join()
         ################################################################################################################
@@ -275,25 +279,9 @@ class Conv2D(DnnNode):
                 # vectorized convolution
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
-        assert (mp_result-vectorized_result).mean() < 1e-5
+        assert (self.result-vectorized_result).mean() < 1e-5
         print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
 
-        raise NotImplementedError
-
-        # initialization
-        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        mark = time.time()
-        # loop over output pixels
-        for n in range(out_b):
-            for m in range(out_c):
-                for y in range(out_h):
-                    for x in range(out_w):
-                        for c in range(k_in):
-                            for i in range(k_h):
-                                for j in range(k_w):
-                                    self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
-                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-        print("Conv2D long: elapsed time %.2fsec" % (time.time() - mark))
         return self.result
 
 
