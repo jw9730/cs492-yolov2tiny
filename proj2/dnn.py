@@ -245,9 +245,12 @@ class Conv2D(DnnNode):
                                 for i in range(k_h):
                                     for j in range(k_w):
                                         ret[n, y, x, m] += kernel[i, j, c, m] * \
-                                                           padded_input[n * s_b, (y + h_start) * s_h + i, (x + w_start) * s_w + j, c * s_c]
+                                                           padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
             queue.put([ret, idx, bounds])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
+
+            #(y + h_start) * s_h + i:
+            #(x + w_start) * s_w + j:
 
         # should be done across batches, output pixels and channels
         n_max_c, n_max_h, n_max_w = 4, 2, 2
@@ -271,7 +274,9 @@ class Conv2D(DnnNode):
 
                     # start thread
                     p = mp.Process(target=run_split,
-                                   args=(q, q_idx, padded_input, self.kernel[:, :, :, c_start:c_end], bounds))
+                                   args=(q, q_idx,
+                                         padded_input[:, h_start * s_h:h_end * s_h + k_h, w_start * s_w:w_end * s_w + k_w, :],
+                                         self.kernel[:, :, :, c_start:c_end], bounds))
                     p.start()
                     p_list.append(p)
                     q_idx += 1
