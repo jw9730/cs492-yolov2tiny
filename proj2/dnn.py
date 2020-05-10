@@ -245,7 +245,7 @@ class Conv2D(DnnNode):
                                     for j in range(k_w):
                                         ret[n, y, x, m] += kernel[i, j, c, m] * \
                                                            padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-            queue.put([ret, c_start, c_end])
+            queue.put([ret, idx, c_start, c_end])
             print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
 
         # should be done across batches, output pixels and channels
@@ -270,8 +270,9 @@ class Conv2D(DnnNode):
         # join threads
         for p in p_list:
             p.join()
-            result, c_start, c_end = q.get()
+            result, idx, c_start, c_end = q.get()
             self.result[:, :, :, c_start:c_end] = result
+            print("[%d] joined" % idx)
         ################################################################################################################
         # vectorized version (as baseline)
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
