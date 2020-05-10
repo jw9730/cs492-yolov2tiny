@@ -232,15 +232,15 @@ class Conv2D(DnnNode):
 
         mark = time.time()
         # loop over output pixels
-		for n in range(out_b):
-			for m in range(out_c):
-				for y in range(out_h):
-					for x in range(out_w):
-						for c in range(k_in):
-							for i in range(k_h):
-								for j in range(k_w):
-									self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
-																padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+        for n in range(out_b):
+            for m in range(out_c):
+                for y in range(out_h):
+                    for x in range(out_w):
+                        for c in range(k_in):
+                            for i in range(k_h):
+                                for j in range(k_w):
+                                    self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
+                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
         print("Conv2D long: elapsed time %.2fsec" % (time.time() - mark))
         for y in range(out_h):
             for x in range(out_w):
