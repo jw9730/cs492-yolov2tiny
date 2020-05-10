@@ -4,6 +4,7 @@ import math
 import networkx as nx
 import numpy as np
 import time
+import multiprocessing as mp
 
 """
 The class DNNInferenceEngine will take a graph of DNN nodes to produce its computation result.
@@ -225,32 +226,89 @@ class Conv2D(DnnNode):
         # print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
         # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
-        # initialization
+        ################################################################################################################
+        # initialize
+        q = mp.Queue()
+        p_list = list()
+
+        # running convolution for limited output pixels
+        def run_split(queue, idx, padded_input, kernel, bounds):
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
+            mark = time.time()
+            ret = np.zeros((out_b, h_end - h_start, w_end - w_start, c_end - c_start), dtype=np.float32)
+            # loop over output pixels
+            for n in range(out_b):
+                for m in range(c_end - c_start):
+                    for y in range(h_end - h_start):
+                        for x in range(w_end - w_start):
+                            for c in range(k_in):
+                                for i in range(k_h):
+                                    for j in range(k_w):
+                                        ret[n, y, x, m] += kernel[i, j, c, m] * \
+                                                           padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+            queue.put([ret, idx, bounds])
+            # print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
+
+        # assign max number of splits per each dimension
+        # print("cpu_count: %d" % mp.cpu_count())
+        n_max_c, n_max_h, n_max_w = 16, 2, 2
+        # length of chunk per each dimension
+        c_per_split = math.ceil(out_c / n_max_c)
+        h_per_split = math.ceil(out_h / n_max_h)
+        w_per_split = math.ceil(out_w / n_max_w)
+        # actual number of splits
+        n_split_c = math.ceil(out_c / c_per_split)
+        n_split_h = math.ceil(out_h / h_per_split)
+        n_split_w = math.ceil(out_w / w_per_split)
+        # multi-threading loop
+        q_idx = 0
+        for c_idx in range(n_split_c):
+            for h_idx in range(n_split_h):
+                for w_idx in range(n_split_w):
+                    # assign chunks
+                    c_start, h_start, w_start = c_idx * c_per_split, h_idx * h_per_split, w_idx * w_per_split
+                    c_end = min(c_start + c_per_split, out_c)
+                    h_end = min(h_start + h_per_split, out_h)
+                    w_end = min(w_start + w_per_split, out_w)
+                    # print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
+                    bounds = (h_start, h_end, w_start, w_end, c_start, c_end)
+
+                    # start thread with split input and kernel
+                    # input: split across h and w
+                    # kernel: split across output channels
+                    thread_input = padded_input[:, h_start * s_h:h_end * s_h + k_h, w_start * s_w:w_end * s_w + k_w, :]
+                    thread_kernel = self.kernel[:, :, :, c_start:c_end]
+                    p = mp.Process(target=run_split, args=(q, q_idx, thread_input, thread_kernel, bounds))
+                    p_list.append(p)
+                    p.start()
+
+                    # increment thread count
+                    q_idx += 1
+
+        # get results and synchronize
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        cnt = 0
+        while cnt < n_split_c * n_split_h * n_split_w:
+            ret, idx, bounds = q.get()
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
+            self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += ret
+            # print("[%d] deque" % idx)
+            cnt += 1
+        for p in p_list:
+            p.join()
+        ################################################################################################################
+        # vectorized version (as baseline)
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
         vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-
         mark = time.time()
-        # loop over output pixels
-        for n in range(out_b):
-            for m in range(out_c):
-                for y in range(out_h):
-                    for x in range(out_w):
-                        for c in range(k_in):
-                            for i in range(k_h):
-                                for j in range(k_w):
-                                    self.result[n, y, x, m] += self.kernel[i, j, c, m] * \
-                                                                padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
-        print("Conv2D long: elapsed time %.2fsec" % (time.time() - mark))
         for y in range(out_h):
             for x in range(out_w):
-                # vectorized convolution
-                # todo: explicitly compute using nested loops. basically, same implementation as before should work
-                # todo: to test correctness, add an assertion that checks if (result from vectorized implementation - result from nested loops).mean() < 1e-5
                 input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert (self.result-vectorized_result).mean() < 1e-5
-        print("Conv2D: elapsed time %.2fsec" % (time.time() - mark))
+        # print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
+        # print(self.name + ": passed correctness check")
+
         return self.result
 
 
