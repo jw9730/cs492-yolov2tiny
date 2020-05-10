@@ -262,6 +262,7 @@ class Conv2D(DnnNode):
         mp_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         while cnt < num_splits:
             mp_result += q.get()
+            cnt += 1
         for p in p_list:
             p.join()
         ################################################################################################################
