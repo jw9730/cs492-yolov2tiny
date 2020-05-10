@@ -267,12 +267,14 @@ class Conv2D(DnnNode):
             p_list.append(p)
 
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
-        # join threads
-        for p in p_list:
-            p.join()
+        cnt = 0
+        while cnt < n_split_c:
             result, idx, c_start, c_end = q.get()
             self.result[:, :, :, c_start:c_end] = result
-            print("[%d] joined" % idx)
+            print("[%d] deque" % idx)
+            cnt += 1
+        for p in p_list:
+            p.join()
         ################################################################################################################
         # vectorized version (as baseline)
         kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
