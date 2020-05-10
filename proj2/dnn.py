@@ -441,7 +441,7 @@ class MaxPool2D(DnnNode):
         # print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
 
         ################################################################################################################
-        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        self.result = -np.inf * np.ones((out_b, out_h, out_w, out_c), dtype=np.float32)
         mark = time.time()
         # loop over output pixels
         for n in range(out_b):
