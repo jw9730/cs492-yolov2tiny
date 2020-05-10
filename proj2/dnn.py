@@ -252,41 +252,48 @@ class Conv2D(DnnNode):
             #(y + h_start) * s_h + i:
             #(x + w_start) * s_w + j:
 
-        # should be done across batches, output pixels and channels
-        n_max_c, n_max_h, n_max_w = 4, 2, 2
+        # max number of splits per each dimension
+        n_max_c, n_max_h, n_max_w = 16, 2, 2
+        # length of chunk per each dimension
         c_per_split = math.ceil(out_c / n_max_c)
         h_per_split = math.ceil(out_h / n_max_h)
         w_per_split = math.ceil(out_w / n_max_w)
+        # actual number of splits
         n_split_c = math.ceil(out_c / c_per_split)
         n_split_h = math.ceil(out_h / h_per_split)
         n_split_w = math.ceil(out_w / w_per_split)
+        # multi-threading loop
         q_idx = 0
         for c_idx in range(n_split_c):
             for h_idx in range(n_split_h):
                 for w_idx in range(n_split_w):
+                    # assign chunks
                     c_start, h_start, w_start = c_idx * c_per_split, h_idx * h_per_split, w_idx * w_per_split
                     c_end = min(c_start + c_per_split, out_c)
                     h_end = min(h_start + h_per_split, out_h)
                     w_end = min(w_start + w_per_split, out_w)
                     print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
-
                     bounds = (h_start, h_end, w_start, w_end, c_start, c_end)
 
-                    # start thread
-                    p = mp.Process(target=run_split,
-                                   args=(q, q_idx,
-                                         padded_input[:, h_start * s_h:h_end * s_h + k_h, w_start * s_w:w_end * s_w + k_w, :],
-                                         self.kernel[:, :, :, c_start:c_end], bounds))
-                    p.start()
+                    # start thread with split input and kernel
+                    # input: split across h and w
+                    # kernel: split across output channels
+                    thread_input = padded_input[:, h_start * s_h:h_end * s_h + k_h, w_start * s_w:w_end * s_w + k_w, :]
+                    thread_kernel = self.kernel[:, :, :, c_start:c_end]
+                    p = mp.Process(target=run_split, args=(q, q_idx, thread_input, thread_kernel, bounds))
                     p_list.append(p)
+                    p.start()
+
+                    # increment thread count
                     q_idx += 1
 
+        # get results and synchronize
         self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         cnt = 0
         while cnt < n_split_c * n_split_h * n_split_w:
-            result, idx, bounds = q.get()
+            ret, idx, bounds = q.get()
             h_start, h_end, w_start, w_end, c_start, c_end = bounds
-            self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += result
+            self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += ret
             print("[%d] deque" % idx)
             cnt += 1
         for p in p_list:
@@ -302,6 +309,7 @@ class Conv2D(DnnNode):
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert (self.result-vectorized_result).mean() < 1e-5
         print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
+        print(self.name + ": passed correctness check")
 
         return self.result
 
