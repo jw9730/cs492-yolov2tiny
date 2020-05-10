@@ -449,13 +449,13 @@ class MaxPool2D(DnnNode):
             for m in range(out_c):
                 for y in range(out_h):
                     for x in range(out_w):
-                # vectorized max
-                # problem: this implementation assumes k_b == 1 and k_c == 1
-                # todo: allow pooling across batches or channels, that is, k_b != 1 or k_c != 1 conditions
-                # for that, you can add additional loop over batches and channels and
-                # extend input_rf over batch and channel dimension
-                        input_rf = padded_input[(n*s_b):(n*s_b+k_b), (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), (m*s_c):(m*s_c+k_c)]
-                        self.result[n, y, x, m] = np.amax(input_rf)
+                        for i in range(k_b):
+                            for j in range(k_h):
+                                for k in range(k_w):
+                                    for l in range(k_c):
+                                        self.result[n,y,x,m] = max(self.result[n,y,x,m],padded_input[n*s_b+i,y*s_h+j,x*s_w+k,m*s_c+l])
+                                        # input_rf = padded_input[(n*s_b):(n*s_b+k_b), (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), (m*s_c):(m*s_c+k_c)]
+                                        # self.result[n, y, x, m] = np.amax(input_rf)
         print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
         vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
         # loop over output pixels
