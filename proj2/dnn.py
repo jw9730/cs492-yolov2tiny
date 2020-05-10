@@ -307,8 +307,7 @@ class Conv2D(DnnNode):
                 vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
         assert ( self.result- vectorized_result ).mean() < 1e-5
         # print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
-        # print(self.name + ": passed correctness check")
-
+        ################################################################################################################
         return self.result
 
 
@@ -467,9 +466,9 @@ class MaxPool2D(DnnNode):
                     # vectorized max
                     input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
                     vectorized_result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
-            # print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
             assert (vectorized_result - self.result).mean() < 1e-5
-
+            # print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
+        ################################################################################################################
         return self.result
 
 
