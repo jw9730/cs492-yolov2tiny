@@ -222,11 +222,13 @@ class Conv2D(DnnNode):
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(res, (self.OC,))
 
-        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: %d nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
+        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
 
+        # free memory
+        del pin, k_1d
         assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed with error {}".format((full_result - self.result).mean())
         self.result = full_result
 
