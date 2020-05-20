@@ -186,13 +186,20 @@ class Conv2D(DnnNode):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
                     """
-                    input_1d = ptin[0, self.SW*ow:self.SW*ow+self.KW, self.SH*oh:self.SH*oh+self.KH, ic].squeeze().contiguous()
-                    kernel_1d = self.weights[0:self.KW, 0:self.KH, ic, oc].squeeze().contiguous()
+                    input_1d = np.ascontiguousarray(ptin[0, self.SW*ow:self.SW*ow+self.KW, self.SH*oh:self.SH*oh+self.KH, ic].squeeze())
+                    kernel_1d = np.ascontiguousarray(self.weights[0:self.KW, 0:self.KH, ic, oc].squeeze())
 
                     assert input_1d.shape[0] == kernel_1d.shape[0]
-                    c_array = POINTER(c_float)*input_1d.shape[0]
-                    mylib.dot_product.argtypes(c_array, c_array, POINTER(c_float), c_int)
-                    mylib.dot_product(input_1d, kernel_1d, shared_result[0, ow, oh, oc], input_1d.shape[0])
+                    n = input_1d.shape[0]
+
+                    c_float_p = POINTER(c_float)
+                    input_1d = input_1d.ctypes.data_as(c_float_p)
+                    kernel_1d = kernel_1d.ctypes.data_as(c_float_p)
+                    res = shared_result[0, ow, oh, [oc]].ctypes.data_as(c_float_p)
+                    n = c_int(n)
+
+                    mylib.dot_product.argtypes = c_float_p, c_float_p, c_float_p, c_int
+                    mylib.dot_product(input_1d, kernel_1d, res, n)
 
         print("chunk {} done".format(chunk))
 
