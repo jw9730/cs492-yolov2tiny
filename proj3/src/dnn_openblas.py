@@ -164,6 +164,8 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
+        # baseline
+        tic = time.time()
         ptins = []
         for i in range(0, parallelism):
             ptins.append(np.pad(self.in_node.result, self.pad, mode='constant'))
@@ -174,41 +176,47 @@ class Conv2D(DnnNode):
             for p in pool:
                 p.join()
         self.result = np.ctypeslib.as_array(self.shm_result)
+        toc = time.time()
+        print("Conv2D: baseline elapsed time {}s".format(tic - toc))
+
+        # offloaded
+        tic = time.time()
+        c_float_p = POINTER(c_float)
+        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
+
+        i_dim = c_int(self.KW * self.KH * self.IC)
+        o_dim = c_int(self.OC)
+
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
+        full_result = np.zeros((1, self.OW, self.OH, self.OC))
+        # 1d kernel: (KW * KH * IC * OC,), should be in row major order
+        k_1d = np.ascontiguousarray(self.weights.squeeze()).ctypes.data_as(c_float_p)
+        for ow in range(0, self.OW):
+            for oh in range(0, self.OH):
+                # 1d input: (KW * KH * IC,)
+                w0 = self.SW * ow
+                h0 = self.SH * oh
+                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze()).ctypes.data_as(c_float_p)
+                # position-wise result buffer
+                res = np.ascontiguousarray(np.zeros((self.OC,))).ctypes.data_as(c_float_p)
+                # apply, accumulate
+                mylib.ki_apply(k_1d, in_1d, res, i_dim, o_dim)
+                full_result[0, ow, oh, :] = np.ctypeslib.as_array(res, (self.OC,))
+
+        toc = time.time()
+        print("Conv2D: offloaded elapsed time {}s".format(tic - toc))
+
+        assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k
         shared_result = np.ctypeslib.as_array(self.shm_result)
-
-        tic = time.time()
-
-        # baseline
         for ic in range(0, self.IC):
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
                     for ii, i in enumerate(range(self.SW * ow, self.SW * ow + self.KW)):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
-
-        base_time = time.time() - tic
-        tic = time.time()
-
-        # offloaded
-        for ic in range(0, self.IC):
-            for ow in range(0, self.OW):
-                for oh in range(0, self.OH):
-                    input_1d = np.ascontiguousarray(ptin[0, self.SW*ow:self.SW*ow+self.KW, self.SH*oh:self.SH*oh+self.KH, ic].squeeze())
-                    kernel_1d = np.ascontiguousarray(self.weights[0:self.KW, 0:self.KH, ic, oc].squeeze())
-
-                    c_float_p = POINTER(c_float)
-                    input_1d = input_1d.ctypes.data_as(c_float_p)
-                    kernel_1d = kernel_1d.ctypes.data_as(c_float_p)
-                    res = shared_result[0, ow, oh, [oc]].ctypes.data_as(c_float_p)
-                    n = c_int(input_1d.shape[0])
-
-                    mylib.dot_product.argtypes = c_float_p, c_float_p, c_float_p, c_int
-                    mylib.dot_product(input_1d, kernel_1d, res, n)
-
-        print("Offload: elapsed {}s, baseline: elapsed {}s".format(time.time() - tic, base_time))
 
 
 class BiasAdd(DnnNode):
