@@ -35,6 +35,13 @@ class DnnInferenceEngine(object):
                 if skip_current:
                     continue
                 current.run(counter)
+
+                # debug mode
+                if self.debug:
+                    # using a counter is heuristic! once a layer gets input from >1 predecessors, race condition happens
+                    # still, no such case in yolov2tiny
+                    np.save(file='intermediate/layer_{}'.format(counter), arr=current.result)
+
                 if not isinstance(current, Input):
                     counter += 1
                 if self.g.is_out_node(current):
