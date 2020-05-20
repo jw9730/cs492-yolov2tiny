@@ -15,7 +15,7 @@ void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     // I: (1, in_size)
     // res: (1, out_size)
 
-
+    ASSERT (!K && !I && !res);
 
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                 1, out_size, in_size,

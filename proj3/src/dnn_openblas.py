@@ -215,7 +215,7 @@ class Conv2D(DnnNode):
                 in_1d = in_1d.ctypes.data_as(c_float_p)
 
                 # output buffer
-                res = np.zeros((self.OC,), order='c')
+                res = np.zeros((self.OC,), order='c').ctypes.data_as(c_float_p)
 
                 # apply filter as a matrix multiplication
                 mylib.ki_apply(k_1d, in_1d, res, i_dim, o_dim)
