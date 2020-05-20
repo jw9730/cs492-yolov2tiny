@@ -1,6 +1,3 @@
-/* gcc compile option */
-/* gcc -shared -fPIC -o dnn_openblas.so dnn_openblas.c */
-
 #include <stdio.h>
 #include <cblas.h> // use sgemm function in cblas library
 
