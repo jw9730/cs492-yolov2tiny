@@ -6,6 +6,7 @@ import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
 
+import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./openblas.so')
 
@@ -177,31 +178,37 @@ class Conv2D(DnnNode):
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k
         shared_result = np.ctypeslib.as_array(self.shm_result)
+
+        tic = time.time()
+
+        # baseline
         for ic in range(0, self.IC):
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
-                    # TODO: parallelize
-                    """
                     for ii, i in enumerate(range(self.SW * ow, self.SW * ow + self.KW)):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
-                    """
+
+        base_time = time.time() - tic
+        tic = time.time()
+
+        # offloaded
+        for ic in range(0, self.IC):
+            for ow in range(0, self.OW):
+                for oh in range(0, self.OH):
                     input_1d = np.ascontiguousarray(ptin[0, self.SW*ow:self.SW*ow+self.KW, self.SH*oh:self.SH*oh+self.KH, ic].squeeze())
                     kernel_1d = np.ascontiguousarray(self.weights[0:self.KW, 0:self.KH, ic, oc].squeeze())
-
-                    assert input_1d.shape[0] == kernel_1d.shape[0]
-                    n = input_1d.shape[0]
 
                     c_float_p = POINTER(c_float)
                     input_1d = input_1d.ctypes.data_as(c_float_p)
                     kernel_1d = kernel_1d.ctypes.data_as(c_float_p)
                     res = shared_result[0, ow, oh, [oc]].ctypes.data_as(c_float_p)
-                    n = c_int(n)
+                    n = c_int(input_1d.shape[0])
 
                     mylib.dot_product.argtypes = c_float_p, c_float_p, c_float_p, c_int
                     mylib.dot_product(input_1d, kernel_1d, res, n)
 
-        print("chunk {} done".format(chunk))
+        print("Offload: elapsed {}s, baseline: elapsed {}s".format(time.time() - tic, base_time))
 
 
 class BiasAdd(DnnNode):
