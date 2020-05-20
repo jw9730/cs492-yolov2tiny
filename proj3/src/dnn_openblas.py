@@ -175,25 +175,25 @@ class Conv2D(DnnNode):
         self.result = np.ctypeslib.as_array(self.shm_result)
 
     def run_for_oc(self, ptin, chunk, k):
-        """
         oc = chunk * parallelism + k
         shared_result = np.ctypeslib.as_array(self.shm_result)
         for ic in range(0, self.IC):
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
+                    # TODO: parallelize
+                    """
                     for ii, i in enumerate(range(self.SW * ow, self.SW * ow + self.KW)):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
-        """
-        c_array = POINTER(POINTER(POINTER(POINTER(c_float))))
+                    """
+                    input_1d = ptin[0, self.SW*ow:self.SW*ow+self.KW, self.SH*oh:self.SH*oh+self.KH, ic].squeeze().contiguous()
+                    kernel_1d = self.weights[0:self.KW, 0:self.KH, ic, oc].squeeze().contiguous()
 
-        weights = np.ctypeslib.as_ctypes(self.weights)
-        ptin = np.ctypeslib.as_ctypes(ptin)
-        shared_result = self.shm_result
-        IC, OW, OH, SW, SH, KW, KH = self.IC, self.OW, self.OH, self.SW, self.SH, self.KW, self.KH
-        
-        mylib.run_for_oc_v2.argtypes = [c_array] * 3 + [c_int] * 10
-        mylib.run_for_oc_v2(ptin, weights, shared_result, chunk, k, parallelism, IC, OW, OH, SW, SH, KW, KH)
+                    assert input_1d.shape[0] == kernel_1d.shape[0]
+                    c_array = POINTER(c_float)*input_1d.shape[0]
+                    mylib.dot_product.argtypes(c_array, c_array, POINTER(c_float), c_int)
+                    mylib.dot_product(input_1d, kernel_1d, shared_result[0, ow, oh, oc], input_1d.shape[0])
+
         print("chunk {} done".format(chunk))
 
 

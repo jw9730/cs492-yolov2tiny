@@ -3,4 +3,3 @@ openblas.so: dnn_openblas.c
 
 clean:
 	rm -f openblas.so
-	rm -f dnn_openblas.so
