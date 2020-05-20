@@ -33,6 +33,7 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
     printf("run_for_oc_v2: loop end\n");
 }
 
+/*
 void run_sgemm(const float **A, const float **B, float **C, int m, int k, int n) {
     // A: (m, k)
     // B: (k, n)
@@ -40,3 +41,4 @@ void run_sgemm(const float **A, const float **B, float **C, int m, int k, int n)
     // C <- A * B + C
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, A, k, B, n, 1, C, n);
 }
+*/
