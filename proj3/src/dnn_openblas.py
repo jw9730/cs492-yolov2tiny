@@ -5,6 +5,9 @@ import networkx as nx
 import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
+from ctypes import cdll
+
+mylib = cdll.LoadLibrary('./dnn_openblas.so')
 
 parallelism = 8
 
@@ -173,14 +176,20 @@ class Conv2D(DnnNode):
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k
-        shared_result = np.ctypeslib.as_array(self.shm_result)       
-
+        shared_result = np.ctypeslib.as_array(self.shm_result)
+        """
         for ic in range(0, self.IC):
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
                     for ii, i in enumerate(range(self.SW * ow, self.SW * ow + self.KW)):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
+        """
+        weights = np.ctypeslib.as_array(self.weights)
+        ptin = np.ctypeslib.as_array(ptin)
+        IC, OW, OH, SW, SH, KW, KH = self.IC, self.OW, self.OH, self.SW, self.SH, self.KW, self.KH
+        mylib.run_for_oc_v2(ptin, weights, shared_result, chunk, k, parallelism, IC, OW, OH, SW, SH, KW, KH)
+
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):

@@ -11,10 +11,10 @@ def resize_input(im):
     imsz = imsz[:,:,::-1]
     return np.asarray(imsz, dtype=np.float32)
 
-def image_object_detection(in_image, out_image):
+def image_object_detection(in_image, out_image, debug):
     frame = cv2.imread(in_image)
 
-    y2t = yolov2tiny.YOLO_V2_TINY([1, 416, 416, 3], "../y2t_weights.pickle")
+    y2t = yolov2tiny.YOLO_V2_TINY([1, 416, 416, 3], "../y2t_weights.pickle", debug)
 
     t_end2end = time.time() 
 
@@ -41,13 +41,17 @@ def image_object_detection(in_image, out_image):
     print('End-to-end elapsed time   : %.3f' % t_end2end)
 
 def main():
-    if len(sys.argv) < 3:
-        print ("Usage: python3 __init__.py [in_image] [out_image]")
+    if len(sys.argv) < 4 or sys.argv[3] not in ('-DEBUG', '-NDEBUG'):
+        print ("Usage: python3 __init__.py [in_image] [out_image] [-DEBUG/NDEBUG]")
         sys.exit()
     image_in = sys.argv[1] 
     image_out = sys.argv[2] 
+    debug = True if sys.argv[3] is '-DEBUG' else False
 
-    image_object_detection(image_in, image_out)
+    if debug:
+        print('Debug mode enabled')
+
+    image_object_detection(image_in, image_out, debug)
 
 if __name__ == "__main__":
     main()

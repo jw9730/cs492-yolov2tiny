@@ -6,12 +6,11 @@ from dnn import DnnGraphBuilder, DnnInferenceEngine
 
 class YOLO_V2_TINY(object):
 
-    def __init__(self, in_shape, weight_pickle, proc="cpu"):
-        self.proc = proc
+    def __init__(self, in_shape, weight_pickle, debug):
         self.weight_pickle = weight_pickle
         self.g = DnnGraphBuilder()
         self.build_graph(in_shape)
-        self.sess = DnnInferenceEngine(self.g)
+        self.sess = DnnInferenceEngine(self.g, debug)
 
     def get_y2t_w(self):
         with open(self.weight_pickle, "rb") as h:
