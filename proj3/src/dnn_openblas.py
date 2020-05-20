@@ -41,7 +41,7 @@ class DnnInferenceEngine(object):
                     # using a counter is heuristic! once a layer gets input from >1 predecessors, race condition happens
                     # still, no such case in yolov2tiny
                     np.save(file='intermediate/layer_{}'.format(counter), arr=current.result)
-                    print("run: layer_{}.npy saved at ./intermediate/".format(counter))
+                    print("run: execution result of {} saved at ./intermediate/layer_{}.npy".format(current.name, counter))
 
                 if not isinstance(current, Input):
                     counter += 1
