@@ -14,6 +14,8 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
     int oc = chunk * parallelism + k;
     int i, j;
 
+    printf("run_for_oc_v2: loop start\n");
+
     for (int ic=0; ic<IC; ic++) {
         for (int ow=0; ow<OW; ow++) {
             for (int oh=0; oh<OH; oh++) {
@@ -27,4 +29,14 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
             }
         }
     }
+
+    printf("run_for_oc_v2: loop end\n");
+}
+
+void run_sgemm(const float **A, const float **B, float **C, int m, int k, int n) {
+    // A: (m, k)
+    // B: (k, n)
+    // C: (m, n)
+    // C <- A * B + C
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, A, k, B, n, 1, C, n);
 }
