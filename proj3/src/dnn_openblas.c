@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <cblas.h> // use sgemm function in cblas library
+ // use sgemm function in cblas library
 
 void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shared_result,
                 int chunk, int k, int parallelism,
@@ -11,7 +10,7 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
     int oc = chunk * parallelism + k;
     int i, j;
 
-    printf("run_for_oc_v2: loop start\n");
+    //printf("run_for_oc_v2: loop start\n");
 
     for (int ic=0; ic<IC; ic++) {
         for (int ow=0; ow<OW; ow++) {
@@ -27,7 +26,7 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
         }
     }
 
-    printf("run_for_oc_v2: loop end\n");
+    //printf("run_for_oc_v2: loop end\n");
 }
 
 /*

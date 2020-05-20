@@ -4,6 +4,8 @@ import cv2
 import time
 
 import yolov2tiny
+from ctypes import *
+mylib = cdll.LoadLibrary('./dnn_openblas.so')
 
 def resize_input(im):
     imsz = cv2.resize(im, (416, 416))
