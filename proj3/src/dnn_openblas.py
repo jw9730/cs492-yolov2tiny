@@ -186,7 +186,8 @@ class Conv2D(DnnNode):
         # set function argument types
         mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
 
-        # i_dim: flattened filter size, o_dim: output channel size
+        # i_dim: flattened filter size
+        # o_dim: output channel size
         i_dim = c_int(self.KW * self.KH * self.IC)
         o_dim = c_int(self.OC)
 
@@ -223,7 +224,8 @@ class Conv2D(DnnNode):
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
 
-        assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
+        assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed with error {}".format((full_result - self.result).mean())
+        self.result = full_result
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k

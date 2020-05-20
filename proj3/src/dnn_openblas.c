@@ -3,7 +3,7 @@
 #include <cblas.h>
 
 void dot_product(float *v1, float *v2, float *res, int n) {
-    //printf("dot_product: (v1, v2, res, n) = (%p, %p, %p, %d)\n", v1, v2, res, n);
+    // n: length of vectors
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                 1, 1, n,
                 1.0, v1, n, v2, 1,
@@ -11,9 +11,9 @@ void dot_product(float *v1, float *v2, float *res, int n) {
 }
 
 void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
-    // K: (KW * KH * IC, OC)
-    // I: (1, KW * KH * IC)
-    // res: (1, OC)
+    // K: (in_size, out_size)
+    // I: (1, in_size)
+    // res: (1, out_size)
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                 1, out_size, in_size,
                 1.0, I, in_size, K, out_size,
