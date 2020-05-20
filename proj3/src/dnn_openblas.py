@@ -9,7 +9,7 @@ from multiprocessing import Process, sharedctypes
 from ctypes import *
 mylib = cdll.LoadLibrary('./openblas.so')
 
-parallelism = 1
+parallelism = 8
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
@@ -175,9 +175,9 @@ class Conv2D(DnnNode):
         self.result = np.ctypeslib.as_array(self.shm_result)
 
     def run_for_oc(self, ptin, chunk, k):
+        """
         oc = chunk * parallelism + k
         shared_result = np.ctypeslib.as_array(self.shm_result)
-        """
         for ic in range(0, self.IC):
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
@@ -185,13 +185,16 @@ class Conv2D(DnnNode):
                         for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
                             shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
         """
-        weights = np.ctypeslib.as_array(self.weights)
-        ptin = np.ctypeslib.as_array(ptin)
-        IC, OW, OH, SW, SH, KW, KH = self.IC, self.OW, self.OH, self.SW, self.SH, self.KW, self.KH
+        c_array = POINTER(POINTER(POINTER(POINTER(c_float))))
 
-        c_array = POINTER(POINTER(POINTER(POINTER(float))))
-        mylib.argtypes = [c_array] * 3 + [c_int] * 10
+        weights = np.ctypeslib.as_ctypes(self.weights)
+        ptin = np.ctypeslib.as_ctypes(ptin)
+        shared_result = self.shm_result
+        IC, OW, OH, SW, SH, KW, KH = self.IC, self.OW, self.OH, self.SW, self.SH, self.KW, self.KH
+        
+        mylib.run_for_oc_v2.argtypes = [c_array] * 3 + [c_int] * 10
         mylib.run_for_oc_v2(ptin, weights, shared_result, chunk, k, parallelism, IC, OW, OH, SW, SH, KW, KH)
+        print("chunk {} done".format(chunk))
 
 
 class BiasAdd(DnnNode):
