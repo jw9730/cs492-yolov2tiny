@@ -12,7 +12,9 @@ void dot_product(float *v1, float *v2, float *res, int n) {
 }
 
 void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
-    assert(!K && !I && !res);
+    assert(K != NULL);
+    assert(I != NULL);
+    assert(res 1= NULL);
 
     // K: (in_size, out_size)
     // I: (1, in_size)

@@ -198,13 +198,13 @@ class Conv2D(DnnNode):
 
         # padded input and convolved result
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
-        full_result = np.zeros((1, self.OW, self.OH, self.OC))
+        full_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
 
         # 1d kernel: (KW * KH * IC * OC,)
         # should be arranged contiguously in memory, in row major order
         # cast to float pointer type
-        k_1d = np.ascontiguousarray(self.weights.squeeze())
-        k_1d = k_1d.ctypes.data_as(c_float_p)
+        k_1d = np.ascontiguousarray(self.weights.squeeze().astype(np.float32))
+        k_p = k_1d.ctypes.data_as(c_float_p)
 
         # pixel-wise offload
         for ow in range(0, self.OW):
@@ -214,16 +214,17 @@ class Conv2D(DnnNode):
                 # cast to float pointer type
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze())
-                in_1d = in_1d.ctypes.data_as(c_float_p)
+                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
+                in_p = in_1d.ctypes.data_as(c_float_p)
 
                 # output buffer
-                res = np.zeros((self.OC,), order='c').ctypes.data_as(c_float_p)
+                buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
 
                 # apply filter as a matrix multiplication
-                mylib.ki_apply(k_1d, in_1d, res, i_dim, o_dim)
+                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
+
                 # accumulate pixel output
-                full_result[0, ow, oh, :] = np.ctypeslib.as_array(res, (self.OC,))
+                full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
