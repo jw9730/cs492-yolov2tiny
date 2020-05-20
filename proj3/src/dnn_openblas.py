@@ -177,34 +177,51 @@ class Conv2D(DnnNode):
                 p.join()
         self.result = np.ctypeslib.as_array(self.shm_result)
         toc = time.time()
-        print("Conv2D: baseline elapsed time {}s".format(tic - toc))
+        print("Conv2D: baseline elapsed time {}s".format(toc - tic))
 
         # offloaded
         tic = time.time()
+        # float pointer type: every n-d array will be modified to 1d float array
         c_float_p = POINTER(c_float)
+        # set function argument types
         mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
 
+        # i_dim: flattened filter size, o_dim: output channel size
         i_dim = c_int(self.KW * self.KH * self.IC)
         o_dim = c_int(self.OC)
 
+        # padded input and convolved result
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         full_result = np.zeros((1, self.OW, self.OH, self.OC))
-        # 1d kernel: (KW * KH * IC * OC,), should be in row major order
-        k_1d = np.ascontiguousarray(self.weights.squeeze()).ctypes.data_as(c_float_p)
+
+        # 1d kernel: (KW * KH * IC * OC,)
+        # should be arranged contiguously in memory, in row major order
+        # cast to float pointer type
+        k_1d = np.ascontiguousarray(self.weights.squeeze())
+        k_1d = k_1d.ctypes.data_as(c_float_p)
+
+        # pixel-wise offload
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 # 1d input: (KW * KH * IC,)
+                # should be arranged contiguously in memory
+                # cast to float pointer type
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze()).ctypes.data_as(c_float_p)
-                # position-wise result buffer
-                res = np.ascontiguousarray(np.zeros((self.OC,))).ctypes.data_as(c_float_p)
-                # apply, accumulate
+                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze())
+                in_1d = in_1d.ctypes.data_as(c_float_p)
+
+                # output buffer
+                res = np.ascontiguousarray(np.zeros((self.OC,)))
+                res = res.ctypes.data_as(c_float_p)
+
+                # apply filter as a matrix multiplication
                 mylib.ki_apply(k_1d, in_1d, res, i_dim, o_dim)
+                # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(res, (self.OC,))
 
         toc = time.time()
-        print("Conv2D: offloaded elapsed time {}s".format(tic - toc))
+        print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
 
         assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
 
