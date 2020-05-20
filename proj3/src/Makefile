@@ -1,4 +1,4 @@
-dnn_openblas_test.so: dnn_openblas.c
+dnn_openblas_test.so: dnn_openblas_test.c
 	gcc -shared -fPIC -o $@ $^
 
 clean:
