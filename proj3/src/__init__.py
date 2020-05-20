@@ -48,6 +48,8 @@ def main():
     image_out = sys.argv[2] 
     debug = True if sys.argv[3] is '-DEBUG' else False
 
+    print(sys.argv[3], debug)
+
     if debug:
         print('Debug mode enabled')
 
