@@ -166,7 +166,11 @@ class Conv2D(DnnNode):
     def run(self, counter):
         print("Conv2D: run start")
 
-        """"# baseline
+        # There's an error in deep layers when baseline and offloaded code are tested together
+        # (NULL pointer access in .so library)
+        # Only check for first layer output, if needed
+        """
+        # baseline
         tic = time.time()
         ptins = []
         for i in range(0, parallelism):
@@ -182,7 +186,8 @@ class Conv2D(DnnNode):
         print("Conv2D: baseline elapsed time {}s".format(toc - tic))
 
         assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output array of baseline method"\
-            .format(np.count_nonzero(np.isnan(self.result)))"""
+            .format(np.count_nonzero(np.isnan(self.result)))
+        """
 
         # offloaded
         tic = time.time()
@@ -230,7 +235,7 @@ class Conv2D(DnnNode):
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
 
         assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
-        #assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed with error {}".format((full_result - self.result).mean())
+        # assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
         self.result = full_result
 
     def run_for_oc(self, ptin, chunk, k):
