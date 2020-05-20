@@ -21,7 +21,7 @@ void run_for_oc_v2(const float ****ptin, const float ****weights, float ****shar
                     for (int jj=0; jj<KH; jj++){
                         i = SW * ow + jj;
                         j = SH * oh + ii;
-                        shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * weights[ii, jj, ic, oc];
+                        shared_result[0][ow][oh][oc] += ptin[0][i][j][ic] * weights[ii][jj][ic][oc];
                     }
                 }
             }
