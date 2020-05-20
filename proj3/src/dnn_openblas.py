@@ -7,7 +7,7 @@ from itertools import product
 from multiprocessing import Process, sharedctypes
 
 from ctypes import *
-mylib = cdll.LoadLibrary('./dnn_openblas.so')
+mylib = cdll.LoadLibrary('./openblas.so')
 
 parallelism = 1
 
