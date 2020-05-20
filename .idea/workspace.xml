@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_openblas.c" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_openblas.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_openblas.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_openblas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/yolov2tiny.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/yolov2tiny.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,11 +14,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/proj3/src/dnn_openblas.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="304">
-              <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
+            <state relative-caret-position="2375">
+              <caret line="128" column="17" selection-start-line="128" selection-start-column="17" selection-end-line="128" selection-end-column="17" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -28,11 +29,20 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/proj3/src/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="349">
-              <caret line="48" column="7" selection-start-line="48" selection-start-column="7" selection-end-line="48" selection-end-column="7" />
+            <state relative-caret-position="133">
+              <caret line="7" column="1" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/proj3/src/yolov2tiny.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="76">
+              <caret line="4" column="12" selection-start-line="4" selection-start-column="12" selection-end-line="4" selection-end-column="12" />
             </state>
           </provider>
         </entry>
@@ -55,7 +65,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>0.1</find>
       <find>1e-5</find>
       <find>offset=offset</find>
       <find># offset</find>
@@ -85,6 +94,7 @@
       <find>self.result =</find>
       <find>assert np.isnan</find>
       <find>print(&quot;__init</find>
+      <find>dnn</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -99,11 +109,12 @@
         <option value="$PROJECT_DIR$/proj2/dnn.py" />
         <option value="$PROJECT_DIR$/proj3/src/dnn_openblas.c" />
         <option value="$PROJECT_DIR$/proj3/src/dnn_openblas.py" />
+        <option value="$PROJECT_DIR$/proj3/src/yolov2tiny.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-8" />
+    <option name="x" value="952" />
     <option name="width" value="977" />
     <option name="height" value="1038" />
   </component>
@@ -208,12 +219,12 @@
       <workItem from="1588144182407" duration="11208000" />
       <workItem from="1588990086926" duration="21403000" />
       <workItem from="1589079188736" duration="10777000" />
-      <workItem from="1589934535301" duration="8774000" />
+      <workItem from="1589934535301" duration="8951000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="135053000" />
+    <option name="totallyTimeSpent" value="135230000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -225,7 +236,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-6" y="0" width="781" height="830" extended-state="0" />
+    <frame x="762" y="0" width="781" height="830" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.197787" />
@@ -335,16 +346,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/proj3/src/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="349">
-          <caret line="48" column="7" selection-start-line="48" selection-start-column="7" selection-end-line="48" selection-end-column="7" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/proj3/examples/ctypes/ctypes_example.c">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -355,13 +356,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/proj3/src/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="133">
+          <caret line="7" column="1" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/proj3/src/dnn_openblas.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="304">
-          <caret line="127" lean-forward="true" selection-start-line="127" selection-end-line="127" />
+        <state relative-caret-position="2375">
+          <caret line="128" column="17" selection-start-line="128" selection-start-column="17" selection-end-line="128" selection-end-column="17" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proj3/src/yolov2tiny.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="76">
+          <caret line="4" column="12" selection-start-line="4" selection-start-column="12" selection-end-line="4" selection-end-column="12" />
         </state>
       </provider>
     </entry>
