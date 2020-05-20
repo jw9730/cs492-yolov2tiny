@@ -164,6 +164,8 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
+        print("Conv2D: run start")
+
         # baseline
         tic = time.time()
         ptins = []
@@ -213,13 +215,14 @@ class Conv2D(DnnNode):
                 in_1d = in_1d.ctypes.data_as(c_float_p)
 
                 # output buffer
-                res = np.ascontiguousarray(np.zeros((self.OC,)))
-                res = res.ctypes.data_as(c_float_p)
+                res = np.ascontiguousarray(np.zeros((self.OC,)), order='c')
 
                 # apply filter as a matrix multiplication
                 mylib.ki_apply(k_1d, in_1d, res, i_dim, o_dim)
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(res, (self.OC,))
+
+        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: %d nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
