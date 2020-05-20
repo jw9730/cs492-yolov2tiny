@@ -6,6 +6,9 @@ import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
 
+from ctypes import *
+mylib = cdll.LoadLibrary('./dnn_openblas.so')
+
 parallelism = 1
 
 class DnnInferenceEngine(object):
