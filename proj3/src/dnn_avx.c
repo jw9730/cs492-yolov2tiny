@@ -39,10 +39,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // I: (in_size)
     // R: (out_size)
     assert((K != NULL) && (I != NULL) && (R != NULL));
-
-#ifdef DEBUG
-    printf("ki_apply: got K %p, I %p, R %p, in_size %d, out_size %d\n", K, I, R, in_size, out_size);
-#endif
     
     // K_o, R_o: holder for addresses
     // args: holder for args struct
@@ -54,18 +50,15 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     int n_c = ceil((float)in_size / 8.0);
     int n_f;
 
+    int i, j;
     struct args * args_list = malloc((sizeof (struct args)) * n_c);
     pthread_t tid[n_c];
-    int i, j;
+
     for (i=0; i<out_size; i++){
         // K_o: kernel vector
         // R_o: output address
         K_o = K + i * in_size;
         R_o = R + i;
-
-#ifdef DEBUG
-        printf("\nki_apply: output idx [%d]/[%d]. Kernel vector M[%p...], out channel M[%p]\n", i, out_size-1, K_o, R_o);
-#endif
         
         // compute dot product between kernel and input
         for (j=0; j<n_c; j++){
@@ -78,14 +71,16 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args.y = I + 8 * j;
             args.o = R_o;
             // run thread
-            pthread_create(tid + j, NULL, func, &args);
+            pthread_create(tid + j, NULL, func, args_list + j);
         }
 
         // join threads
-        for (int j=0; j<n_c; j++){
+        for (j=0; j<n_c; j++){
             pthread_join(tid[j], NULL);
         }
     }
+
     free(args_list);
+    
     return;
 }
