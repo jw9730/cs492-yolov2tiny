@@ -83,7 +83,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
         // join threads
         for (int j=0; j<n_c; j++){
-            pthread_join(tid + j, NULL);
+            pthread_join(tid[j], NULL);
         }
     }
 
