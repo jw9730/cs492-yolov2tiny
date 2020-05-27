@@ -72,26 +72,26 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
             printf("ki_apply: K [");
-            for (int i=0; i<n_f; i++) printf("%3.2f ", (float *) (K_o+8*j));
+            for (int k=0; k<n_f; k++) printf("%3.2f ", (float *) (K_o + 8 * j)[k]);
             printf("]\n");
             printf("ki_apply: I [");
-            for (int i=0; i<n_f; i++) printf("%3.2f ", (float *) (I+8*j));
+            for (int k=0; k<n_f; k++) printf("%3.2f ", (float *) (I + 8 * j)[k]);
             printf("]\n");
 #endif
             // allocate an argument holder (will be freed before a thread exits)
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
             // convert subarrays into 256-bit chunks
-            memcpy(&args->x, K_o+8*j, sizeof(float)*n_f);
-            memcpy(&args->y, I+8*j, sizeof(float)*n_f);
+            memcpy(&args->x, K_o + 8 * j, sizeof(float)*n_f);
+            memcpy(&args->y, I + 8 * j, sizeof(float)*n_f);
             args->o = R_o;
 
 #ifdef DEBUG
             printf("ki_apply: x [");
-            for (int i=0; i<8; i++) printf("%3.2f ", (float *) &args->x[i]);
+            for (int k=0; k<8; k++) printf("%3.2f ", ((float *) &args->x)[k]);
             printf("]\n");
             printf("ki_apply: y [");
-            for (int i=0; i<8; i++) printf("%3.2f ", (float *) &args->y[i]);
+            for (int k=0; k<8; k++) printf("%3.2f ", ((float *) &args->y)[k]);
             printf("]\n");
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
