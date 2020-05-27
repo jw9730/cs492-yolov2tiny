@@ -52,7 +52,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #endif
 
     // number of chunks
-    int n_c = ceil(in_size / 8);
+    int n_c = ceil((float)in_size / 8.0);
     // holder for num_elements within a chunk (<= 8)
     int n_f;
     // holder for args struct
@@ -68,7 +68,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         R_o = R + i;
 
 #ifdef DEBUG
-        printf("ki_apply: output idx [%d]/[%d]. Kernel vector M[%p...], out channel M[%p]\n", i, out_size, K_o, R_o);
+        printf("ki_apply: output idx [%d]/[%d]. Kernel vector M[%p...], out channel M[%p]\n", i, out_size-1, K_o, R_o);
 #endif
 
         // compute dot product between kernel and input
@@ -79,7 +79,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // convert subarrays into 256-bit chunks
             n_f = MIN(in_size - 8 * j, 8);
 #ifdef DEBUG
-            printf("ki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c n_f, args);
+            printf("ki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
 #endif
             args->x = get_chunk(K_o + 8 * j, n_f);
             args->y = get_chunk(I + 8 * j, n_f);
