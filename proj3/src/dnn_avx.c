@@ -16,7 +16,7 @@ struct args {
 
 __m256 get_chunk(float * v, int n){
     __m256 c = _mm256_setzero_ps();
-    memcpy(&c, v, (sizeof float) * n);
+    memcpy(&c, v, (sizeof (float)) * n);
     return c;
 }
 
