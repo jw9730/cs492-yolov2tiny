@@ -97,7 +97,18 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
 #endif
             args->x = get_chunk(K_o + 8 * j, n_f);
+#ifdef DEBUG
+    printf("nki_apply: args->x [");
+    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&args->x[i]);
+    printf("]\n");
+#endif
             args->y = get_chunk(I + 8 * j, n_f);
+
+#ifdef DEBUG
+    printf("nki_apply: args->y [");
+    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&args->y[i]);
+    printf("]\n");
+#endif
             args->o = R_o;
 #ifdef DEBUG
             printf("ki_apply: create thread %d\n", i * n_c + j);
