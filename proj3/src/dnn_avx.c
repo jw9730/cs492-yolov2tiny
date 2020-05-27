@@ -39,13 +39,21 @@ void * func(void * aux) {
     // compute vector multiplication
     __m256 o = _mm256_mul_ps(args->x, args->y);
     float * r = (float *) &o;
+
+#ifdef DEBUG
+    printf("func: x * y [");
+    for (int i=0; i<8; i++) printf("%3.2f ", r[i]);
+    printf("]\n");
+#endif
+
     // accumulate result in output address
     float acc = r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
     *(args->o) += acc;
-    free(args);
 #ifdef DEBUG
     printf("func: acc += %f\n", acc);
 #endif
+
+    free(args);
     return NULL;
 }
 
