@@ -15,23 +15,20 @@ struct args {
     float * o;
 };
 
-__m256 get_chunk(float * v, int n){
+void get_chunk(float * c, float * v, int n){
 #ifdef DEBUG
     printf("get_chunk: v [");
     for (int i=0; i<n; i++) printf("%3.2f ", v[i]);
     printf("]\n");
 #endif
 
-    __m256 c = _mm256_setzero_ps();
-    memcpy((void *)&c, (void *)v, (size_t)((sizeof (float)) * n));
-
+    memcpy((void *)c, (void *)v, (size_t)((sizeof (float)) * n));
+    
 #ifdef DEBUG
     printf("get_chunk: c [");
-    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&c[i]);
+    for (int i=0; i<8; i++) printf("%3.2f ", c[i]);
     printf("]\n");
 #endif
-
-    return c;
 }
 
 void * func(void * aux) {
@@ -89,9 +86,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // allocate an argument holder (will be freed before a thread exits)
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
-            args->x = _mm256_setzero_ps();
-            args->y = _mm256_setzero_ps();
-            args->o = NULL;
 
             // convert subarrays into 256-bit chunks
             n_f = in_size - 8 * j;
@@ -99,25 +93,14 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
 #endif
-            args->x = get_chunk(K_o + 8 * j, n_f);
-#ifdef DEBUG
-    printf("ki_apply: args->x [");
-    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&args->x[i]);
-    printf("]\n");
-#endif
-            args->y = get_chunk(I + 8 * j, n_f);
-
-#ifdef DEBUG
-    printf("ki_apply: args->y [");
-    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&args->y[i]);
-    printf("]\n");
-#endif
+            get_chunk(&args->x, K_o + 8 * j, n_f);
+            get_chunk(&args->y, I + 8 * j, n_f);
             args->o = R_o;
 #ifdef DEBUG
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
             // run thread
-            //pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
+            pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
             args = NULL;
         }
     }
