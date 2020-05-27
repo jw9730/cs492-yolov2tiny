@@ -112,4 +112,13 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             printf("thread %d ends\n", i * n_c + j);
         }
     }
+
+
+#ifdef DEBUG
+    printf("ki_apply: output [");
+    for (int i=0; i<out_size; i++) printf("%3.2f ", R[i]);
+    printf("]\n");
+#endif
+
+    return;
 }
