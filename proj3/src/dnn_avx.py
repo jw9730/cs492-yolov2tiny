@@ -8,7 +8,7 @@ from multiprocessing import Process, sharedctypes
 
 import time
 from ctypes import *
-mylib = cdll.LoadLibrary('./openblas.so')
+mylib = cdll.LoadLibrary('./avx.so')
 
 parallelism = 8
 
@@ -173,11 +173,10 @@ class Conv2D(DnnNode):
 
     def run(self, counter):
         print("Conv2D: run start")
-
+        """
         # There's an error in deep layers when baseline and offloaded code are tested together
         # (NULL pointer access in .so library)
         # Only check for first layer output, if needed
-        """
         # baseline
         tic = time.time()
         ptins = []
@@ -198,6 +197,8 @@ class Conv2D(DnnNode):
         """
 
         # offloaded
+        # use pthread and AVX
+        # matrix multiplication := multithreaded dot product
         tic = time.time()
         # float pointer type: every n-d array will be modified to 1d float array
         c_float_p = POINTER(c_float)

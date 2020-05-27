@@ -3,10 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cs492-yolov2tiny.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/proj3.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/proj3.pdf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/proj3/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.c" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/openblas.so" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/proj3/src/yolov2tiny.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/yolov2tiny.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -75,12 +76,36 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\GitHub_Repos\cs492-yolov2tiny\proj3\src" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="cs492-yolov2tiny" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -103,7 +128,7 @@
       <workItem from="1589079188736" duration="10777000" />
       <workItem from="1589934535301" duration="11028000" />
       <workItem from="1590553614042" duration="1446000" />
-      <workItem from="1590555129557" duration="266000" />
+      <workItem from="1590555129557" duration="9984000" />
     </task>
     <servers />
   </component>
@@ -120,9 +145,9 @@
     <option name="version" value="2" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="221" y="89" key="SettingsEditor" timestamp="1590555198671">
+    <state x="403" y="108" key="SettingsEditor" timestamp="1590556342235">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state x="221" y="89" key="SettingsEditor/0.0.1440.900@0.0.1440.900" timestamp="1590555198671" />
+    <state x="403" y="108" key="SettingsEditor/0.0.1440.900@0.0.1440.900" timestamp="1590556342235" />
   </component>
 </project>
