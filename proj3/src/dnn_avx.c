@@ -20,7 +20,7 @@ __m256 get_chunk(float * v, int n){
     return c;
 }
 
-void func(void * aux) {
+void *func(void * aux) {
     struct args * args = (struct args *) aux;
     // compute vector multiplication
     __m256 o = _mm256_mul_ps(args->x, args->y);
@@ -28,6 +28,7 @@ void func(void * aux) {
     // accumulate result in output address
     *(args->o) += r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
     free(args);
+    return NULL;
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
@@ -65,7 +66,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args->o = R_o;
 
             // run thread
-            pthread_create(tid + (i * n_c + j), NULL, &func, (void *)(args));
+            pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
         }
     }
 
