@@ -57,7 +57,8 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     void * R_o = NULL;
 
     pthread_t tid[n_c];
-    for (int i=0; i<out_size; i++){
+    int i, j;
+    for (i=0; i<out_size; i++){
         // K_o: kernel vector
         // R_o: output address
         K_o = K + i * in_size;
@@ -68,11 +69,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #endif
         
         // compute dot product between kernel and input
-        for (int j=0; j<n_c; j++){
+        for (j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
             args = malloc(sizeof (struct args));
-            memset(args, 0, sizeof (struct args));
             n_f = in_size - 8 * j;
             args->n_f = (n_f > 8) ? 8 : n_f;
             args->x = K_o + 8 * j;
