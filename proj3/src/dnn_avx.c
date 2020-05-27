@@ -20,10 +20,14 @@ void * func(void * aux) {
     printf("func: apply operation, aux @ %p\n", aux);
 #endif
     struct args * args = (struct args *) aux;
-    // compute vector multiplication
+#ifdef DEBUG
+    printf("func: compute vector multiplication, (v1 @ %p, v2 @ %p)\n", &args->x, &args->y);
+#endif
     __m256 o = _mm256_mul_ps(args->x, args->y);
     float * r = (float *) &o;
-    // accumulate result in output address
+#ifdef DEBUG
+    printf("func: accumulate result in output address %p\n", args->o);
+#endif
     float acc = r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
     *(args->o) += acc;
 #ifdef DEBUG
