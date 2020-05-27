@@ -1,8 +1,8 @@
-openblas.so : dnn_openblas.c
-    gcc -shared -fPIC -o $@ $^ -lblas
+openblas.so: dnn_openblas.c
+	gcc -shared -fPIC -o $@ $^ -lblas
 
-avx.so : dnn_avx.c
-    gcc -o $@ $^ -mavx2 -lpthread
+avx.so: dnn_avx.c
+	gcc -o $@ $^ -mavx2 -lpthread
 
 clean:
 	rm -f openblas.so
