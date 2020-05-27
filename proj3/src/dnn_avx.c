@@ -82,8 +82,8 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
             // convert subarrays into 256-bit chunks
-            memcpy(&args->x, K_o + 8 * j, sizeof(float)*n_f);
-            memcpy(&args->y, I + 8 * j, sizeof(float)*n_f);
+            memcpy(&args->x, K_o + 8 * j, sizeof (float) * n_f);
+            memcpy(&args->y, I + 8 * j, sizeof (float) * n_f);
             args->o = R_o;
 
 #ifdef DEBUG
@@ -96,14 +96,14 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
             // run thread
-            pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
+            //pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
             args = NULL;
         }
     }
 
     for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
-            pthread_join(tid[i * n_c + j], NULL);
+            //pthread_join(tid[i * n_c + j], NULL);
             printf("thread %d ends\n", i * n_c + j);
         }
     }
