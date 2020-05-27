@@ -87,6 +87,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         for (int j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
             args = malloc(sizeof (struct args));
+            if (!args){
+                printf("MALLOC FAILURE");
+                ASSERT(0);
+            }
 
             // convert subarrays into 256-bit chunks
             n_f = in_size - 8 * j;
