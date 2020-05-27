@@ -65,10 +65,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
             args = args_list[j];
-            n_f = in_size - 8 * j;
-            args.n_f = (n_f > 8) ? 8 : n_f;
             args.x = K_o + 8 * j;
             args.y = I + 8 * j;
+            n_f = in_size - 8 * j;
+            args.n_f = (n_f > 8) ? 8 : n_f;
             args.o = R_o;
             // run thread
             pthread_create(tid + j, NULL, func, args_list + j);
@@ -81,6 +81,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     }
 
     free(args_list);
-    
+
     return;
 }
