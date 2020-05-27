@@ -10,33 +10,27 @@
 // - __m256: 256-bit vector containing 8 floats
 
 struct args {
-    __m256 x;
-    __m256 y;
+    float * x;
+    float * y;
+    int n_f;
     float * o;
 };
 
 void * func(void * aux) {
-#ifdef DEBUG
-    printf("func: apply operation, aux @ %p\n", aux);
-#endif
     struct args * args = (struct args *) aux;
-#ifdef DEBUG
-    printf("func: compute vector multiplication, (v1 @ %p, v2 @ %p)\n", &args->x, &args->y);
-#endif
-    __m256 x = _mm256_loadu_ps(&args->x);
-    __m256 y = _mm256_loadu_ps(&args->y);
+    int n_f = args->n_f;
+
+    __m256 x = _mm256_setzero_ps();
+    __m256 y = _mm256_setzero_ps();
+    memcpy(&x, args->x, sizeof (float) * n_f);
+    memcpy(&y, args->y, sizeof (float) * n_f);
     __m256 o = _mm256_mul_ps(x, y);
+    
     float * r = (float *) &o;
-#ifdef DEBUG
-    printf("func: accumulate result in output address %p\n", args->o);
-#endif
     float acc = r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
     *(args->o) += acc;
-#ifdef DEBUG
-    printf("func: acc += %f\n", acc);
-#endif
+    
     free(args);
-    return NULL;
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
@@ -72,35 +66,17 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
         // compute dot product between kernel and input
         for (int j=0; j<n_c; j++){
-            n_f = in_size - 8 * j;
-            n_f = (n_f > 8) ? 8 : n_f;
-
-#ifdef DEBUG
-            printf("\nki_apply: chunk idx [%d]/[%d], # elements %d\n", j, n_c-1, n_f);
-            printf("ki_apply: K [");
-            for (int k=0; k<n_f; k++) printf("%3.2f ", ((float *) (K_o + 8 * j))[k]);
-            printf("]\n");
-            printf("ki_apply: I [");
-            for (int k=0; k<n_f; k++) printf("%3.2f ", ((float *) (I + 8 * j))[k]);
-            printf("]\n");
-#endif
             // allocate an argument holder (will be freed before a thread exits)
+            // convert subarrays into 256-bit chunks
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
-            // convert subarrays into 256-bit chunks
-            memcpy(&args->x, K_o + 8 * j, sizeof (float) * n_f);
-            memcpy(&args->y, I + 8 * j, sizeof (float) * n_f);
+            n_f = in_size - 8 * j;
+            n_f = (n_f > 8) ? 8 : n_f;
+            args->n_f = n_f;
+            args->x = K_o + 8 * j;
+            args->y = I + 8 * j;
             args->o = R_o;
 
-#ifdef DEBUG
-            printf("ki_apply: x [");
-            for (int k=0; k<8; k++) printf("%3.2f ", ((float *) &args->x)[k]);
-            printf("]\n");
-            printf("ki_apply: y [");
-            for (int k=0; k<8; k++) printf("%3.2f ", ((float *) &args->y)[k]);
-            printf("]\n");
-            printf("ki_apply: create thread %d\n", i * n_c + j);
-#endif
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
             args = NULL;
