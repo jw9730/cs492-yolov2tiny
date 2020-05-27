@@ -52,7 +52,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
     int i, j;
     struct args * args_list = malloc((sizeof (struct args)) * n_c);
-    pthread_t tid[n_c];
+    pthread_t tid[out_size * n_c];
 
     for (i=0; i<out_size; i++){
         // K_o: kernel vector
@@ -71,12 +71,12 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args.n_f = (n_f > 8) ? 8 : n_f;
             args.o = R_o;
             // run thread
-            pthread_create(tid + j, NULL, func, args_list + j);
+            pthread_create(tid + i * n_c + j, NULL, func, args_list + j);
         }
 
         // join threads
         for (j=0; j<n_c; j++){
-            pthread_join(tid[j], NULL);
+            pthread_join(tid[i * n_c + j], NULL);
         }
     }
 
