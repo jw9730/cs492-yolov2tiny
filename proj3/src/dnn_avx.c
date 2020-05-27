@@ -19,9 +19,6 @@ struct args {
 __m256 get_chunk(float * v, int n){
     __m256 c = _mm256_setzero_ps();
     memcpy((void *)&c, (void *)v, (size_t)((sizeof (float)) * n));
-#ifdef DEBUG
-    printf("get_chunk: copied %d bytes from v to c, c = %d\n", (sizeof (float)) * n, c);
-#endif
     return c;
 }
 
