@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #define MIN(x, y) ((x)>(y)? (y) : (x))
+#define DEBUG
 
 // - __m256: 256-bit vector containing 8 floats
 
@@ -39,6 +40,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // I: (in_size)
     // R: (out_size)
 
+#ifdef DEBUG
+    printf("ki_apply: got K %llx, I %llx, R %llx, in_size %d, out_size %d\n", K, I, R, in_size, out_size);
+#endif
+
     // number of chunks
     int n_c = ceil(in_size / 8);
     // holder for num_elements within a chunk (<= 8)
@@ -55,6 +60,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         // output address
         R_o = R + i;
 
+#ifdef DEBUG
+        printf("ki_apply: output idx %d. Kernel vector M[%llx...], out channel M[%llx]\n", i, R_o, K_o);
+#endif
+
         // compute dot product between kernel and input
         for (int j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
@@ -66,6 +75,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args->y = get_chunk(I + 8 * j, n_f);
             args->o = R_o;
 
+#ifdef DEBUG
+            printf("ki_apply: chunk idx %d, # elements %d\n", j, n_f);
+#endif
+
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
         }
@@ -73,8 +86,8 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
     for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
-            pthread_join(tid[i], NULL);
-            printf("thread %d ends\n", i);
+            pthread_join(tid[i * n_c + j], NULL);
+            printf("thread %d ends\n", i * n_c + j);
         }
     }
 }

@@ -173,28 +173,9 @@ class Conv2D(DnnNode):
 
     def run(self, counter):
         print("Conv2D: run start")
-        """
         # There's an error in deep layers when baseline and offloaded code are tested together
         # (NULL pointer access in .so library)
         # Only check for first layer output, if needed
-        # baseline
-        tic = time.time()
-        ptins = []
-        for i in range(0, parallelism):
-            ptins.append(np.pad(self.in_node.result, self.pad, mode='constant'))
-        for chunk in range(0, int(self.OC / parallelism) + 1):
-            pool = [Process(target=self.run_for_oc, args=(ptins[k], chunk, k)) for k in range(min(parallelism * (chunk+1), self.OC) - parallelism * chunk)]
-            for j in range(min(parallelism * (chunk + 1), self.OC) - parallelism * chunk):
-                pool[j].start()
-            for p in pool:
-                p.join()
-        self.result = np.ctypeslib.as_array(self.shm_result)
-        toc = time.time()
-        print("Conv2D: baseline elapsed time {}s".format(toc - tic))
-
-        assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output array of baseline method"\
-            .format(np.count_nonzero(np.isnan(self.result)))
-        """
 
         # offloaded
         # use pthread and AVX
@@ -242,9 +223,28 @@ class Conv2D(DnnNode):
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
-
         assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
-        # assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
+
+        # baseline
+        tic = time.time()
+        ptins = []
+        for i in range(0, parallelism):
+            ptins.append(np.pad(self.in_node.result, self.pad, mode='constant'))
+        for chunk in range(0, int(self.OC / parallelism) + 1):
+            pool = [Process(target=self.run_for_oc, args=(ptins[k], chunk, k)) for k in range(min(parallelism * (chunk+1), self.OC) - parallelism * chunk)]
+            for j in range(min(parallelism * (chunk + 1), self.OC) - parallelism * chunk):
+                pool[j].start()
+            for p in pool:
+                p.join()
+        self.result = np.ctypeslib.as_array(self.shm_result)
+        toc = time.time()
+        print("Conv2D: baseline elapsed time {}s".format(toc - tic))
+
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output array of baseline method"\
+            .format(np.count_nonzero(np.isnan(self.result)))
+
+        # correctness check
+        assert (full_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed"
         self.result = full_result
 
     def run_for_oc(self, ptin, chunk, k):
