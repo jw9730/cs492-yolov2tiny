@@ -72,10 +72,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
             printf("ki_apply: K [");
-            for (int k=0; k<n_f; k++) printf("%3.2f ", (float *) (K_o + 8 * j)[k]);
+            for (int k=0; k<n_f; k++) printf("%3.2f ", ((float *) (K_o + 8 * j))[k]);
             printf("]\n");
             printf("ki_apply: I [");
-            for (int k=0; k<n_f; k++) printf("%3.2f ", (float *) (I + 8 * j)[k]);
+            for (int k=0; k<n_f; k++) printf("%3.2f ", ((float *) (I + 8 * j))[k]);
             printf("]\n");
 #endif
             // allocate an argument holder (will be freed before a thread exits)
