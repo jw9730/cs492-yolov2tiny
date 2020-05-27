@@ -17,11 +17,11 @@ struct args {
 };
 
 __m256 get_chunk(float * v, int n){
-#ifdef DEBUG
-    printf("get_chunk: copy %d bytes from v to c\n", (sizeof (float)) * n);
-#endif
     __m256 c = _mm256_setzero_ps();
     memcpy((void *)&c, (void *)v, (size_t)((sizeof (float)) * n));
+#ifdef DEBUG
+    printf("get_chunk: copied %d bytes from v to c\n", (sizeof (float)) * n);
+#endif
     return c;
 }
 
