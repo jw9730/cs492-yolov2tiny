@@ -34,32 +34,36 @@ void * func(void * aux) {
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
-    assert((K != NULL) && (I != NULL) && (R != NULL));
     // K: (in_size * out_size), row major ordered
     // I: (in_size)
     // R: (out_size)
+    assert((K != NULL) && (I != NULL) && (R != NULL));
+
 #ifdef DEBUG
     printf("ki_apply: got K %p, I %p, R %p, in_size %d, out_size %d\n", K, I, R, in_size, out_size);
 #endif
-    // number of chunks
+    
+    // n_c: number of chunks
+    // n_f: holder for num_elements within a chunk (<= 8)
+    // args: holder for args struct
+    // K_o, R_o: holder for addresses
     int n_c = ceil((float)in_size / 8.0);
-    // holder for num_elements within a chunk (<= 8)
     int n_f;
-    // holder for args struct
     struct args * args = NULL;
-    // holder for addresses
     void * K_o = NULL;
     void * R_o = NULL;
 
-    pthread_t tid[out_size * n_c];
+    pthread_t tid[n_c];
     for (int i=0; i<out_size; i++){
-        // kernel vector
+        // K_o: kernel vector
+        // R_o: output address
         K_o = K + i * in_size;
-        // output address
         R_o = R + i;
+
 #ifdef DEBUG
         printf("\nki_apply: output idx [%d]/[%d]. Kernel vector M[%p...], out channel M[%p]\n", i, out_size-1, K_o, R_o);
 #endif
+        
         // compute dot product between kernel and input
         for (int j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
@@ -71,20 +75,15 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args->x = K_o + 8 * j;
             args->y = I + 8 * j;
             args->o = R_o;
-
             // run thread
-            pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
+            pthread_create(tid + j, NULL, func, (void *)(args));
         }
+
+        // join threads
         for (int j=0; j<n_c; j++){
-            pthread_join(tid[i * n_c + j], NULL);
+            pthread_join(tid[j], NULL);
         }
     }
-
-#ifdef DEBUG
-    printf("ki_apply: output [");
-    for (int i=0; i<out_size; i++) printf("%3.2f ", R[i]);
-    printf("]\n");
-#endif
 
     return;
 }
