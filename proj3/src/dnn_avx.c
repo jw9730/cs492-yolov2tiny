@@ -67,8 +67,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
             n_f = in_size - 8 * j;
-            n_f = (n_f > 8) ? 8 : n_f;
-            args->n_f = n_f;
+            args->n_f = (n_f > 8) ? 8 : n_f;
             args->x = K_o + 8 * j;
             args->y = I + 8 * j;
             args->o = R_o;
@@ -76,16 +75,11 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
         }
-    }
-
-    for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
             pthread_join(tid[i * n_c + j], NULL);
-#ifdef DEBUG
-            printf("thread %d ends\n", i * n_c + j);
-#endif
         }
     }
+}
 
 
 #ifdef DEBUG
