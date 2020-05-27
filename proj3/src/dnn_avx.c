@@ -17,8 +17,9 @@ struct args {
 
 void * func(void * aux) {
     struct args * p = (struct args *) aux;
+    printf("%p\n", p);
+    /*
     int n_f = p->n_f;
-    printf("%d\n", n_f);
 
     __m256 x = _mm256_setzero_ps();
     __m256 y = _mm256_setzero_ps();
@@ -32,6 +33,7 @@ void * func(void * aux) {
         acc += r[i];
     }
     *(p->o) += acc;
+    */
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
