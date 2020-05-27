@@ -1,5 +1,5 @@
 openblas.so: dnn_openblas.c
-	gcc -shared -fPIC -o $@ $^ -lblas
+	gcc -shared -fPIC -o $@ $^ -cblas
 
 avx.so: dnn_avx.c
 	gcc -o $@ $^ -mavx2 -lpthread
