@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-//#define DEBUG
+#define DEBUG
 
 // - __m256: 256-bit vector containing 8 floats
 
@@ -71,7 +71,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
-
             printf("ki_apply: K [");
             for (int i=0; i<n_f; i++) printf("%3.2f ", (float *) (K_o+8*j));
             printf("]\n");
@@ -94,7 +93,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             printf("ki_apply: y [");
             for (int i=0; i<8; i++) printf("%3.2f ", (float *) &args->y[i]);
             printf("]\n");
-            
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
             // run thread
