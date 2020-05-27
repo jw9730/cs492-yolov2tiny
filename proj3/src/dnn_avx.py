@@ -204,12 +204,12 @@ class Conv2D(DnnNode):
         # pixel-wise offload
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
-                pix_start = time.time()
+                w0 = self.SW * ow
+                h0 = self.SH * oh
+
                 # 1d input: (KW * KH * IC,)
                 # should be arranged contiguously in memory
                 # cast to float pointer type
-                w0 = self.SW * ow
-                h0 = self.SH * oh
                 in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
 
@@ -221,8 +221,6 @@ class Conv2D(DnnNode):
 
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
-                pix_end = time.time()
-                print("Conv2D: pixel execution time {}s".format(pix_end-pix_start))
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
