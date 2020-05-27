@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#define MIN(x, y) ((x)>(y)? (y) : (x))
 
 // - __m256: 256-bit vector containing 8 floats
 
@@ -60,7 +61,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args = malloc(sizeof (struct args));
 
             // convert subarrays into 256-bit chunks
-            n_f = min(in_size - 8 * j, 8);
+            n_f = MIN(in_size - 8 * j, 8);
             args->x = get_chunk(K_o + 8 * j, n_f);
             args->y = get_chunk(I + 8 * j, n_f);
             args->o = R_o;
