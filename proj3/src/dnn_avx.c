@@ -79,8 +79,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             pthread_join(tid[i * n_c + j], NULL);
         }
     }
-}
-
 
 #ifdef DEBUG
     printf("ki_apply: output [");
