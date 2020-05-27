@@ -4,6 +4,8 @@ openblas.so: dnn_openblas.c
 avx.so: dnn_avx.c
 	gcc -o $@ $^ -mavx2 -lpthread
 
+all: openblas.so avx.so
+
 clean:
 	rm -f openblas.so
 	rm -f avx.so
