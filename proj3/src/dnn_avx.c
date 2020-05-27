@@ -70,7 +70,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             n_f = (n_f > 8) ? 8 : n_f;
 
 #ifdef DEBUG
-            printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
+            printf("\nki_apply: chunk idx [%d]/[%d], # elements %d\n", j, n_c-1, n_f);
             printf("ki_apply: K [");
             for (int k=0; k<n_f; k++) printf("%3.2f ", ((float *) (K_o + 8 * j))[k]);
             printf("]\n");
