@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-//#define DEBUG
 
 // - __m256: 256-bit vector containing 8 floats
 
