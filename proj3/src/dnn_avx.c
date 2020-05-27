@@ -85,15 +85,11 @@ void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
             // run thread
             pthread_create(tid + ofs, NULL, func, args);
         }
-    }
-
-    // join threads
-    for (i=0; i<out_size; i++){
         for (j=0; j<n_c; j++){
             pthread_join(tid[i * n_c + j], NULL);
         }
     }
-
+    
     free(args_list);
     free(tid);
 
