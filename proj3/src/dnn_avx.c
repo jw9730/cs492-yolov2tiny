@@ -17,12 +17,26 @@ struct args {
 };
 
 __m256 get_chunk(float * v, int n){
+
+#ifdef DEBUG
+    printf("get_chunk: v [");
+    for (int i=0; i<n; i++) printf("%3.0f ", v[i]);
+    printf("]\n");
+#endif
+
     __m256 c = _mm256_setzero_ps();
     memcpy((void *)&c, (void *)v, (size_t)((sizeof (float)) * n));
+
+#ifdef DEBUG
+    printf("get_chunk: c [");
+    for (int i=0; i<8; i++) printf("%3.0f ", *(float *)&c[i]);
+    printf("]\n");
+#endif
+
     return c;
 }
 
-void *func(void * aux) {
+void * func(void * aux) {
 #ifdef DEBUG
     printf("func: apply operation, aux @ %p\n", aux);
 #endif
