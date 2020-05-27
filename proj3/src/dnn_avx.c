@@ -23,6 +23,9 @@ __m256 get_chunk(float * v, int n){
 }
 
 void *func(void * aux) {
+#ifdef DEBUG
+    printf("func: apply operation, aux @ %p\n", aux);
+#endif
     struct args * args = (struct args *) aux;
     // compute vector multiplication
     __m256 o = _mm256_mul_ps(args->x, args->y);
@@ -76,7 +79,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args->o = R_o;
 
 #ifdef DEBUG
-            printf("ki_apply: chunk idx %d, # elements %d\n", j, n_f);
+            printf("ki_apply: chunk idx %d, # elements %d, args @ %p\n", j, n_f, args);
 #endif
 
             // run thread
