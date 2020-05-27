@@ -68,9 +68,10 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // holder for num_elements within a chunk (<= 8)
     int n_f;
     // holder for args struct
-    struct args * args;
+    struct args * args = NULL;
     // holder for addresses
-    void * K_o, * R_o;
+    void * K_o = NULL;
+    void * R_o = NULL;
 
     pthread_t tid[out_size * n_c];
     for (int i=0; i<out_size; i++){
@@ -89,7 +90,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args = malloc(sizeof (struct args));
             if (!args){
                 printf("MALLOC FAILURE");
-                ASSERT(0);
+                assert(0);
             }
 
             // convert subarrays into 256-bit chunks
@@ -108,6 +109,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 #endif
             // run thread
             //pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
+            args = NULL;
         }
     }
 
