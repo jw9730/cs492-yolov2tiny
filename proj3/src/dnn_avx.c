@@ -17,8 +17,6 @@ struct args {
 
 void * func(void * aux) {
     struct args * p = (struct args *) aux;
-    printf("%p\n", p);
-    /*
     int n_f = p->n_f;
 
     __m256 x = _mm256_setzero_ps();
@@ -33,7 +31,6 @@ void * func(void * aux) {
         acc += r[i];
     }
     *(p->o) += acc;
-    */
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
@@ -48,7 +45,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // n_f: holder for num_elements within a chunk (<= 8)
     void * K_o = NULL;
     void * R_o = NULL;
-    struct args args;
+    struct args * args;
     int n_c = ceil((float)in_size / 8.0);
     int n_f;
 
@@ -67,14 +64,14 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
             ofs = i * n_c + j;
-            args = args_list[ofs];
-            args.x = K_o + 8 * j;
-            args.y = I + 8 * j;
+            args = args_list + ofs;
+            args->x = K_o + 8 * j;
+            args->y = I + 8 * j;
             n_f = in_size - 8 * j;
-            args.n_f = (n_f > 8) ? 8 : n_f;
-            args.o = R_o;
+            args->n_f = (n_f > 8) ? 8 : n_f;
+            args->o = R_o;
             // run thread
-            pthread_create(tid + ofs, NULL, func, args_list + ofs);
+            pthread_create(tid + ofs, NULL, func, args);
         }
     }
 
