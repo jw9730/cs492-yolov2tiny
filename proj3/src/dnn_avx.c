@@ -17,11 +17,11 @@ struct args {
 };
 
 __m256 get_chunk(float * v, int n){
+#ifdef DEBUG
+    printf("get_chunk: copy %d bytes from v to c\n", (sizeof (float)) * n);
+#endif
     __m256 c = _mm256_setzero_ps();
     memcpy((void *)&c, (void *)v, (size_t)((sizeof (float)) * n));
-#ifdef DEBUG
-    printf("get_chunk: c = %d\n", c);
-#endif
     return c;
 }
 
@@ -34,8 +34,12 @@ void *func(void * aux) {
     __m256 o = _mm256_mul_ps(args->x, args->y);
     float * r = (float *) &o;
     // accumulate result in output address
-    *(args->o) += r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
+    float acc = r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
+    *(args->o) += acc;
     free(args);
+#ifdef DEBUG
+    printf("func: acc += %f\n", acc);
+#endif
     return NULL;
 }
 
