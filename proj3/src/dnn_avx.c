@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+//#define DEBUG
 
 // - __m256: 256-bit vector containing 8 floats
 
@@ -33,7 +34,7 @@ void * func(void * aux) {
     *(p->o) += acc;
 }
 
-void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
+void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
     // K: (in_size * out_size), row major ordered
     // I: (in_size)
     // R: (out_size)
@@ -43,8 +44,8 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // args: holder for args struct
     // n_c: number of chunks
     // n_f: holder for num_elements within a chunk (<= 8)
-    void * K_o = NULL;
-    void * R_o = NULL;
+    float * K_o = NULL;
+    float * R_o = NULL;
     struct args * args;
     int n_c = ceil((float)in_size / 8.0);
     int n_f;
@@ -59,6 +60,17 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         K_o = K + i * in_size;
         R_o = R + i;
         
+#ifdef DEBUG
+        if (i == 0){
+            printf("I[:]: ");
+            for (j=0; j<in_size; j++) printf("%f ", I[j]);
+            printf("\n");
+            printf("K[:, 0]: ");
+            for (j=0; j<in_size; j++) printf("%f ", ((float *)K_o)[j]);
+            printf("\n");
+        }
+#endif
+
         // compute dot product between kernel and input
         for (j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)

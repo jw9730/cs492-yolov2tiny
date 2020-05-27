@@ -195,11 +195,11 @@ class Conv2D(DnnNode):
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         full_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
 
-        # 1d kernel: (KW * KH * IC * OC,)
-        # should be arranged contiguously in memory, in row major order
+        # 1d kernel: (KW * KH * IC, OC)
+        # should be arranged contiguously in memory, in column major order
         # cast to float pointer type
-        k_1d = np.ascontiguousarray(self.weights.squeeze().astype(np.float32))
-        k_p = k_1d.ctypes.data_as(c_float_p)
+        k_2d = np.asfortranarray(self.weights.reshape((-1, self.OC)).astype(np.float32))
+        k_p = k_2d.ctypes.data_as(c_float_p)
 
         # pixel-wise offload
         for ow in range(0, self.OW):
@@ -210,8 +210,11 @@ class Conv2D(DnnNode):
                 # 1d input: (KW * KH * IC,)
                 # should be arranged contiguously in memory
                 # cast to float pointer type
-                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
+                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
+
+                #print(k_2d[:, 0])
+                #print(in_1d[:])
 
                 # output buffer
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
@@ -221,6 +224,11 @@ class Conv2D(DnnNode):
 
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
+
+                # vectorized version (as baseline)
+                #tmp = (np.ctypeslib.as_array(buf_p, (self.OC,)) - np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()).mean()
+                #print("mean error: {}".format(tmp))
+                #assert tmp < 1e-2
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
