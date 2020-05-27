@@ -20,7 +20,7 @@ __m256 get_chunk(float * v, int n){
 
 #ifdef DEBUG
     printf("get_chunk: v [");
-    for (int i=0; i<n; i++) printf("%3.0f ", v[i]);
+    for (int i=0; i<n; i++) printf("%3.2f ", v[i]);
     printf("]\n");
 #endif
 
@@ -29,7 +29,7 @@ __m256 get_chunk(float * v, int n){
 
 #ifdef DEBUG
     printf("get_chunk: c [");
-    for (int i=0; i<8; i++) printf("%3.0f ", *(float *)&c[i]);
+    for (int i=0; i<8; i++) printf("%3.2f ", *(float *)&c[i]);
     printf("]\n");
 #endif
 
