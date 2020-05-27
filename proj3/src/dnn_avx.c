@@ -74,13 +74,12 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
             // convert subarrays into 256-bit chunks
             n_f = MIN(in_size - 8 * j, 8);
-            args->x = get_chunk(K_o + 8 * j, n_f);
-            args->y = get_chunk(I + 8 * j, n_f);
-            args->o = R_o;
-
 #ifdef DEBUG
             printf("ki_apply: chunk idx %d, # elements %d, args @ %p\n", j, n_f, args);
 #endif
+            args->x = get_chunk(K_o + 8 * j, n_f);
+            args->y = get_chunk(I + 8 * j, n_f);
+            args->o = R_o;
 
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
