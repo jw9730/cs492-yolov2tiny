@@ -89,6 +89,9 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // allocate an argument holder (will be freed before a thread exits)
             args = malloc(sizeof (struct args));
             memset(args, 0, sizeof (struct args));
+            args->x = _mm256_setzero_ps();
+            args->y = _mm256_setzero_ps();
+            args->o = NULL;
 
             // convert subarrays into 256-bit chunks
             n_f = in_size - 8 * j;
