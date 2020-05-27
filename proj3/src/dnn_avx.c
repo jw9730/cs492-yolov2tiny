@@ -61,7 +61,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         R_o = R + i;
 
 #ifdef DEBUG
-        printf("ki_apply: output idx %d. Kernel vector M[%p...], out channel M[%p]\n", i, R_o, K_o);
+        printf("ki_apply: output idx %d. Kernel vector M[%p...], out channel M[%p]\n", i, K_o, R_o);
 #endif
 
         // compute dot product between kernel and input
