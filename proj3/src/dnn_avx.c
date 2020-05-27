@@ -65,7 +65,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args->o = R_o;
 
             // run thread
-            pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
+            pthread_create(tid + (i * n_c + j), NULL, &func, (void *)(args));
         }
     }
 
