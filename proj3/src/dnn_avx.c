@@ -51,8 +51,8 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     int n_f;
 
     int i, j;
-    struct args * args_list = malloc((sizeof (struct args)) * n_c);
-    pthread_t tid[out_size * n_c];
+    struct args * args_list = malloc((sizeof (struct args)) * out_size * n_c);
+    pthread_t * tid = malloc((sizeof (pthread_t)) * out_size * n_c);
 
     for (i=0; i<out_size; i++){
         // K_o: kernel vector
@@ -64,23 +64,26 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         for (j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
-            args = args_list[j];
+            args = args_list[i * n_c + j];
             args.x = K_o + 8 * j;
             args.y = I + 8 * j;
             n_f = in_size - 8 * j;
             args.n_f = (n_f > 8) ? 8 : n_f;
             args.o = R_o;
             // run thread
-            pthread_create(tid + i * n_c + j, NULL, func, args_list + j);
+            pthread_create(tid + i * n_c + j, NULL, func, args_list + i * n_c + j);
         }
+    }
 
-        // join threads
+    // join threads
+    for (i=0; i<out_size; i++){
         for (j=0; j<n_c; j++){
             pthread_join(tid[i * n_c + j], NULL);
         }
     }
 
     free(args_list);
+    free(tid);
 
     return;
 }
