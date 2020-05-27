@@ -23,10 +23,8 @@ void * func(void * aux) {
 #ifdef DEBUG
     printf("func: compute vector multiplication, (v1 @ %p, v2 @ %p)\n", &args->x, &args->y);
 #endif
-    __m256 x = _mm256_setzero_ps();
-    __m256 y = _mm256_setzero_ps();
-    memcpy(&x, &args->x, (sizeof (float)) * 8);
-    memcpy(&y, &args->y, (sizeof (float)) * 8);
+    __m256 x = _mm256_loadu_ps(&args->x);
+    __m256 y = _mm256_loadu_ps(&args->y);
     __m256 o = _mm256_mul_ps(x, y);
     float * r = (float *) &o;
 #ifdef DEBUG
@@ -111,7 +109,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
     for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
-            args = pthread_join(tid[i * n_c + j], NULL);
+            pthread_join(tid[i * n_c + j], NULL);
 #ifdef DEBUG
             printf("thread %d ends\n", i * n_c + j);
 #endif
