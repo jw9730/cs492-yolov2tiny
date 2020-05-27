@@ -21,9 +21,7 @@ void get_chunk(float * c, float * v, int n){
     for (int i=0; i<n; i++) printf("%3.2f ", v[i]);
     printf("]\n");
 #endif
-
-    memcpy((void *)c, (void *)v, (size_t)((sizeof (float)) * n));
-    
+    memcpy(c, v, (sizeof (float) * n));
 #ifdef DEBUG
     printf("get_chunk: c [");
     for (int i=0; i<8; i++) printf("%3.2f ", c[i]);
@@ -39,27 +37,18 @@ void * func(void * aux) {
     // compute vector multiplication
     __m256 o = _mm256_mul_ps(args->x, args->y);
     float * r = (float *) &o;
-
-#ifdef DEBUG
-    printf("func: x * y [");
-    for (int i=0; i<8; i++) printf("%3.2f ", r[i]);
-    printf("]\n");
-#endif
-
     // accumulate result in output address
     float acc = r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
     *(args->o) += acc;
 #ifdef DEBUG
     printf("func: acc += %f\n", acc);
 #endif
-
     free(args);
     return NULL;
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     assert((K != NULL) && (I != NULL) && (R != NULL));
-
     // K: (in_size * out_size), row major ordered
     // I: (in_size)
     // R: (out_size)
@@ -84,33 +73,26 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         K_o = K + i * in_size;
         // output address
         R_o = R + i;
-
 #ifdef DEBUG
         printf("\nki_apply: output idx [%d]/[%d]. Kernel vector M[%p...], out channel M[%p]\n", i, out_size-1, K_o, R_o);
 #endif
-
         // compute dot product between kernel and input
         for (int j=0; j<n_c; j++){
-            // allocate an argument holder (will be freed before a thread exits)
-            args = malloc(sizeof (struct args));
-            memset(args, 0, sizeof (struct args));
-
-            // convert subarrays into 256-bit chunks
-            n_f = in_size - 8 * j;
-            n_f = (n_f > 8) ? 8 : n_f;
-
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
 #endif
-
+            // allocate an argument holder (will be freed before a thread exits)
+            args = malloc(sizeof (struct args));
+            memset(args, 0, sizeof (struct args));
+            // convert subarrays into 256-bit chunks
+            n_f = in_size - 8 * j;
+            n_f = (n_f > 8) ? 8 : n_f;
             get_chunk((float *) &args->x, K_o + 8 * j, n_f);
             get_chunk((float *) &args->y, I + 8 * j, n_f);
             args->o = R_o;
-
 #ifdef DEBUG
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
-
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
             args = NULL;
@@ -119,7 +101,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
 
     for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
-            //pthread_join(tid[i * n_c + j], NULL);
+            pthread_join(tid[i * n_c + j], NULL);
             printf("thread %d ends\n", i * n_c + j);
         }
     }
