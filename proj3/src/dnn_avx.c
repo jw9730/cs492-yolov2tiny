@@ -90,15 +90,19 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             // convert subarrays into 256-bit chunks
             n_f = in_size - 8 * j;
             n_f = (n_f > 8) ? 8 : n_f;
+
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
 #endif
-            get_chunk(&args->x, K_o + 8 * j, n_f);
-            get_chunk(&args->y, I + 8 * j, n_f);
+
+            get_chunk((float *) &args->x, K_o + 8 * j, n_f);
+            get_chunk((float *) &args->y, I + 8 * j, n_f);
             args->o = R_o;
+
 #ifdef DEBUG
             printf("ki_apply: create thread %d\n", i * n_c + j);
 #endif
+
             // run thread
             pthread_create(tid + (i * n_c + j), NULL, func, (void *)(args));
             args = NULL;
