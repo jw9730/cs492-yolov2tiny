@@ -89,12 +89,15 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args = malloc(sizeof (struct args));
 
             // convert subarrays into 256-bit chunks
-            n_f = (in_size - 8 * j > 8)? 8 : (in_size - 8 * j);
+            n_f = in_size - 8 * j;
+            n_f = (n_f > 8) ? 8 : n_f;
 #ifdef DEBUG
             printf("\nki_apply: chunk idx [%d]/[%d], # elements %d, args @ %p\n", j, n_c-1, n_f, args);
-#endif
-            args->x = get_chunk(K_o + 8 * j, n_f);
-            args->y = get_chunk(I + 8 * j, n_f);
+#endif      
+            args->x = _mm256_setzero_ps();
+            args->y = _mm256_setzero_ps();
+            //args->x = get_chunk(K_o + 8 * j, n_f);
+            //args->y = get_chunk(I + 8 * j, n_f);
             args->o = R_o;
 #ifdef DEBUG
             printf("ki_apply: create thread %d\n", i * n_c + j);
