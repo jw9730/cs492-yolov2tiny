@@ -44,15 +44,15 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     printf("ki_apply: got K %p, I %p, R %p, in_size %d, out_size %d\n", K, I, R, in_size, out_size);
 #endif
     
+    // K_o, R_o: holder for addresses
+    // args: holder for args struct
     // n_c: number of chunks
     // n_f: holder for num_elements within a chunk (<= 8)
-    // args: holder for args struct
-    // K_o, R_o: holder for addresses
-    int n_c = ceil((float)in_size / 8.0);
-    int n_f;
-    struct args args;
     void * K_o = NULL;
     void * R_o = NULL;
+    struct args args;
+    int n_c = ceil((float)in_size / 8.0);
+    int n_f;
 
     struct args args_list[n_c];
     pthread_t tid[n_c];
@@ -78,12 +78,12 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             args.y = I + 8 * j;
             args.o = R_o;
             // run thread
-            pthread_create(tid + j, NULL, func, args_list + j);
+            pthread_create(tid + j, NULL, func, &args);
         }
 
         // join threads
         for (int j=0; j<n_c; j++){
-            pthread_join(tid[j], NULL);
+            pthread_join(tid + j, NULL);
         }
     }
 
