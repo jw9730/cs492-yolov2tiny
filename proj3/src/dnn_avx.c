@@ -62,11 +62,11 @@ void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
         
 #ifdef DEBUG
         if (i == 0){
-            printf("I[:]: ");
-            for (j=0; j<in_size; j++) printf("%f ", I[j]);
-            printf("\n");
             printf("K[:, 0]: ");
             for (j=0; j<in_size; j++) printf("%f ", ((float *)K_o)[j]);
+            printf("\n");
+            printf("I[:]: ");
+            for (j=0; j<in_size; j++) printf("%f ", I[j]);
             printf("\n");
         }
 #endif
