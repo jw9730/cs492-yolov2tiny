@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define DEBUG
+//#define DEBUG
 
 // - __m256: 256-bit vector containing 8 floats
 
@@ -54,7 +54,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     int n_c = ceil((float)in_size / 8.0);
     int n_f;
 
-    struct args args_list[n_c];
+    struct args * args_list = malloc((sizeof (struct args)) * n_c);
     pthread_t tid[n_c];
     int i, j;
     for (i=0; i<out_size; i++){
@@ -86,6 +86,6 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
             pthread_join(tid[j], NULL);
         }
     }
-
+    free(args_list);
     return;
 }
