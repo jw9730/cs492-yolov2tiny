@@ -87,11 +87,7 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         // compute dot product between kernel and input
         for (int j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
-            args = malloc(sizeof (struct args));
-            if (!args){
-                printf("MALLOC FAILURE");
-                assert(0);
-            }
+            args = calloc(1, sizeof (struct args));
 
             // convert subarrays into 256-bit chunks
             n_f = in_size - 8 * j;
