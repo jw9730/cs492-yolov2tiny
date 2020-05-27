@@ -17,13 +17,13 @@ struct args {
 };
 
 void * func(void * aux) {
-    struct args * args = (struct args *) aux;
-    int n_f = args->n_f;
+    struct args * p = (struct args *) aux;
+    int n_f = p->n_f;
 
     __m256 x = _mm256_setzero_ps();
     __m256 y = _mm256_setzero_ps();
-    memcpy(&x, args->x, sizeof (float) * n_f);
-    memcpy(&y, args->y, sizeof (float) * n_f);
+    memcpy(&x, p->x, sizeof (float) * n_f);
+    memcpy(&y, p->y, sizeof (float) * n_f);
     __m256 o = _mm256_mul_ps(x, y);
     
     float * r = (float *) &o;
@@ -31,9 +31,7 @@ void * func(void * aux) {
     for (int i=0; i<8; i++){
         acc += r[i];
     }
-    *(args->o) += acc;
-    
-    free(args);
+    *(p->o) += acc;
 }
 
 void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
@@ -52,10 +50,11 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     // K_o, R_o: holder for addresses
     int n_c = ceil((float)in_size / 8.0);
     int n_f;
-    struct args * args = NULL;
+    struct args args;
     void * K_o = NULL;
     void * R_o = NULL;
 
+    struct args args_list[n_c];
     pthread_t tid[n_c];
     int i, j;
     for (i=0; i<out_size; i++){
@@ -72,14 +71,14 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
         for (j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
-            args = malloc(sizeof (struct args));
+            args = args_list[j];
             n_f = in_size - 8 * j;
-            args->n_f = (n_f > 8) ? 8 : n_f;
-            args->x = K_o + 8 * j;
-            args->y = I + 8 * j;
-            args->o = R_o;
+            args.n_f = (n_f > 8) ? 8 : n_f;
+            args.x = K_o + 8 * j;
+            args.y = I + 8 * j;
+            args.o = R_o;
             // run thread
-            pthread_create(tid + j, NULL, func, (void *)(args));
+            pthread_create(tid + j, NULL, func, args_list + j * (sizeof (struct args)));
         }
 
         // join threads
