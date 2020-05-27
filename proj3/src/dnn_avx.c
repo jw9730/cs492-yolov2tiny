@@ -112,7 +112,9 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     for (int i=0; i<out_size; i++){
         for (int j=0; j<n_c; j++){
             args = pthread_join(tid[i * n_c + j], NULL);
+#ifdef DEBUG
             printf("thread %d ends\n", i * n_c + j);
+#endif
         }
     }
 
