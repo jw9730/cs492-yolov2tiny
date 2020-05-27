@@ -18,6 +18,8 @@ class YOLO_V2_TINY(object):
                 y2t_w = pickle.load(h)
             elif "3.5" in sys.version:
                 y2t_w = pickle.load(h, encoding='latin1')
+            elif "3.6" in sys.version:
+                y2t_w = pickle.load(h, encoding='latin1')
             else:
                 raise Exception("Unknown python version")
         return y2t_w
