@@ -198,13 +198,8 @@ class Conv2D(DnnNode):
         mylib.matmul(in_p, k_p, out_p, n_pixels, kernel_in, kernel_out)  # apply filter as a matrix multiplication
         toeplitz_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
 
-        # correctness check
-        toeplitz_ref = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
-        assert (toeplitz_result - toeplitz_ref).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((toeplitz_result - toeplitz_ref).mean())
-
         toc = time.time()
         print("Conv2D: Toeplitz-offloaded elapsed time {}s".format(toc - tic))
-        self.result = toeplitz_result
 
         """
         # 2. pixel-wise offload
@@ -254,10 +249,9 @@ class Conv2D(DnnNode):
         assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
         
         # correctness check
-        assert (full_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
-        
-        self.result = pixelwise_result
+        assert (toeplitz_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
         """
+        self.result = toeplitz_result
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k

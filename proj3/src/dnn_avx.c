@@ -117,7 +117,7 @@ void ki_apply(float * K, float * I, float * R, int in_channels, int out_channels
         out_residue -= n_outs;
     }
 
-    for (int i=0; i<=t; i++){
+    for (int i=0; i<t; i++){
         // join thread
         pthread_join(tid[i], NULL);
     }
@@ -192,6 +192,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
     assert((I != NULL) && (K != NULL) && (R != NULL));
+    assert(MAX_THREADS >= 8);
 
     // dynamic threading
     int MAX_THREADS_PIX = 2;
@@ -231,6 +232,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     pthread_t tid[MAX_THREADS];
     struct mm_args args_list[MAX_THREADS];
     int t_pix = 0, t_out = 0;
+    int t_pix_max = MAX_THREADS_PIX, t_out_max = MAX_THREADS_OUT;
 
     // loop variables
     struct mm_args * args = args_list;
@@ -255,23 +257,33 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
 
             // run thread
             pthread_create(tid + (t_pix * MAX_THREADS_OUT + t_out), NULL, mm_func, args);
+            //printf("%d, %d\n", t_pix, t_out);
             args++;
         
             // processed output boundary, exit
-            if (out_residue < out_per_thread) break;
+            if (out_residue < out_per_thread){
+                t_out_max = t_out + 1;
+                break;
+            }
             // update loop vars
             out_residue -= out_per_thread;
         }
 
         // processed input boundary, exit
-        if (in_residue < pix_per_thread) break;
+        if (in_residue < pix_per_thread){
+            t_pix_max = t_pix + 1;
+            break;
+        }
         // update loop vars
         in_residue -= pix_per_thread;
     }
 
-    for (int i=0; i<t_pix; i++){
-        for (int j=0; j<t_out; j++){
+    //printf("<%d, %d>\n", t_pix_max, t_out_max);
+
+    for (int i=0; i<t_pix_max; i++){
+        for (int j=0; j<t_out_max; j++){
             // join thread
+            //printf("%d, %d\n", i, j);
             pthread_join(tid[i * MAX_THREADS_OUT + j], NULL);
         }
     }
