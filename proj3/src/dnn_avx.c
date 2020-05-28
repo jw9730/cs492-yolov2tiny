@@ -61,7 +61,6 @@ void * mm_func(void * aux) {
             memcpy(&vy, y, sizeof(float) * residue);
             __m256 vo = _mm256_mul_ps(vx, vy);
             acc = _mm256_add_ps(acc, vo);
-
             float * res = (float *) &acc;
             for (int k=0; k<8; k++) *o += res[k];
         }
@@ -588,17 +587,7 @@ void * mp_func(void * aux) {
         __m256 vm = _mm256_set1_ps(-1e20);
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
-            // reference: https://stackoverflow.com/questions/9795529/how-to-find-the-horizontal-maximum-in-a-256-bit-avx-vector
-            __m256 v1 = _mm256_max_ps(vm, vx); // e.g. v1=[1 2 3 4 5 6 7 8]
-            __m256 v2 = _mm256_permute_ps(v1, 147); // 147: rotate left by upper 4 elements and lower 4 elements separately, v2=[2 3 4 1 6 7 8 5]
-            __m256 v3 = _mm256_max_ps(v1, v2); // v3=[2 3 4 4 6 7 8 8]
-            __m256 v4 = _mm256_permute_ps(v3, 147); // v4=[3 4 4 2 7 8 8 6]
-            __m256 v5 = _mm256_max_ps(v3, v4); // v5=[3 4 4 4 7 8 8 8]
-            __m256 v6 = _mm256_permute_ps(v5, 147); // v6=[4 4 4 3 8 8 8 7]
-            vm = _mm256_max_ps(v5, v6);//contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
-            float vm1 = ((float *)&vm)[0];
-            float vm2 = ((float *)&vm)[4];
-            vm = _mm256_set1_ps(vm1 > vm2 ? vm1 : vm2);
+            vm = _mm256_max_ps(vm, vx);
             // update loop variables
             residue -= 8; x += 8;
         }
@@ -606,13 +595,14 @@ void * mp_func(void * aux) {
         assert(residue<=8);
         __m256 vx = _mm256_set1_ps(-1e20);
         memcpy(&vx, x, sizeof(float) * residue);
+        // reference: https://stackoverflow.com/questions/9795529/how-to-find-the-horizontal-maximum-in-a-256-bit-avx-vector
         __m256 v1 = _mm256_max_ps(vm, vx); // e.g. v1=[1 2 3 4 5 6 7 8]
         __m256 v2 = _mm256_permute_ps(v1, 147); // 147: rotate left by upper 4 elements and lower 4 elements separately, v2=[2 3 4 1 6 7 8 5]
         __m256 v3 = _mm256_max_ps(v1, v2); // v3=[2 3 4 4 6 7 8 8]
         __m256 v4 = _mm256_permute_ps(v3, 147); // v4=[3 4 4 2 7 8 8 6]
         __m256 v5 = _mm256_max_ps(v3, v4); // v5=[3 4 4 4 7 8 8 8]
         __m256 v6 = _mm256_permute_ps(v5, 147); // v6=[4 4 4 3 8 8 8 7]
-        vm = _mm256_max_ps(v5, v6);//contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
+        vm = _mm256_max_ps(v5, v6); // contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
         float vm1 = ((float *)&vm)[0];
         float vm2 = ((float *)&vm)[4];
         *o = vm1 > vm2 ? vm1 : vm2;
