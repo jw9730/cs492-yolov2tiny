@@ -3,7 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/avx.so" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/avx.so" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.c" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -90,7 +91,7 @@
       <workItem from="1589079188736" duration="10777000" />
       <workItem from="1589934535301" duration="11028000" />
       <workItem from="1590553614042" duration="1446000" />
-      <workItem from="1590555129557" duration="33545000" />
+      <workItem from="1590555129557" duration="39997000" />
     </task>
     <servers />
   </component>

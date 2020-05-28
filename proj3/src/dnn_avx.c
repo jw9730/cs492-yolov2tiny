@@ -9,7 +9,7 @@
 
 /* __m256: 256-bit vector containing 8 floats */
 
-/* matrix-matrix multiplication */
+/* MAT_MUL */
 // common arguments
 struct mm_global {
     int n_pixels;
@@ -169,12 +169,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     }
 }
 
-
-
-
-
-
-/* channel-wise operations */
+/* BIAS_ADD */
 struct ba_global {
     int n_pixel;
     int n_chunks;
@@ -187,7 +182,6 @@ struct ba_args {
     int n_o;
 };
 void * ba_func(void * aux) {
-    // arguments
     struct ba_args * args = (struct ba_args *) aux;
     int n_pixel = args->G->n_pixel;
     int n_chunks = args->G->n_chunks;
@@ -206,23 +200,22 @@ void * ba_func(void * aux) {
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
             __m256 vo = _mm256_add_ps(vx, vy);
-            memcpy(o, &vo, 8 * sizeof(float));
+            memcpy(o, &vo, sizeof(float) * 8);
             // update loop variables
             residue -= 8; x += 8; o += 8;
         }
         // handle last chunk
+        assert(residue<=8);
         __m256 vx = _mm256_setzero_ps();
-        memcpy(&vx, x, residue * sizeof(float));
+        memcpy(&vx, x, sizeof(float) * residue);
         __m256 vo = _mm256_add_ps(vx, vy);
-        memcpy(o, &vo, residue * sizeof(float));
+        memcpy(o, &vo, sizeof(float) * residue);
     }
 }
-/* channel-wise addition */
 void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
-    // I: (n_pixel, n_channel), column major ordered
+    // I: (n_channel, n_pixel), row major ordered
     // B: (n_channel)
-    // R: (n_pixel, n_channel), column major ordered
-    assert((I != NULL) && (B != NULL) && (R != NULL));
+    // R: (n_channel, n_pixel), row major ordered
 
     // threading parameters
     int out_per_thread = ceil((float) n_channel / (float) MAX_THREADS);
@@ -276,11 +269,7 @@ void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
     }
 }
 
-
-
-
-
-/* channel-wise operations */
+/* BATCH_NORMALIZATION */
 struct bn_global {
     int n_pixel;
     int n_chunks;
@@ -334,13 +323,12 @@ void * bn_func(void * aux) {
         memcpy(o, &vo, residue * sizeof(float));
     }
 }
-/* channel-wise addition */
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int n_pixel, int n_channel){
-    // I: (n_pixel, n_channel), column major ordered
+    // I: (n_channel, n_pixel), row major ordered
     // M: (n_channel)
     // G: (n_channel)
     // V: (n_channel)
-    // R: (n_pixel, n_channel), column major ordered
+    // R: (n_channel, n_pixel), row major ordered
 
     // threading parameters
     int out_per_thread = ceil((float) n_channel / (float) MAX_THREADS);
@@ -401,12 +389,7 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
     }
 }
 
-
-
-
-
-
-/* channel-wise operations */
+/* LEAKY_RELU */
 struct lr_args {
     float * I_o;
     float * R_o;
@@ -440,9 +423,7 @@ void * lr_func(void * aux) {
     __m256 vo = _mm256_max_ps(vx, vl);
     memcpy(o, &vo, residue * sizeof(float));
 }
-/* channel-wise addition */
 void leaky_relu(float * I, float * R, int length){
-
     // threading parameters
     int out_per_thread = ceil((float) length / (float) MAX_THREADS);
 
@@ -485,12 +466,7 @@ void leaky_relu(float * I, float * R, int length){
     }
 }
 
-
-
-
-
-
-/* matrix-vector multiplication */
+/* MV_MUL */
 // common arguments
 struct mv_global {
     int in_channels;
@@ -599,5 +575,115 @@ void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
     for (int i=0; i<t_max; i++){
         // join thread
         pthread_join(tid[i], NULL);
+    }
+}
+
+/* MAX_POOL */
+struct mp_global {
+    int pool_size;
+    int n_chunks;
+};
+struct mp_args {
+    struct mp_global * G;
+    float * I_o;
+    float * R_o;
+    int n_o;
+};
+void * mp_func(void * aux) {
+    struct mp_args * args = (struct mp_args *) aux;
+    int pool_size = args->G->pool_size;
+    int n_chunks = args->G->n_chunks;
+    float * I_o = args->I_o;
+    float * R_o = args->R_o;
+    int n_o = args->n_o;
+    // iterate over pool space
+    for (int i=0; i<n_o; i++){
+        int residue = pool_size;
+        float * x = I_o + i * pool_size;
+        float * o = R_o + i;
+        // compute max
+        __m256 vm = _mm256_set1_ps(-1e20);
+        for (int j=0; j<n_chunks-1; j++){
+            __m256 vx = _mm256_loadu_ps(x);
+            // reference: https://stackoverflow.com/questions/9795529/how-to-find-the-horizontal-maximum-in-a-256-bit-avx-vector
+            __m256 v1 = _mm256_max_ps(vm, vx); // e.g. v1=[1 2 3 4 5 6 7 8]
+            __m256 v2 = _mm256_permute_ps(v1, 147); // 147: rotate left by upper 4 elements and lower 4 elements separately, v2=[2 3 4 1 6 7 8 5]
+            __m256 v3 = _mm256_max_ps(v1, v2); // v3=[2 3 4 4 6 7 8 8]
+            __m256 v4 = _mm256_permute_ps(v3, 147); // v4=[3 4 4 2 7 8 8 6]
+            __m256 v5 = _mm256_max_ps(v3, v4); // v5=[3 4 4 4 7 8 8 8]
+            __m256 v6 = _mm256_permute_ps(v5, 147); // v6=[4 4 4 3 8 8 8 7]
+            vm = _mm256_max_ps(v5, v6);//contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
+            float vm1 = ((float *)&vm)[0];
+            float vm2 = ((float *)&vm)[4];
+            vm = _mm256_set1_ps(vm1 > vm2 ? vm1 : vm2);
+            // update loop variables
+            residue -= 8; x += 8;
+        }
+        // handle last chunk
+        assert(residue<=8);
+        __m256 vx = _mm256_set1_ps(-1e20);
+        memcpy(&vx, x, sizeof(float) * residue);
+        __m256 v1 = _mm256_max_ps(vm, vx); // e.g. v1=[1 2 3 4 5 6 7 8]
+        __m256 v2 = _mm256_permute_ps(v1, 147); // 147: rotate left by upper 4 elements and lower 4 elements separately, v2=[2 3 4 1 6 7 8 5]
+        __m256 v3 = _mm256_max_ps(v1, v2); // v3=[2 3 4 4 6 7 8 8]
+        __m256 v4 = _mm256_permute_ps(v3, 147); // v4=[3 4 4 2 7 8 8 6]
+        __m256 v5 = _mm256_max_ps(v3, v4); // v5=[3 4 4 4 7 8 8 8]
+        __m256 v6 = _mm256_permute_ps(v5, 147); // v6=[4 4 4 3 8 8 8 7]
+        vm = _mm256_max_ps(v5, v6);//contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
+        float vm1 = ((float *)&vm)[0];
+        float vm2 = ((float *)&vm)[4];
+        *o = vm1 > vm2 ? vm1 : vm2;
+    }
+}
+void max_pool(float * I, float * R, int out_size, int pool_size){
+    // I: (out_size, pool_size), row major ordered
+    // R: (out_size)
+
+    // threading parameters
+    int out_per_thread = ceil((float) out_size / (float) MAX_THREADS);
+    int n_chunks = ceil((float) pool_size / 8.0);
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct mp_args args_list[MAX_THREADS];
+    int t_max = MAX_THREADS;
+
+    // global context
+    struct mp_global G[1];
+    G->pool_size = pool_size;
+    G->n_chunks = n_chunks;
+
+    // loop variables
+    struct mp_args * args = args_list;
+    int out_residue = out_size;
+    float * I_o = I;
+    float * R_o = R;
+
+    for (int t=0; t<MAX_THREADS; t++){
+        //printf("%d\n", t);
+        // set up thread arguments
+        args->G = G;
+        args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
+        args->I_o = I_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, mp_func, args);
+        // processed boundary, exit
+        if (out_residue < out_per_thread){
+            t_max = t + 1;
+            break;
+        }
+        // update loop vars
+        I_o += pool_size * out_per_thread;
+        R_o += out_per_thread;
+        out_residue -= out_per_thread;
+        args++;
+    }
+    //printf("<%d>\n", t_max);
+    for (int t=0; t<t_max; t++){
+        //printf("%d\n", t);
+        // join thread
+        pthread_join(tid[t], NULL);
     }
 }
