@@ -173,24 +173,37 @@ class Conv2D(DnnNode):
 
     def run(self, counter):
         print("Conv2D: run start")
-        # There's an error in deep layers when baseline and offloaded code are tested together
-        # (NULL pointer access in .so library)
-        # Only check for first layer output, if needed
 
-        # offloaded
-        # 1. Toeplitz matrix
+        # 1. Toeplitz matrix multiplication
         tic = time.time()
+        c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
+        mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int  # set function argument types
+        n_pixels = c_int(self.OW * self.OH)
+        kernel_in = c_int(self.KW * self.KH * self.IC)
+        kernel_out = c_int(self.OC)
+
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
+
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
-        toeplitz_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
+
+        in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
+        k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
+        out_p = np.ascontiguousarray(np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)).ctypes.data_as(c_float_p)
+        mylib.matmul(in_p, k_p, out_p, n_pixels, kernel_in, kernel_out)  # apply filter as a matrix multiplication
+        toeplitz_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+
+        # correctness check
+        toeplitz_ref = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
+        assert (toeplitz_result - toeplitz_ref).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((toeplitz_result - toeplitz_ref).mean())
+
         toc = time.time()
-        print("Toeplitz: offloaded elapsed time {}s".format(toc - tic))
+        print("Conv2D: Toeplitz-offloaded elapsed time {}s".format(toc - tic))
         self.result = toeplitz_result
 
         """
@@ -220,10 +233,10 @@ class Conv2D(DnnNode):
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))  # accumulate pixel output
 
         toc = time.time()
-        print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
+        print("Conv2D: pixelwise-offload elapsed time {}s".format(toc - tic))
         assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(full_result)))
 
-        # baseline
+        # 3. baseline
         tic = time.time()
         ptins = []
         for i in range(0, parallelism):
@@ -241,7 +254,7 @@ class Conv2D(DnnNode):
         assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
         
         # correctness check
-        assert (full_result - self.result).mean() < 1e-3, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
+        assert (full_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
         
         self.result = pixelwise_result
         """
