@@ -3,48 +3,13 @@
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/avx.so" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/avx.so" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.c" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
-  </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>1e-5</find>
-      <find>offset=offset</find>
-      <find># offset</find>
-      <find>offset=biases</find>
-      <find># b</find>
-      <find>post</find>
-      <find>moving_variance=</find>
-      <find>nn.max_pool</find>
-      <find>mkdir</find>
-      <find>argv</find>
-      <find>prev_output_shape</find>
-      <find>np.ndarray</find>
-      <find>np.memmap</find>
-      <find>print</find>
-      <find>expected input shape</find>
-      <find>inferred output shape</find>
-      <find>n_b</find>
-      <find>n_h</find>
-      <find>n_w</find>
-      <find>n_h,</find>
-      <find>n_c</find>
-      <find>new_</find>
-      <find>self.parsed_padding</find>
-      <find>=float</find>
-      <find>assert k_c</find>
-      <find>s_c</find>
-      <find>self.result =</find>
-      <find>assert np.isnan</find>
-      <find>print(&quot;__init</find>
-      <find>dnn</find>
-    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -125,7 +90,7 @@
       <workItem from="1589079188736" duration="10777000" />
       <workItem from="1589934535301" duration="11028000" />
       <workItem from="1590553614042" duration="1446000" />
-      <workItem from="1590555129557" duration="26582000" />
+      <workItem from="1590555129557" duration="33545000" />
     </task>
     <servers />
   </component>

@@ -316,7 +316,7 @@ void * bn_func(void * aux) {
         float * var = V_o + i;
         float * o = R_o + i * n_pixel;
         __m256 v_mu = _mm256_set1_ps(-*mu);
-        __m256 v_factor = _mm256_set1_ps((*gamma)/sqrt((*var)+eps));
+        __m256 v_factor = _mm256_set1_ps((*gamma)/(sqrt(*var)+eps));
         // compute elementwise sum
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
