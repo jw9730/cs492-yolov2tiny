@@ -178,68 +178,50 @@ class Conv2D(DnnNode):
         # Only check for first layer output, if needed
 
         # offloaded
-        # use pthread and AVX
-        # matrix multiplication := multithreaded dot product
+        # 1. Toeplitz matrix
         tic = time.time()
-        # float pointer type: every n-d array will be modified to 1d float array
-        c_float_p = POINTER(c_float)
-        # set function argument types
-        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
-
-        # i_dim: flattened filter size
-        # o_dim: output channel size
-        i_dim = c_int(self.KW * self.KH * self.IC)
-        o_dim = c_int(self.OC)
-
-        # padded input and convolved result
+        kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
-        full_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
+        toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
+        for ow in range(0, self.OW):
+            for oh in range(0, self.OH):
+                w0 = self.SW * ow
+                h0 = self.SH * oh
+                toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
+        toeplitz_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
+        toc = time.time()
+        print("Toeplitz: offloaded elapsed time {}s".format(toc - tic))
+        self.result = toeplitz_result
+
+        """
+        # 2. pixel-wise offload
+        tic = time.time()
+        c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
+        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int  # set function argument types
+        i_dim = c_int(self.KW * self.KH * self.IC)  # i_dim: flattened filter size
+        o_dim = c_int(self.OC)  # o_dim: output channel size
+        
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')  # padded input
+        pixelwise_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)  # convolved result
 
         # 1d kernel: (KW * KH * IC, OC)
-        # should be arranged contiguously in memory, in column major order
-        # cast to float pointer type
-        k_2d = np.asfortranarray(self.weights.reshape((-1, self.OC)).astype(np.float32))
-        k_p = k_2d.ctypes.data_as(c_float_p)
-
-        # pixel-wise offload
-        cnt, offload_t, ref_t, err = .0, .0, .0, .0
+        k_2d = np.asfortranarray(self.weights.reshape((-1, self.OC)).astype(np.float32)) # should be arranged contiguously in memory, in column major order
+        k_p = k_2d.ctypes.data_as(c_float_p)  # cast to float pointer type
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
                 # 1d input: (KW * KH * IC,)
-                # should be arranged contiguously in memory
-                # cast to float pointer type
-                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))
-                in_p = in_1d.ctypes.data_as(c_float_p)
-
-                #loop_tic = time.time()
-
-                # output buffer
-                buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
-                # apply filter as a matrix multiplication
-                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
-                # accumulate pixel output
-                full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
-
-                #loop_toc = time.time()
-                #offload_t += loop_toc - loop_tic
-                #loop_tic = time.time()
-
-                # vectorized version (as baseline)
-                #vec_res = np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()
-                #err += (np.ctypeslib.as_array(buf_p, (self.OC,)) - vec_res).mean()
-
-                #loop_toc = time.time()
-                #ref_t += loop_toc - loop_tic
-
-                #if cnt % 100 == 0 and cnt > 0:
-                #    print("[{}] \terror {}, \toffload time {:0.5f}s, \tref time {:0.5f}s".format((ow, oh), err/cnt, offload_t/cnt, ref_t/cnt))
-                #cnt += 1
+                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))  # should be arranged contiguously in memory
+                in_p = in_1d.ctypes.data_as(c_float_p)  # cast to float pointer type
+                
+                buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)  # output buffer
+                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)  # apply filter as a matrix multiplication
+                full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))  # accumulate pixel output
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
-        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
+        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(full_result)))
 
         # baseline
         tic = time.time()
@@ -253,14 +235,16 @@ class Conv2D(DnnNode):
             for p in pool:
                 p.join()
         self.result = np.ctypeslib.as_array(self.shm_result)
+        
         toc = time.time()
         print("Conv2D: baseline elapsed time {}s".format(toc - tic))
-        assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output array of baseline method"\
-            .format(np.count_nonzero(np.isnan(self.result)))
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        
         # correctness check
         assert (full_result - self.result).mean() < 1e-3, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
-
-        self.result = full_result
+        
+        self.result = pixelwise_result
+        """
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k
