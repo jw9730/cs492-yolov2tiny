@@ -5,90 +5,122 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-//#define DEBUG
+#define MAX_THREADS 8
 
-// - __m256: 256-bit vector containing 8 floats
+/* __m256: 256-bit vector containing 8 floats */
 
+// common arguments
+struct global {
+    int in_channels;
+    int n_outs;
+    int n_chunks;
+    float * I;
+};
+// thread-specific arguments
 struct args {
-    float * x;
-    float * y;
-    int n_f;
-    float * o;
+    struct global * G;
+    int n_o;
+    float * K_o;
+    float * R_o;
 };
 
 void * func(void * aux) {
-    struct args * p = (struct args *) aux;
-    int n_f = p->n_f;
-    __m256 x = _mm256_setzero_ps();
-    __m256 y = _mm256_setzero_ps();
-    memcpy(&x, p->x, sizeof (float) * n_f);
-    memcpy(&y, p->y, sizeof (float) * n_f);
-    __m256 o = _mm256_mul_ps(x, y);
-    
-    float * r = (float *) &o;
-    for (int i=0; i<8; i++){
-        *(p->o) += r[i];
+    // arguments
+    struct args * args = (struct args *) aux;
+    int in_channels = args->G->in_channels;
+    int n_outs = args->G->n_outs;
+    int n_chunks = args->G->n_chunks;
+    float * I = args->G->I;
+    int n_o = args->n_o;
+    float * K_o = args->K_o;
+    float * R_o = args->R_o;
+
+    // iterate over output channels
+    for (int i=0; i<n_o; i++){
+        int residue = in_channels;
+        float * x = I;
+        float * y = K_o + i * in_channels;
+        float * o = R_o + i;
+        __m256 acc = _mm256_setzero_ps();
+
+        // compute dot product between kernel and input
+        for (int j=0; j<n_chunks-1; j++){
+            // element-wise product, no aggregation
+            __m256 vx = _mm256_loadu_ps(x);
+            __m256 vy = _mm256_loadu_ps(y);
+            __m256 vo = _mm256_mul_ps(vx, vy);
+            acc = _mm256_add_ps(acc, vo);
+            // update loop variables
+            residue -= 8; x += 8; y += 8;
+        }
+
+        // handle last chunk
+        __m256 vx = _mm256_setzero_ps();
+        __m256 vy = _mm256_setzero_ps();
+        memcpy(&vx, x, sizeof(float) * residue);
+        memcpy(&vy, y, sizeof(float) * residue);
+        __m256 vo = _mm256_mul_ps(vx, vy);
+        acc = _mm256_add_ps(acc, vo);
+
+        // accumulate
+        float * res = (float *) &acc;
+        for (int k=0; k<8; k++) *o += res[k];
     }
 }
 
-void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
-    // K: (in_size * out_size), row major ordered
-    // I: (in_size)
-    // R: (out_size)
+void ki_apply(float * K, float * I, float * R, int in_channels, int out_channels) {
+    // arguments: column major ordered
+    // K: (in_channels * out_channels)
+    // I: (in_channels)
+    // R: (out_channels)
     assert((K != NULL) && (I != NULL) && (R != NULL));
-    
-    // K_o, R_o: holder for addresses
-    // args: holder for args struct
-    // n_c: number of chunks
-    // n_f: holder for num_elements within a chunk (<= 8)
-    float * K_o = NULL;
-    float * R_o = NULL;
-    struct args * args = NULL;
-    int n_c = ceil((float)in_size / 8.0);
-    int n_f = 0;
-    int ofs = 0;
-    struct args args_list[out_size * n_c];
-    pthread_t tid[out_size * n_c];
 
-    for (int i=0; i<out_size; i++){
-        // K_o: kernel vector
-        // R_o: output address
-        K_o = K + i * in_size;
-        R_o = R + i;
+    // threading parameters
+    int n_outs = ceil((float) out_channels / (float) MAX_THREADS);
+    int n_chunks = ceil((float) in_channels / 8.0);
+
+    // set up global context
+    struct global G[1];
+    G->I = I;
+    G->in_channels = in_channels;
+    G->n_chunks = n_chunks;
+    G->n_outs = n_outs;
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct args args_list[MAX_THREADS];
+    int t = 0;
+
+    // loop variables
+    struct args * args = args_list;
+    float * K_o = K;
+    float * R_o = R;
+    int out_residue = out_channels;
+
+    for (t=0; t<MAX_THREADS; t++){
+        // set up thread arguments
+        args->G = G;
+        args->n_o = (out_residue < n_outs) ? out_residue : n_outs;
+        args->K_o = K_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, func, args);
         
-#ifdef DEBUG
-        if (i == 0){
-            printf("K[:, 0]: ");
-            for (j=0; j<in_size; j++) printf("%f ", ((float *)K_o)[j]);
-            printf("\n");
-            printf("I[:]: ");
-            for (j=0; j<in_size; j++) printf("%f ", I[j]);
-            printf("\n");
-        }
-#endif
-
-        // compute dot product between kernel and input
-        for (int j=0; j<n_c; j++){
-            // allocate an argument holder (will be freed before a thread exits)
-            // convert subarrays into 256-bit chunks
-            ofs = i * n_c + j;
-
-            args = args_list + ofs;
-            args->x = K_o + 8 * j;
-            args->y = I + 8 * j;
-            n_f = in_size - 8 * j;
-            args->n_f = (n_f < 8) ? n_f : 8;
-            args->o = R_o;
-            
-            // run thread
-            pthread_create(tid + ofs, NULL, func, args);
-        }
-
-        for (int j=0; j<n_c; j++){
-            // join thread
-            pthread_join(tid[i * n_c + j], NULL);
-        }
+        // processed boundary, exit
+        if (out_residue < n_outs) break;
+        
+        // update loop vars
+        args++;
+        K_o += in_channels * n_outs;
+        R_o += n_outs;
+        out_residue -= n_outs;
     }
-    
+
+    for (int i=0; i<=t; i++){
+        // join thread
+        pthread_join(tid[i], NULL);
+    }
+
     return;
 }

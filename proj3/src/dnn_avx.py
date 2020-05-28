@@ -213,7 +213,7 @@ class Conv2D(DnnNode):
                 in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
 
-                loop_tic = time.time()
+                #loop_tic = time.time()
 
                 # output buffer
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
@@ -222,20 +222,20 @@ class Conv2D(DnnNode):
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
 
-                loop_toc = time.time()
-                offload_t += loop_toc - loop_tic
-                loop_tic = time.time()
+                #loop_toc = time.time()
+                #offload_t += loop_toc - loop_tic
+                #loop_tic = time.time()
 
                 # vectorized version (as baseline)
-                vec_res = np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()
-                err += (np.ctypeslib.as_array(buf_p, (self.OC,)) - vec_res).mean()
+                #vec_res = np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()
+                #err += (np.ctypeslib.as_array(buf_p, (self.OC,)) - vec_res).mean()
 
-                loop_toc = time.time()
-                ref_t += loop_toc - loop_tic
+                #loop_toc = time.time()
+                #ref_t += loop_toc - loop_tic
 
-                if cnt % 100 == 0 and cnt > 0:
-                    print("[{}] \terror {}, \toffload time {:0.5f}s, \tref time {:0.5f}s".format((ow, oh), err/cnt, offload_t/cnt, ref_t/cnt))
-                cnt += 1
+                #if cnt % 100 == 0 and cnt > 0:
+                #    print("[{}] \terror {}, \toffload time {:0.5f}s, \tref time {:0.5f}s".format((ow, oh), err/cnt, offload_t/cnt, ref_t/cnt))
+                #cnt += 1
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
