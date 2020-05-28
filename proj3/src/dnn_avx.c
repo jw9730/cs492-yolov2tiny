@@ -9,122 +9,7 @@
 
 /* __m256: 256-bit vector containing 8 floats */
 
-// common arguments
-struct global {
-    int in_channels;
-    int n_outs;
-    int n_chunks;
-    float * I;
-};
-// thread-specific arguments
-struct args {
-    struct global * G;
-    int n_o;
-    float * K_o;
-    float * R_o;
-};
-
-void * func(void * aux) {
-    // arguments
-    struct args * args = (struct args *) aux;
-    int in_channels = args->G->in_channels;
-    int n_outs = args->G->n_outs;
-    int n_chunks = args->G->n_chunks;
-    float * I = args->G->I;
-    int n_o = args->n_o;
-    float * K_o = args->K_o;
-    float * R_o = args->R_o;
-
-    // iterate over output channels
-    for (int i=0; i<n_o; i++){
-        int residue = in_channels;
-        float * x = I;
-        float * y = K_o + i * in_channels;
-        float * o = R_o + i;
-        __m256 acc = _mm256_setzero_ps();
-
-        // compute dot product between kernel and input
-        for (int j=0; j<n_chunks-1; j++){
-            // element-wise product, no aggregation
-            __m256 vx = _mm256_loadu_ps(x);
-            __m256 vy = _mm256_loadu_ps(y);
-            __m256 vo = _mm256_mul_ps(vx, vy);
-            acc = _mm256_add_ps(acc, vo);
-            // update loop variables
-            residue -= 8; x += 8; y += 8;
-        }
-
-        // handle last chunk
-        __m256 vx = _mm256_setzero_ps();
-        __m256 vy = _mm256_setzero_ps();
-        memcpy(&vx, x, sizeof(float) * residue);
-        memcpy(&vy, y, sizeof(float) * residue);
-        __m256 vo = _mm256_mul_ps(vx, vy);
-        acc = _mm256_add_ps(acc, vo);
-
-        // accumulate
-        float * res = (float *) &acc;
-        for (int k=0; k<8; k++) *o += res[k];
-    }
-}
-
-void ki_apply(float * K, float * I, float * R, int in_channels, int out_channels) {
-    // arguments: column major ordered
-    // K: (in_channels * out_channels)
-    // I: (in_channels)
-    // R: (out_channels)
-    assert((K != NULL) && (I != NULL) && (R != NULL));
-
-    // threading parameters
-    int n_outs = ceil((float) out_channels / (float) MAX_THREADS);
-    int n_chunks = ceil((float) in_channels / 8.0);
-
-    // set up global context
-    struct global G[1];
-    G->I = I;
-    G->in_channels = in_channels;
-    G->n_chunks = n_chunks;
-    G->n_outs = n_outs;
-
-    // set up threads
-    pthread_t tid[MAX_THREADS];
-    struct args args_list[MAX_THREADS];
-    int t = 0;
-
-    // loop variables
-    struct args * args = args_list;
-    float * K_o = K;
-    float * R_o = R;
-    int out_residue = out_channels;
-
-    for (t=0; t<MAX_THREADS; t++){
-        // set up thread arguments
-        args->G = G;
-        args->n_o = (out_residue < n_outs) ? out_residue : n_outs;
-        args->K_o = K_o;
-        args->R_o = R_o;
-
-        // run thread
-        pthread_create(tid + t, NULL, func, args);
-        
-        // processed boundary, exit
-        if (out_residue < n_outs) break;
-        
-        // update loop vars
-        args++;
-        K_o += in_channels * n_outs;
-        R_o += n_outs;
-        out_residue -= n_outs;
-    }
-
-    for (int i=0; i<t; i++){
-        // join thread
-        pthread_join(tid[i], NULL);
-    }
-
-    return;
-}
-
+/* matrix-matrix multiplication */
 // common arguments
 struct mm_global {
     int n_pixels;
@@ -143,7 +28,6 @@ struct mm_args {
     float * K_o;
     float * R_o;
 };
-
 void * mm_func(void * aux) {
     struct mm_args * args = (struct mm_args *) aux;
     int n_pixels = args->G->n_pixels;
@@ -185,9 +69,7 @@ void * mm_func(void * aux) {
         }
     }
 }
-
 void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int kernel_out) {
-
     // I: (n_pixels * kernel_in), row major ordered
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
@@ -195,8 +77,8 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     assert(MAX_THREADS >= 8);
 
     // dynamic threading
-    int MAX_THREADS_PIX = 2;
-    int MAX_THREADS_OUT = 4;
+    int MAX_THREADS_PIX = 1;
+    int MAX_THREADS_OUT = 8;
     float ratio = n_pixels / kernel_out;
     if (ratio >= 8.0){
         MAX_THREADS_PIX = MAX_THREADS;
@@ -277,9 +159,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
         // update loop vars
         in_residue -= pix_per_thread;
     }
-
     //printf("<%d, %d>\n", t_pix_max, t_out_max);
-
     for (int i=0; i<t_pix_max; i++){
         for (int j=0; j<t_out_max; j++){
             // join thread
@@ -287,6 +167,437 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             pthread_join(tid[i * MAX_THREADS_OUT + j], NULL);
         }
     }
+}
 
-    return;
+
+
+
+
+
+/* channel-wise operations */
+struct ba_global {
+    int n_pixel;
+    int n_chunks;
+};
+struct ba_args {
+    struct ba_global * G;
+    float * I_o;
+    float * B_o;
+    float * R_o;
+    int n_o;
+};
+void * ba_func(void * aux) {
+    // arguments
+    struct ba_args * args = (struct ba_args *) aux;
+    int n_pixel = args->G->n_pixel;
+    int n_chunks = args->G->n_chunks;
+    float * I_o = args->I_o;
+    float * B_o = args->B_o;
+    float * R_o = args->R_o;
+    int n_o = args->n_o;
+    // iterate over output channels
+    for (int i=0; i<n_o; i++){
+        int residue = n_pixel;
+        float * x = I_o + i * n_pixel;
+        float * y = B_o + i;
+        float * o = R_o + i * n_pixel;
+        __m256 vy = _mm256_set1_ps(*y);
+        // compute elementwise sum
+        for (int j=0; j<n_chunks-1; j++){
+            __m256 vx = _mm256_loadu_ps(x);
+            __m256 vo = _mm256_add_ps(vx, vy);
+            memcpy(o, &vo, 8 * sizeof(float));
+            // update loop variables
+            residue -= 8; x += 8; o += 8;
+        }
+        // handle last chunk
+        __m256 vx = _mm256_setzero_ps();
+        memcpy(&vx, x, residue * sizeof(float));
+        __m256 vo = _mm256_add_ps(vx, vy);
+        memcpy(o, &vo, residue * sizeof(float));
+    }
+}
+/* channel-wise addition */
+void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
+    // I: (n_pixel, n_channel), column major ordered
+    // B: (n_channel)
+    // R: (n_pixel, n_channel), column major ordered
+    assert((I != NULL) && (B != NULL) && (R != NULL));
+
+    // threading parameters
+    int out_per_thread = ceil((float) n_channel / (float) MAX_THREADS);
+    int n_chunks = ceil((float) n_pixel / 8.0);
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct ba_args args_list[MAX_THREADS];
+    int t_max = MAX_THREADS;
+
+    // global context
+    struct ba_global G[1];
+    G->n_pixel = n_pixel;
+    G->n_chunks = n_chunks;
+
+    // loop variables
+    struct ba_args * args = args_list;
+    int out_residue = n_channel;
+    float * I_o = I;
+    float * B_o = B;
+    float * R_o = R;
+
+    for (int t=0; t<MAX_THREADS; t++){
+        //printf("%d\n", t);
+        // set up thread arguments
+        args->G = G;
+        args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
+        args->I_o = I_o;
+        args->B_o = B_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, ba_func, args);
+        // processed boundary, exit
+        if (out_residue < out_per_thread){
+            t_max = t + 1;
+            break;
+        }
+        // update loop vars
+        I_o += n_pixel * out_per_thread;
+        B_o += out_per_thread;
+        R_o += n_pixel * out_per_thread;
+        out_residue -= out_per_thread;
+        args++;
+    }
+    //printf("<%d>\n", t_max);
+    for (int t=0; t<t_max; t++){
+        //printf("%d\n", t);
+        // join thread
+        pthread_join(tid[t], NULL);
+    }
+}
+
+
+
+
+
+/* channel-wise operations */
+struct bn_global {
+    int n_pixel;
+    int n_chunks;
+    float eps;
+};
+struct bn_args {
+    struct bn_global * G;
+    float * I_o;
+    float * M_o;
+    float * G_o;
+    float * V_o;
+    float * R_o;
+    int n_o;
+};
+void * bn_func(void * aux) {
+    // arguments
+    struct bn_args * args = (struct bn_args *) aux;
+    int n_pixel = args->G->n_pixel;
+    int n_chunks = args->G->n_chunks;
+    float eps = args->G->eps;
+    float * I_o = args->I_o;
+    float * M_o = args->M_o;
+    float * G_o = args->G_o;
+    float * V_o = args->V_o;
+    float * R_o = args->R_o;
+    int n_o = args->n_o;
+    // iterate over output channels
+    for (int i=0; i<n_o; i++){
+        int residue = n_pixel;
+        float * x = I_o + i * n_pixel;
+        float * mu = M_o + i;
+        float * gamma = G_o + i;
+        float * var = V_o + i;
+        float * o = R_o + i * n_pixel;
+        __m256 v_mu = _mm256_set1_ps(-*mu);
+        __m256 v_factor = _mm256_set1_ps((*gamma)/sqrt((*var)+eps));
+        // compute elementwise sum
+        for (int j=0; j<n_chunks-1; j++){
+            __m256 vx = _mm256_loadu_ps(x);
+            __m256 v1 = _mm256_add_ps(vx, v_mu);
+            __m256 vo = _mm256_mul_ps(v1, v_factor);
+            memcpy(o, &vo, 8 * sizeof(float));
+            // update loop variables
+            residue -= 8; x += 8; o += 8;
+        }
+        // handle last chunk
+        __m256 vx = _mm256_setzero_ps();
+        memcpy(&vx, x, residue * sizeof(float));
+        __m256 v1 = _mm256_add_ps(vx, v_mu);
+        __m256 vo = _mm256_mul_ps(v1, v_factor);
+        memcpy(o, &vo, residue * sizeof(float));
+    }
+}
+/* channel-wise addition */
+void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int n_pixel, int n_channel){
+    // I: (n_pixel, n_channel), column major ordered
+    // M: (n_channel)
+    // G: (n_channel)
+    // V: (n_channel)
+    // R: (n_pixel, n_channel), column major ordered
+
+    // threading parameters
+    int out_per_thread = ceil((float) n_channel / (float) MAX_THREADS);
+    int n_chunks = ceil((float) n_pixel / 8.0);
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct bn_args args_list[MAX_THREADS];
+    int t_max = MAX_THREADS;
+
+    // global context
+    struct bn_global GL[1];
+    GL->n_pixel = n_pixel;
+    GL->n_chunks = n_chunks;
+    GL->eps = eps;
+
+    // loop variables
+    struct bn_args * args = args_list;
+    int out_residue = n_channel;
+    float * I_o = I;
+    float * M_o = M;
+    float * G_o = G;
+    float * V_o = V;
+    float * R_o = R;
+
+    for (int t=0; t<MAX_THREADS; t++){
+        //printf("%d\n", t);
+        // set up thread arguments
+        args->G = GL;
+        args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
+        args->I_o = I_o;
+        args->M_o = M_o;
+        args->G_o = G_o;
+        args->V_o = V_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, bn_func, args);
+        // processed boundary, exit
+        if (out_residue < out_per_thread){
+            t_max = t + 1;
+            break;
+        }
+        // update loop vars
+        I_o += n_pixel * out_per_thread;
+        M_o += out_per_thread;
+        G_o += out_per_thread;
+        V_o += out_per_thread;
+        R_o += n_pixel * out_per_thread;
+        out_residue -= out_per_thread;
+        args++;
+    }
+    //printf("<%d>\n", t_max);
+    for (int t=0; t<t_max; t++){
+        //printf("%d\n", t);
+        // join thread
+        pthread_join(tid[t], NULL);
+    }
+}
+
+
+
+
+
+
+/* channel-wise operations */
+struct lr_args {
+    float * I_o;
+    float * R_o;
+    int n_o;
+};
+void * lr_func(void * aux) {
+    // arguments
+    struct lr_args * args = (struct lr_args *) aux;
+    float * I_o = args->I_o;
+    float * R_o = args->R_o;
+    int n_o = args->n_o;
+    int n_chunks = ceil((float) n_o / 8.0);
+
+    int residue = n_o;
+    float * x = I_o;
+    float * o = R_o;
+    __m256 leak = _mm256_set1_ps(0.1);
+    // compute elementwise recfitication
+    for (int j=0; j<n_chunks-1; j++){
+        __m256 vx = _mm256_loadu_ps(x);
+        __m256 vl = _mm256_mul_ps(vx, leak);
+        __m256 vo = _mm256_max_ps(vx, vl);
+        memcpy(o, &vo, 8 * sizeof(float));
+        // update loop variables
+        residue -= 8; x += 8; o += 8;
+    }
+    // handle last chunk
+    __m256 vx = _mm256_setzero_ps();
+    memcpy(&vx, x, residue * sizeof(float));
+    __m256 vl = _mm256_mul_ps(vx, leak);
+    __m256 vo = _mm256_max_ps(vx, vl);
+    memcpy(o, &vo, residue * sizeof(float));
+}
+/* channel-wise addition */
+void leaky_relu(float * I, float * R, int length){
+
+    // threading parameters
+    int out_per_thread = ceil((float) length / (float) MAX_THREADS);
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct lr_args args_list[MAX_THREADS];
+    int t_max = MAX_THREADS;
+
+    // loop variables
+    struct lr_args * args = args_list;
+    int out_residue = length;
+    float * I_o = I;
+    float * R_o = R;
+
+    for (int t=0; t<MAX_THREADS; t++){
+        //printf("%d\n", t);
+        // set up thread arguments
+        args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
+        args->I_o = I_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, lr_func, args);
+        // processed boundary, exit
+        if (out_residue < out_per_thread){
+            t_max = t + 1;
+            break;
+        }
+        // update loop vars
+        I_o += out_per_thread;
+        R_o += out_per_thread;
+        out_residue -= out_per_thread;
+        args++;
+    }
+    //printf("<%d>\n", t_max);
+    for (int t=0; t<t_max; t++){
+        //printf("%d\n", t);
+        // join thread
+        pthread_join(tid[t], NULL);
+    }
+}
+
+
+
+
+
+
+/* matrix-vector multiplication */
+// common arguments
+struct mv_global {
+    int in_channels;
+    int n_chunks;
+    float * I;
+};
+// thread-specific arguments
+struct mv_args {
+    struct mv_global * G;
+    int n_o;
+    float * K_o;
+    float * R_o;
+};
+void * mv_func(void * aux) {
+    // arguments
+    struct mv_args * args = (struct mv_args *) aux;
+    int in_channels = args->G->in_channels;
+    int n_chunks = args->G->n_chunks;
+    float * I = args->G->I;
+    int n_o = args->n_o;
+    float * K_o = args->K_o;
+    float * R_o = args->R_o;
+
+    // iterate over output channels
+    for (int i=0; i<n_o; i++){
+        int residue = in_channels;
+        float * x = I;
+        float * y = K_o + i * in_channels;
+        float * o = R_o + i;
+        __m256 acc = _mm256_setzero_ps();
+
+        // compute dot product between kernel and input
+        for (int j=0; j<n_chunks-1; j++){
+            // element-wise product, no aggregation
+            __m256 vx = _mm256_loadu_ps(x);
+            __m256 vy = _mm256_loadu_ps(y);
+            __m256 vo = _mm256_mul_ps(vx, vy);
+            acc = _mm256_add_ps(acc, vo);
+            // update loop variables
+            residue -= 8; x += 8; y += 8;
+        }
+
+        // handle last chunk
+        __m256 vx = _mm256_setzero_ps();
+        __m256 vy = _mm256_setzero_ps();
+        memcpy(&vx, x, sizeof(float) * residue);
+        memcpy(&vy, y, sizeof(float) * residue);
+        __m256 vo = _mm256_mul_ps(vx, vy);
+        acc = _mm256_add_ps(acc, vo);
+
+        // accumulate
+        float * res = (float *) &acc;
+        for (int k=0; k<8; k++) *o += res[k];
+    }
+}
+void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
+    // arguments: column major ordered
+    // K: (in_channels * out_channels)
+    // I: (in_channels)
+    // R: (out_channels)
+    assert((K != NULL) && (I != NULL) && (R != NULL));
+
+    // threading parameters
+    int n_outs = ceil((float) out_channels / (float) MAX_THREADS);
+    int n_chunks = ceil((float) in_channels / 8.0);
+
+    // set up global context
+    struct mv_global G[1];
+    G->I = I;
+    G->in_channels = in_channels;
+    G->n_chunks = n_chunks;
+
+    // set up threads
+    pthread_t tid[MAX_THREADS];
+    struct mv_args args_list[MAX_THREADS];
+    int t = 0;
+    int t_max = MAX_THREADS;
+
+    // loop variables
+    struct mv_args * args = args_list;
+    float * K_o = K;
+    float * R_o = R;
+    int out_residue = out_channels;
+
+    for (t=0; t<MAX_THREADS; t++){
+        // set up thread arguments
+        args->G = G;
+        args->n_o = (out_residue < n_outs) ? out_residue : n_outs;
+        args->K_o = K_o;
+        args->R_o = R_o;
+
+        // run thread
+        pthread_create(tid + t, NULL, mv_func, args);
+        // processed boundary, exit
+        if (out_residue < n_outs){
+            t_max = t + 1;
+            break;
+        }
+
+        // update loop vars
+        args++;
+        K_o += in_channels * n_outs;
+        R_o += n_outs;
+        out_residue -= n_outs;
+    }
+    for (int i=0; i<t_max; i++){
+        // join thread
+        pthread_join(tid[i], NULL);
+    }
 }

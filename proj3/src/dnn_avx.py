@@ -199,16 +199,15 @@ class Conv2D(DnnNode):
         toeplitz_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
 
         toc = time.time()
-        print("Conv2D: Toeplitz-offloaded elapsed time {}s".format(toc - tic))
-
+        print("Conv2D: Toeplitz-offload elapsed time {}s".format(toc - tic))
         """
         # 2. pixel-wise offload
         tic = time.time()
         c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
-        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int  # set function argument types
+        mylib.mvmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int  # set function argument types
         i_dim = c_int(self.KW * self.KH * self.IC)  # i_dim: flattened filter size
         o_dim = c_int(self.OC)  # o_dim: output channel size
-        
+
         pin = np.pad(self.in_node.result, self.pad, mode='constant')  # padded input
         pixelwise_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)  # convolved result
 
@@ -222,14 +221,13 @@ class Conv2D(DnnNode):
                 # 1d input: (KW * KH * IC,)
                 in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))  # should be arranged contiguously in memory
                 in_p = in_1d.ctypes.data_as(c_float_p)  # cast to float pointer type
-                
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)  # output buffer
-                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)  # apply filter as a matrix multiplication
-                full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))  # accumulate pixel output
+                mylib.mvmul(k_p, in_p, buf_p, i_dim, o_dim)  # apply filter as a matrix multiplication
+                pixelwise_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))  # accumulate pixel output
 
         toc = time.time()
         print("Conv2D: pixelwise-offload elapsed time {}s".format(toc - tic))
-        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(full_result)))
+        assert np.count_nonzero(np.isnan(pixelwise_result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(pixelwise_result)))
 
         # 3. baseline
         tic = time.time()
@@ -249,7 +247,7 @@ class Conv2D(DnnNode):
         assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
         
         # correctness check
-        assert (toeplitz_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
+        assert (toeplitz_result - self.result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((toeplitz_result - self.result).mean())
         """
         self.result = toeplitz_result
 
@@ -281,13 +279,33 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
+        """
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 for oc in range(0, self.OC):
                     self.result[0][ow][oh][oc] = tin[0][ow][oh][oc] + self.biases[oc]
+        toc = time.time()
+        print("BiasAdd: baseline elapsed time {}s".format(toc - tic))
+        """
+        tic = time.time()
+        c_float_p = POINTER(c_float)
+        mylib.bias_add.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
+        in_p = np.asfortranarray(self.in_node.result.reshape((self.OW * self.OH, self.OC)).astype(np.float32)).ctypes.data_as(c_float_p)
+        b_p = np.ascontiguousarray(self.biases.astype(np.float32)).ctypes.data_as(c_float_p)
+        out_p = np.asfortranarray(np.zeros((self.OW * self.OH, self.OC), dtype=np.float32)).ctypes.data_as(c_float_p)
+        n_pixel = c_int(self.OW * self.OH)
+        n_channel = c_int(self.OC)
+        mylib.bias_add(in_p, b_p, out_p, n_pixel, n_channel)
+        avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+        toc = time.time()
+        print("BiasAdd: offload elapsed time {}s".format(toc - tic))
 
+        # correctness check
+        # assert (avx_result - self.result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format((avx_result - self.result).mean())
+        self.result = avx_result
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
@@ -340,6 +358,7 @@ class MaxPool2D(DnnNode):
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
+        tic = time.time()
         ptin = np.pad(self.in_node.result, self.pad, mode='constant')
         for oc in range(0, self.OC):
             for pw in range(0, self.PW, self.stride[1]):
@@ -354,6 +373,8 @@ class MaxPool2D(DnnNode):
                             if ptin[0, pw + i, ph + j, oc] > tmp:
                                 tmp = ptin[0, pw + i, ph + j, oc] 
                     self.result[0][int(pw/self.stride[1])][int(ph/self.stride[2])][oc] = tmp
+        toc = time.time()
+        print("MaxPool2D: elapsed time {}s".format(toc - tic))
 
 class BatchNorm(DnnNode):
     def __init__(self, name, in_node, mean, variance, gamma, epsilon):
@@ -377,6 +398,8 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
+        """
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
@@ -385,6 +408,33 @@ class BatchNorm(DnnNode):
                     self.result[0][ow][oh][oc] \
                         = (tin[0][ow][oh][oc] - self.mean[oc]) * self.gamma[oc] / \
                             math.sqrt(self.variance[oc] + self.epsilon)
+        toc = time.time()
+        print("BatchNorm: elapsed time {}s".format(toc - tic))
+        """
+
+        tic = time.time()
+        c_float_p = POINTER(c_float)
+        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int
+
+        in_p = np.asfortranarray(self.in_node.result.reshape((self.OW * self.OH, self.OC)).astype(np.float32)).ctypes.data_as(c_float_p)
+        mu_p = np.ascontiguousarray(self.mean.astype(np.float32)).ctypes.data_as(c_float_p)
+        gamma_p = np.ascontiguousarray(self.gamma.astype(np.float32)).ctypes.data_as(c_float_p)
+        var_p = np.ascontiguousarray(self.variance.astype(np.float32)).ctypes.data_as(c_float_p)
+        out_p = np.asfortranarray(np.zeros((self.OW * self.OH, self.OC), dtype=np.float32)).ctypes.data_as(c_float_p)
+
+        c_eps = c_float(self.epsilon)
+        n_pixel = c_int(self.OW * self.OH)
+        n_channel = c_int(self.OC)
+
+        mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_eps, n_pixel, n_channel)
+        avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+
+        toc = time.time()
+        print("BatchNorm: offload elapsed time {}s".format(toc - tic))
+
+        # correctness check
+        #assert (avx_result - self.result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format((avx_result - self.result).mean())
+        self.result = avx_result
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -400,24 +450,45 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
+        """
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 for oc in range(0, self.OC):
                     self.result[0][ow][oh][oc] = max(tin[0][ow][oh][oc], .1 * tin[0][ow][oh][oc])
+        toc = time.time()
+        print("LeakyReLU: elapsed time {}s".format(toc - tic))
+        """
+
+        tic = time.time()
+        c_float_p = POINTER(c_float)
+        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_int, c_int
+        in_p = np.asfortranarray(self.in_node.result.astype(np.float32)).ctypes.data_as(c_float_p)
+        out_p = np.asfortranarray(np.zeros((self.OW * self.OH * self.OC), dtype=np.float32)).ctypes.data_as(c_float_p)
+        n_length = c_int(self.OW * self.OH * self.OC)
+        mylib.leaky_relu(in_p, out_p, n_length)
+        avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+
+        toc = time.time()
+        print("LeakyReLU: offload elapsed time {}s".format(toc - tic))
+
+        # correctness check
+        #assert (avx_result - self.result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format((avx_result - self.result).mean())
+        self.result = avx_result
 
 class Input(DnnNode):
-    def __init__(self, name, in_shape):
-        self.name = name
-        self.in_shape = in_shape 
-        self.result = np.ndarray(self.in_shape)
+   def __init__(self, name, in_shape):
+       self.name = name
+       self.in_shape = in_shape
+       self.result = np.ndarray(self.in_shape)
 
-    def set_input(self, tensor):
-        assert tuple(self.in_shape) == tuple(tensor.shape)
-        self.result = tensor 
+   def set_input(self, tensor):
+       assert tuple(self.in_shape) == tuple(tensor.shape)
+       self.result = tensor
 
-    def run(self, counter):
-        pass
+   def run(self, counter):
+       pass
 
 
