@@ -240,7 +240,7 @@ class Conv2D(DnnNode):
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
         assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
-        """
+
         # baseline
         tic = time.time()
         ptins = []
@@ -259,7 +259,7 @@ class Conv2D(DnnNode):
             .format(np.count_nonzero(np.isnan(self.result)))
         # correctness check
         assert (full_result - self.result).mean() < 1e-3, "Conv2D: correctness check failed with mean err {}".format((full_result - self.result).mean())
-        """
+
         self.result = full_result
 
     def run_for_oc(self, ptin, chunk, k):
