@@ -202,33 +202,40 @@ class Conv2D(DnnNode):
         k_p = k_2d.ctypes.data_as(c_float_p)
 
         # pixel-wise offload
+        cnt, offload_t, ref_t, err = .0, .0, .0, .0
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-
                 # 1d input: (KW * KH * IC,)
                 # should be arranged contiguously in memory
                 # cast to float pointer type
                 in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
 
-                #print(k_2d[:, 0])
-                #print(in_1d[:])
+                loop_tic = time.time()
 
                 # output buffer
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
-
                 # apply filter as a matrix multiplication
                 mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
-
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
 
+                loop_toc = time.time()
+                offload_t += loop_toc - loop_tic
+                loop_tic = time.time()
+
                 # vectorized version (as baseline)
-                #tmp = (np.ctypeslib.as_array(buf_p, (self.OC,)) - np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()).mean()
-                #print("mean error: {}".format(tmp))
-                #assert tmp < 1e-5
+                vec_res = np.matmul(in_1d.reshape((1, -1)), k_2d).squeeze()
+                err += (np.ctypeslib.as_array(buf_p, (self.OC,)) - vec_res).mean()
+
+                loop_toc = time.time()
+                ref_t += loop_toc - loop_tic
+
+                if cnt % 100 == 0 and cnt > 0:
+                    print("[{}] \terror {}, \toffload time {:0.5f}s, \tref time {:0.5f}s".format((ow, oh), err/cnt, offload_t/cnt, ref_t/cnt))
+                cnt += 1
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))

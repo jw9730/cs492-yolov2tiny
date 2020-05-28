@@ -19,7 +19,6 @@ struct args {
 void * func(void * aux) {
     struct args * p = (struct args *) aux;
     int n_f = p->n_f;
-
     __m256 x = _mm256_setzero_ps();
     __m256 y = _mm256_setzero_ps();
     memcpy(&x, p->x, sizeof (float) * n_f);
@@ -27,11 +26,9 @@ void * func(void * aux) {
     __m256 o = _mm256_mul_ps(x, y);
     
     float * r = (float *) &o;
-    float acc = 0.0;
     for (int i=0; i<8; i++){
-        acc += r[i];
+        *(p->o) += r[i];
     }
-    *(p->o) += acc;
 }
 
 void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
@@ -46,15 +43,14 @@ void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
     // n_f: holder for num_elements within a chunk (<= 8)
     float * K_o = NULL;
     float * R_o = NULL;
-    struct args * args;
+    struct args * args = NULL;
     int n_c = ceil((float)in_size / 8.0);
-    int n_f;
+    int n_f = 0;
+    int ofs = 0;
+    struct args args_list[out_size * n_c];
+    pthread_t tid[out_size * n_c];
 
-    int i, j, ofs;
-    struct args * args_list = malloc((sizeof (struct args)) * out_size * n_c);
-    pthread_t * tid = malloc((sizeof (pthread_t)) * out_size * n_c);
-
-    for (i=0; i<out_size; i++){
+    for (int i=0; i<out_size; i++){
         // K_o: kernel vector
         // R_o: output address
         K_o = K + i * in_size;
@@ -72,26 +68,27 @@ void ki_apply(float * K, float * I, float * R, int in_size, int out_size) {
 #endif
 
         // compute dot product between kernel and input
-        for (j=0; j<n_c; j++){
+        for (int j=0; j<n_c; j++){
             // allocate an argument holder (will be freed before a thread exits)
             // convert subarrays into 256-bit chunks
             ofs = i * n_c + j;
+
             args = args_list + ofs;
             args->x = K_o + 8 * j;
             args->y = I + 8 * j;
             n_f = in_size - 8 * j;
-            args->n_f = (n_f > 8) ? 8 : n_f;
+            args->n_f = (n_f < 8) ? n_f : 8;
             args->o = R_o;
+            
             // run thread
             pthread_create(tid + ofs, NULL, func, args);
         }
-        for (j=0; j<n_c; j++){
+
+        for (int j=0; j<n_c; j++){
+            // join thread
             pthread_join(tid[i * n_c + j], NULL);
         }
     }
     
-    free(args_list);
-    free(tid);
-
     return;
 }
