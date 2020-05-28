@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define MAX_THREADS 8
+#define MAX_THREADS 16
 
 /* __m256: 256-bit vector containing 8 floats */
 
@@ -41,7 +41,6 @@ void * mm_func(void * aux) {
     float * I_o = args->I_o;
     float * K_o = args->K_o;
     float * R_o = args->R_o;
-
     for (int i=0; i<n_pix; i++){
         for (int j=0; j<n_out; j++){
             int residue = kernel_in;
@@ -49,7 +48,6 @@ void * mm_func(void * aux) {
             float * y = K_o + j * kernel_in;
             float * o = R_o + i * kernel_out + j;
             __m256 acc = _mm256_setzero_ps();
-
             for (int k=0; k<n_chunks-1; k++){
                 __m256 vx = _mm256_loadu_ps(x);
                 __m256 vy = _mm256_loadu_ps(y);
@@ -75,7 +73,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // R: (n_pixels * kernel_out), row major ordered
     assert((I != NULL) && (K != NULL) && (R != NULL));
     assert(MAX_THREADS >= 8);
-
     // dynamic threading
     int MAX_THREADS_PIX = 1;
     int MAX_THREADS_OUT = 8;
@@ -128,7 +125,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
         for (t_out=0; t_out<MAX_THREADS_OUT; t_out++){
             int i_ofs = t_pix * pix_per_thread;
             int k_ofs = t_out * out_per_thread;
-
             // set up thread arguments
             args->G = G;
             args->n_pix = (in_residue < pix_per_thread) ? in_residue : pix_per_thread;
@@ -136,12 +132,10 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             args->I_o = I + i_ofs * kernel_in;
             args->K_o = K + k_ofs * kernel_in;
             args->R_o = R + i_ofs * kernel_out + k_ofs;
-
             // run thread
             pthread_create(tid + (t_pix * MAX_THREADS_OUT + t_out), NULL, mm_func, args);
             //printf("%d, %d\n", t_pix, t_out);
             args++;
-        
             // processed output boundary, exit
             if (out_residue < out_per_thread){
                 t_out_max = t_out + 1;
@@ -150,7 +144,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             // update loop vars
             out_residue -= out_per_thread;
         }
-
         // processed input boundary, exit
         if (in_residue < pix_per_thread){
             t_pix_max = t_pix + 1;
@@ -246,9 +239,9 @@ void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
         args->I_o = I_o;
         args->B_o = B_o;
         args->R_o = R_o;
-
         // run thread
         pthread_create(tid + t, NULL, ba_func, args);
+        args++;
         // processed boundary, exit
         if (out_residue < out_per_thread){
             t_max = t + 1;
@@ -259,7 +252,6 @@ void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
         B_o += out_per_thread;
         R_o += n_pixel * out_per_thread;
         out_residue -= out_per_thread;
-        args++;
     }
     //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
@@ -364,9 +356,9 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
         args->G_o = G_o;
         args->V_o = V_o;
         args->R_o = R_o;
-
         // run thread
         pthread_create(tid + t, NULL, bn_func, args);
+        args++;
         // processed boundary, exit
         if (out_residue < out_per_thread){
             t_max = t + 1;
@@ -379,7 +371,6 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
         V_o += out_per_thread;
         R_o += n_pixel * out_per_thread;
         out_residue -= out_per_thread;
-        args++;
     }
     //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
@@ -444,9 +435,9 @@ void leaky_relu(float * I, float * R, int length){
         args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
         args->I_o = I_o;
         args->R_o = R_o;
-
         // run thread
         pthread_create(tid + t, NULL, lr_func, args);
+        args++;
         // processed boundary, exit
         if (out_residue < out_per_thread){
             t_max = t + 1;
@@ -456,7 +447,6 @@ void leaky_relu(float * I, float * R, int length){
         I_o += out_per_thread;
         R_o += out_per_thread;
         out_residue -= out_per_thread;
-        args++;
     }
     //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
@@ -489,7 +479,6 @@ void * mv_func(void * aux) {
     int n_o = args->n_o;
     float * K_o = args->K_o;
     float * R_o = args->R_o;
-
     // iterate over output channels
     for (int i=0; i<n_o; i++){
         int residue = in_channels;
@@ -497,7 +486,6 @@ void * mv_func(void * aux) {
         float * y = K_o + i * in_channels;
         float * o = R_o + i;
         __m256 acc = _mm256_setzero_ps();
-
         // compute dot product between kernel and input
         for (int j=0; j<n_chunks-1; j++){
             // element-wise product, no aggregation
@@ -508,7 +496,6 @@ void * mv_func(void * aux) {
             // update loop variables
             residue -= 8; x += 8; y += 8;
         }
-
         // handle last chunk
         __m256 vx = _mm256_setzero_ps();
         __m256 vy = _mm256_setzero_ps();
@@ -516,15 +503,13 @@ void * mv_func(void * aux) {
         memcpy(&vy, y, sizeof(float) * residue);
         __m256 vo = _mm256_mul_ps(vx, vy);
         acc = _mm256_add_ps(acc, vo);
-
         // accumulate
         float * res = (float *) &acc;
         for (int k=0; k<8; k++) *o += res[k];
     }
 }
 void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
-    // arguments: column major ordered
-    // K: (in_channels * out_channels)
+    // K: (in_channels, out_channels), column major ordered
     // I: (in_channels)
     // R: (out_channels)
     assert((K != NULL) && (I != NULL) && (R != NULL));
@@ -557,7 +542,6 @@ void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
         args->n_o = (out_residue < n_outs) ? out_residue : n_outs;
         args->K_o = K_o;
         args->R_o = R_o;
-
         // run thread
         pthread_create(tid + t, NULL, mv_func, args);
         // processed boundary, exit
@@ -565,7 +549,6 @@ void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
             t_max = t + 1;
             break;
         }
-
         // update loop vars
         args++;
         K_o += in_channels * n_outs;
@@ -666,9 +649,9 @@ void max_pool(float * I, float * R, int out_size, int pool_size){
         args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
         args->I_o = I_o;
         args->R_o = R_o;
-
         // run thread
         pthread_create(tid + t, NULL, mp_func, args);
+        args++;
         // processed boundary, exit
         if (out_residue < out_per_thread){
             t_max = t + 1;
@@ -678,7 +661,6 @@ void max_pool(float * I, float * R, int out_size, int pool_size){
         I_o += pool_size * out_per_thread;
         R_o += out_per_thread;
         out_residue -= out_per_thread;
-        args++;
     }
     //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
