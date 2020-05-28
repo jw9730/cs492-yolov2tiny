@@ -193,8 +193,8 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // R: (n_pixels * kernel_out), row major ordered
     assert((I != NULL) && (K != NULL) && (R != NULL));
 
-    int MAX_THREADS_PIX = 4;
-    int MAX_THREADS_OUT = 2;
+    int MAX_THREADS_PIX = 2;
+    int MAX_THREADS_OUT = 4;
     // dynamic threading
     float ratio = n_pixels / kernel_out;
     if (ratio >= 8.0){
