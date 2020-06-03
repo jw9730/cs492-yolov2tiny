@@ -344,8 +344,8 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     if (lower < full_idx) {
         upper = (upper < full_idx)? upper : full_idx;
         for (int idx=lower; idx<upper; idx++){
-            int j = idx%ih;
             int i = idx/ih;
+            int j = idx%ih;
             M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)];
         }
     }
@@ -358,6 +358,9 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
         }
     }
     */
+    if (tid == 0){
+        printf("channel %d\n", cid);
+    }
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
