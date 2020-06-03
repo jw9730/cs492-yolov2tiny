@@ -7,10 +7,10 @@
 
 #define THREADS_PER_BLOCK 512
 
-#define INDEX_ROW_MAJOR_3 (i, j, k, I, J, K) (i * (J*K) + j * K + k)
-#define INDEX_ROW_MAJOR_4 (i, j, k, l, I, J, K, L) (i * (J*K*L) + j * (K*L) + k * L + l)
+#define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) (i * (J*K) + j * K + k)
+#define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) (i * (J*K*L) + j * (K*L) + k * L + l)
 
-#define HANDLE_ERROR (err) (HandleError( err, __FILE__, __LINE__ ))
+#define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
 {
     if (err != cudaSuccess) {
