@@ -7,8 +7,8 @@
 
 #define THREADS_PER_BLOCK 512
 
-#define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) (i * (J*K) + j * K + k)
-#define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) (i * (J*K*L) + j * (K*L) + k * L + l)
+#define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) (k + K * (j + J * (i)))
+#define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) (l + L * (k + K * (j + J * (i))))
 
 #define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
@@ -108,10 +108,10 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
             }
         }
     }
-    if (threadIdx.x == 0 && w == 99 && h == 50){
+    if (threadIdx.x == 0 && w == 100 && h == 50){
         printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
-    if (threadIdx.x == 0 && w == 50 && h == 99){
+    if (threadIdx.x == 0 && w == 50 && h == 100){
         printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
 }
