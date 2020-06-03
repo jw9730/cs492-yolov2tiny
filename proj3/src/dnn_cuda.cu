@@ -52,6 +52,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             int residue = kernel_in;
             int ofs = 0;
             while (residue > 0){
+                printf("ofs: %d\n", ofs);
                 int n_tid = residue > THREADS_PER_BLOCK? THREADS_PER_BLOCK : residue;
                 mul(I_ + ofs, K_ + ofs, R_, n_tid);
                 ofs += THREADS_PER_BLOCK;
