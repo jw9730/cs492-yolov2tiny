@@ -37,7 +37,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
     int lower = load_per_thread * tid;
     int upper = load_per_thread * (tid + 1);
-    /*
     if (lower < full_idx) {
         upper = (upper < full_idx)? upper : full_idx;
         for (int idx=lower; idx<upper; idx++){
@@ -47,7 +46,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
         }
     }
-    */
+    /*
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
@@ -57,6 +56,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             }
         }
     }
+    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output channel dimension
@@ -83,9 +83,23 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
     // declare on-chip shared memory
     extern __shared__ float M[];
-    // read kernel weight once per block (shared across threads)
+    // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
+    int full_idx = kw * kh * ic;
+    int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
+    int lower = load_per_thread * tid;
+    int upper = load_per_thread * (tid + 1);
+    if (lower < full_idx) {
+        upper = (upper < full_idx)? upper : full_idx;
+        for (int idx=lower; idx<upper; idx++){
+            int k = idx%ic;
+            int j = idx/ic%kh;
+            int i = idx/ic/kh;
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
+        }
+    }
+    /*
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
@@ -95,6 +109,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
             }
         }
     }
+    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output pixel dimension
@@ -138,7 +153,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
     
-    if (ow*oh > 10 * THREADS_PER_BLOCK){
+    if (ow*oh > THREADS_PER_BLOCK){
         // weight stationary
         // within a block, hold kernel and thread over output pixels
         int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
