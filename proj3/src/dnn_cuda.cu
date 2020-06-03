@@ -333,7 +333,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
     
-    printf("channel %d\n", cid);
+    printf("bid %d, tid %d, pid %d, cid %d, bpc %d\n", bid, tid, pid, cid, BLOCKS_PER_CHANNEL);
 
     // declare on-chip shared memory
     extern __shared__ float M[];
