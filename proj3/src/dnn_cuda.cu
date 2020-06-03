@@ -14,11 +14,11 @@ __global__ void mul(float *i, float *k, float *r){
 
 extern "C"
 void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int kernel_out) {
+    printf("matmul: Started offloaded matmul in GPU... ");
     // I: (n_pixels * kernel_in), row major ordered
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
     assert((I != NULL) && (K != NULL) && (R != NULL));
-    printf("matmul: Started offloaded matmul in GPU... ");
 
     // todo:
     // compute matrix multiplication between I and K and store the results in R
