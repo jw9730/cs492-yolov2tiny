@@ -240,10 +240,11 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     int tid = threadIdx.x;
     // handle boundary
     int ofs = ow*oh*oc - bid*THREADS_PER_BLOCK;
-    if (tid >= (ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK) return;
+    int n_tid = (ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK;
+    if (tid >= n_tid) return;
     // add
-    ofs = bid * THREADS_PER_BLOCK + tid;
-    atomicAdd(R + bid*THREADS_PER_BLOCK+tid, I[ofs]*(I[ofs]>0? 1:0.1));
+    ofs = bid*THREADS_PER_BLOCK+tid;
+    atomicAdd(R + ofs, I[ofs] * (I[ofs]>0? 1 : 0.1));
 }
 extern "C"
 void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
