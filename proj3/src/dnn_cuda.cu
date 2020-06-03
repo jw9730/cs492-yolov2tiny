@@ -81,7 +81,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int h = pos_bid - oh * w;
     
     // declare on-chip shared memory
-    __shared__ float input[kw * kh * ic];
+    extern __shared__ float input[];
     // read input data once per block (shared across threads)
     if(tid == 0){
         for (int i=0; i<kw; i++){
@@ -130,7 +130,8 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // thread over output channels (input stationary)
     int BLOCKS_OUT = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int BLOCKS = ow * oh * BLOCKS_OUT;
-    conv<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    int shared_memory_size = kw * kh * ic * sizeof(float);
+    conv<<<BLOCKS,THREADS_PER_BLOCK, shared_memory_size>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
