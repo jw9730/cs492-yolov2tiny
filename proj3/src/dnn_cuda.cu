@@ -51,19 +51,19 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
 
     // copy inputs to device
     // allocate the memory on the GPU
-    HANDLE_ERROR(cudaMalloc((void**)&dev_I, n_pixels * kernel_in * sizeof(float)));
-    HANDLE_ERROR(cudaMalloc((void**)&dev_K, kernel_in * kernel_out sizeof(float)));
-    HANDLE_ERROR(cudaMalloc((void**)&dev_R, n_pixels * kernel_out * sizeof(float)));
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, n_pixels * kernel_in * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_K, kernel_in * kernel_out * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, n_pixels * kernel_out * sizeof(float) ) );
 
     // copy the arrays to the GPU
-    HANDLE_ERROR(cudaMemcpy(dev_I, I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(dev_K, K, kernel_in * kernel_out sizeof(float), cudaMemcpyHostToDevice));
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_K, K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice ) );
     
     // launch kernel on GPU
     mm<<<kernel_in,1>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
     
     // copy the array 'c' back from the GPU to the CPU
-    HANDLE_ERROR(cudaMemcpy(R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost));
+    HANDLE_ERROR( cudaMemcpy( R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost ) );
 
     // cleanup
     cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
