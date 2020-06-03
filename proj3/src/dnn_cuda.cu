@@ -112,7 +112,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
 extern "C"
 void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc) {
     float *dev_I, *dev_K, *dev_R;
-    assert (iw == ow*sw && ih = iw*sh);
+    assert ((iw == ow*sw) && (ih == iw*sh));
     // I: (iw * ih * ic), row major ordered
     // K: (kw * kh * ic * oc), row major ordered
     // R: (ow * oh * oc), row major ordered
