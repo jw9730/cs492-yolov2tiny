@@ -75,15 +75,12 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
-    
 #ifdef DEBUG
     printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, ofs, n_tid, pid, w, h);
 #endif
-
     assert (w * oh + h == pid);
     assert (pid + cid == blockIdx.x);
     if (threadIdx.x >= n_tid) return;
-    
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -114,7 +111,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     if (threadIdx.x == 0 && w == 100 && h == 50){
         printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
-    if (threadIdx.x == 0 && w == 50 && h == 100){
+    if (threadIdx.x == 0 && w == 50 && h == 99){
         printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
 }
@@ -141,11 +138,8 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // thread over output channels (input stationary)
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
-    int shared_memory_size = kw * kh * ic * sizeof(float);
-#ifdef DEBUG
-    printf("# blocks: %d, # blocks per pixel: %d\n", BLOCKS, BLOCKS_PER_PIXEL);
-#endif
-    conv<<<BLOCKS,THREADS_PER_BLOCK, shared_memory_size>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
+    conv<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
