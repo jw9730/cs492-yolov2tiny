@@ -219,10 +219,9 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     HANDLE_ERROR( cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice ) );
 
     // block = channel, thread over pixels
-    int BLOCK_MEMSIZE = sizeof(float);
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    badd<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_B, dev_R, ow, oh, oc);
+    badd<<<BLOCKS,THREADS_PER_BLOCK,sizeof(float)>>>(dev_I, dev_B, dev_R, ow, oh, oc);
     
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
@@ -265,4 +264,64 @@ void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_R);
+}
+
+
+
+
+
+__global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, int ow, int oh, int oc){
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
+    int cid = bid / BLOCKS_PER_CHANNEL; // channel index
+    // declare on-chip shared memory
+    extern __shared__ float M[];
+    if(tid == 0) M[4] = {M[cid], G[cid], V[cid], eps};
+
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= n_tid) return;
+
+    // retrieve output pixel
+    int pos = ofs + tid;
+    int w = pos/oh;
+    int h = pos%oh;
+    
+    // wait until data is ready
+    __syncthreads();
+    // normalize
+    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), (I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] - M[0]) * M[1]/sqrt(M[2]+M[3]);
+}
+extern "C"
+void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
+    float *dev_I, *dev_B, *dev_R;
+    // I: (ow * oh * oc), row major ordered
+    // M, G, V, R: (oc)
+    // R: (ow * oh * oc), row major ordered
+    // todo: element-wise normalization
+    // allocate the memory on the GPU
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_M, oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_G, oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_V, oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    // copy the arrays to the GPU
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_M, M, oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_G, G, oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_V, V, oc * sizeof(float), cudaMemcpyHostToDevice ) );
+
+    // block = channel, thread over pixels
+    int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
+    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
+    bn<<<BLOCKS,THREADS_PER_BLOCK,4*sizeof(float)>>>(dev_I, dev_M, dev_G, dev_V, dev_R, eps, ow, oh, oc);
+    
+    // copy the array back from the GPU to the CPU
+    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    // cleanup
+    cudaFree(dev_I); cudaFree(dev_M); cudaFree(dev_G); cudaFree(dev_V); cudaFree(dev_R);
 }

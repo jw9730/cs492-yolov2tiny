@@ -356,31 +356,24 @@ class BatchNorm(DnnNode):
         toc = time.time()
         print("BatchNorm: NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
-        """
-        tic = time.time()
         c_float_p = POINTER(c_float)
-        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int
+        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
+        in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
+        mu_p = np.ascontiguousarray(self.mean).astype(np.float32).ctypes.data_as(c_float_p)
+        gamma_p = np.ascontiguousarray(self.gamma).astype(np.float32).ctypes.data_as(c_float_p)
+        var_p = np.ascontiguousarray(self.variance).astype(np.float32).ctypes.data_as(c_float_p)
+        out_p = np.zeros((self.OC, self.OW, self.OH), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
 
-        in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
-        mu_p = np.ascontiguousarray(self.mean.astype(np.float32)).ctypes.data_as(c_float_p)
-        gamma_p = np.ascontiguousarray(self.gamma.astype(np.float32)).ctypes.data_as(c_float_p)
-        var_p = np.ascontiguousarray(self.variance.astype(np.float32)).ctypes.data_as(c_float_p)
-        out_p = np.zeros((self.OC, self.OW * self.OH), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-
-        c_eps = c_float(self.epsilon)
-        n_pixel = c_int(self.OW * self.OH)
-        n_channel = c_int(self.OC)
-
-        mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_eps, n_pixel, n_channel)
-        avx_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
-
+        tic = time.time()
+        mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BatchNorm: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
-        """
-        self.result = ref_result
+        print("BatchNorm: CUDA elapsed time {:1.5f}s".format(toc - tic))
+
+        self.result = cuda_result
         # correctness check
-        #assert abs(avx_result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(avx_result - ref_result).mean())
-        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -406,7 +399,7 @@ class LeakyReLU(DnnNode):
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-        
+
         tic = time.time()
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
