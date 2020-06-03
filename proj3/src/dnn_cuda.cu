@@ -43,8 +43,8 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     cudaMalloc((void **) &d_R, n_pixels * kernel_out * sizeof(float));
 
     // copy inputs to device
-    cudaMemcpy(d_I, &I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_K, &K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_I, &I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice);
+    //cudaMemcpy(d_K, &K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice);
     
     // launch kernel on GPU
     for(int i=0; i<n_pixels; i++){
@@ -64,7 +64,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // synchronize
     cudaDeviceSynchronize();
     // copy result back to host
-    cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost);
     // free GPU memory
     cudaFree(d_I);
     cudaFree(d_K);
