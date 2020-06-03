@@ -291,9 +291,6 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // wait until data is ready
     __syncthreads();
     // normalize
-    if (cid == 0){
-        printf("%f, %f, %f, %f\n", Mem[0], Mem[1], Mem[2], Mem[3]);
-    }
     atomicAdd(R + ofs, Mem[1] * (I[ofs] - Mem[0]) / (sqrt(Mem[2]) + Mem[3]));
 }
 extern "C"

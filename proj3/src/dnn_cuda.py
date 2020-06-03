@@ -370,8 +370,6 @@ class BatchNorm(DnnNode):
         toc = time.time()
         print("BatchNorm: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
-        print(self.mean[0], self.gamma[0], self.variance[0], self.epsilon)
-
         self.result = cuda_result
         # correctness check
         assert abs(cuda_result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
