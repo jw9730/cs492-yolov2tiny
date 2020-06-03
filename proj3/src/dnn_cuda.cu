@@ -56,11 +56,11 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
 
             // compute dot product and accumulate the result in target output
             for(int k=0; k<kernel_in; k++){
-                mul<<<1,1>>>(d_I, d_K, d_R);
+                mul<<<1,1>>>(I_, K_, R_);
             }
         }
     }
     
     // copy result back to host
-    cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDevicetoHost);
+    cudaMemcpy(&R, d_R, n_pixels * kern el_out * sizeof(float), cudaMemcpyDevicetoHost);
 }
