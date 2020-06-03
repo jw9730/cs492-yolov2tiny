@@ -100,14 +100,14 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
-    // handle boundary
-    if (tid >= n_tid) return;
     // apply convolution
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oc/oh;
     int h = pos/oc%oh;
     printf("[%d, %d, %d], bid %d, tid %d/%d, BLOCKS_PER_CHANNEL %d\n", w, h, cid, tid, bid, n_tid-1, BLOCKS_PER_CHANNEL);
+    // handle boundary
+    if (tid >= n_tid) return;
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
