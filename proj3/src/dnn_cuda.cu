@@ -340,7 +340,7 @@ __global__ void mp(float *I, float *K, float *R, int iw, int ih, int kw, int kh,
     if(tid == 0){
         for (int i=0; i<iw; i++){
             for (int j=0; j<ih; j++){
-                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,ic)];
+                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
             }
         }
     }
@@ -362,7 +362,7 @@ __global__ void mp(float *I, float *K, float *R, int iw, int ih, int kw, int kh,
     int idx;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, kw,kh,ic);
+            idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, kw,kh,oc);
             v = M[idx] > v? M[idx] : v;
         }
     }
@@ -371,15 +371,15 @@ __global__ void mp(float *I, float *K, float *R, int iw, int ih, int kw, int kh,
 extern "C"
 void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc) {
     float *dev_I, *dev_R;
-    // I: (iw * ih * ic), row major ordered
+    // I: (iw * ih * oc), row major ordered
     // R: (ow * oh * oc), row major ordered
     // todo: max-pooling
     // kernel function: pooling for a single sliding window
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, iw * ih * ic * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, iw * ih * oc * sizeof(float) ) );
     HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice ) );
 
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
