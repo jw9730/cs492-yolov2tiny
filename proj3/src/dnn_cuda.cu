@@ -16,16 +16,18 @@ static void HandleError(cudaError_t err, const char *file, int line)
 }
 
 __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
-    int block_idx = blockIdx.x;
-    int thread_idx = threadIdx.x;
-    if(block_idx * THREADS_PER_BLOCK + thread_idx >= kernel_in){
+    __shared__ float tmp[THREADS_PER_BLOCK];
+    int gidx = blockIdx.x;
+    int lidx = threadIdx.x;
+    
+    if(block_idx * THREADS_PER_BLOCK + lidx >= kernel_in){
         return;
     }
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            float * Iix = I + i * kernel_in + block_idx * THREADS_PER_BLOCK + thread_idx;
-            float * Kxj = K + j * kernel_in + block_idx * THREADS_PER_BLOCK + thread_idx;
+            float * Iix = I + i * kernel_in + gidx * THREADS_PER_BLOCK + lidx;
+            float * Kxj = K + j * kernel_in + gidx * THREADS_PER_BLOCK + lidx;
             // target output address
             float * Rij = R + i * kernel_out + j;
             // accumulate
