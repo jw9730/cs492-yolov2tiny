@@ -34,39 +34,21 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // shared memory: gets vectors to compute product
     // kernel function: multiply-and-accumulate of floats, accumulation can be asynchronous
 
-    // device copies of inputs
-    float * d_I, * d_K, * d_R;
-
-    // allocate space for device copies of input
-    cudaMalloc((void **) &d_I, n_pixels * kernel_in * sizeof(float));
-    cudaMalloc((void **) &d_K, kernel_in * kernel_out * sizeof(float));
-    cudaMalloc((void **) &d_R, n_pixels * kernel_out * sizeof(float));
-
     // copy inputs to device
-    //cudaMemcpy(d_I, &I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice);
-    //cudaMemcpy(d_K, &K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice);
     
     // launch kernel on GPU
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            float * I_ = d_I + i * kernel_in;
-            float * K_ = d_K + j * kernel_in;
+            float * I_ = I + i * kernel_in;
+            float * K_ = K + j * kernel_in;
             // target output address
-            float * R_ = d_R + i * kernel_out + j;
+            float * R_ = R + i * kernel_out + j;
 
             // compute dot product and accumulate the result in target output
             for(int k=0; k<kernel_in; k++){
-                //mul<<<1,1>>>(I_, K_, R_);
+                mul(I_, K_, R_);
             }
         }
     }
-    // synchronize
-    cudaDeviceSynchronize();
-    // copy result back to host
-    //cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost);
-    // free GPU memory
-    cudaFree(d_I);
-    cudaFree(d_K);
-    cudaFree(d_R);
 }
