@@ -75,8 +75,9 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int n_tid = (oc - offset < THREADS_PER_BLOCK)? (oc - offset) : THREADS_PER_BLOCK;
     // compute output pixel of the block
     int pid = bid - cid;
-    int w = pid % oh;
-    int h = pid - oh * w;
+    int h = pid % oh;
+    int w = pid / oh;
+    assert (w * oh + h == pid);
     printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
     if (tid >= n_tid) return;
 
