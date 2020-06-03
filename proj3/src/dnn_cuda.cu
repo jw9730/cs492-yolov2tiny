@@ -15,7 +15,7 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out, int THREADS_PER_BLOCK){
+__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
     int block_idx = blockIdx.x;
     int thread_idx = threadIdx.x;
     if(block_idx * THREADS_PER_BLOCK + thread_idx >= kernel_in){
@@ -63,7 +63,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     
     // launch kernel on GPU
     int BLOCKS = ceil(float(kernel_in)/float(THREADS_PER_BLOCK));
-    mm<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out, THREADS_PER_BLOCK);
+    mm<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
     
     // copy the array 'c' back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost ) );
