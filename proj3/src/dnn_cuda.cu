@@ -278,7 +278,12 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
     // declare on-chip shared memory
     __shared__ float Mem[4];
-    if(tid == 0) Mem = {M[cid], G[cid], V[cid], eps};
+    if(tid == 0){
+        Mem[0] = M[cid];
+        Mem[1] = G[cid];
+        Mem[2] = V[cid];
+        Mem[3] = eps;
+    }
 
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
