@@ -16,6 +16,7 @@ static void HandleError(cudaError_t err, const char *file, int line)
 #define THREADS_PER_BLOCK 512
 
 __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
+    printf("Block %d\n", blockIdx.x);
     if(blockIdx.x >= kernel_in){
         return;
     }
@@ -30,6 +31,7 @@ __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, in
             *R_ += I_[blockIdx.x] * K_[blockIdx.x];
         }
     }
+    printf("Block %d done\n", blockIdx.x);
 }
 
 extern "C"
