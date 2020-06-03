@@ -6,10 +6,12 @@
 #include <cuda_runtime.h>
 #define THREADS_PER_BLOCK 512
 
-void mul(float *i, float *k, float *r){
-    //int idx = blockIdx.x * THREADS_PER_BLOCK + threadIdx.x;
-    //r[idx] += i[idx] + k[idx];
-    *r += (*i) * (*k);
+void mul(float *i, float *k, float *r, int n_tid){
+    int tid = 0;
+    while (tid < n_tid){
+        r[tid] += i[tid] * k[tid];
+        tid += 1;
+    }
 }
 
 extern "C"
@@ -46,8 +48,14 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             float * R_ = R + i * kernel_out + j;
 
             // compute dot product and accumulate the result in target output
-            for(int k=0; k<kernel_in; k++){
-                mul(I_ + k, K_ + k, R_);
+            // block-wise
+            int residue = kernel_in;
+            int ofs = 0;
+            while (residue > 0){
+                int n_tid = residue > THREADS_PER_BLOCK? THREADS_PER_BLOCK : residue;
+                mul(I_ + ofs, K_ + ofs, R_, n_tid);
+                ofs += THREADS_PER_BLOCK;
+                residue -= THREADS_PER_BLOCK;
             }
         }
     }
