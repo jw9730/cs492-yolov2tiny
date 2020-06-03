@@ -10,8 +10,6 @@ import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./cuda.so')
 
-parallelism = 8
-
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
         self.g = graph
@@ -172,7 +170,6 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        # 1. Toeplitz matrix multiplication
         # preprocessing
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
@@ -183,7 +180,7 @@ class Conv2D(DnnNode):
                 h0 = self.SH * oh
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
 
-        # BASELINE
+        # fast debugging
         tic = time.time()
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
@@ -202,12 +199,12 @@ class Conv2D(DnnNode):
         # CUDA
         tic = time.time()
         mylib.matmul(in_p, k_p, out_p, n_pixels, kernel_in, kernel_out)  # apply filter as a matrix multiplication
-        avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-CUDA elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(avx_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((avx_result - ref_result).mean())
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
 
-        self.result = avx_result
+        self.result = cuda_result
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
