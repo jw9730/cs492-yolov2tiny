@@ -5,7 +5,7 @@
 #include <string.h>
 #include <cuda_runtime.h>
 
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
+#define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
 {
     if (err != cudaSuccess) {
@@ -38,7 +38,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
     // todo: compute matrix multiplication between I and K and store the results in R
-    assert((I != NULL) && (K != NULL) && (R != NULL));
 
     // how to effectively eliminate loops?
     // assign blocks
@@ -50,7 +49,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // kernel function: multiply-and-accumulate of floats, accumulation can be asynchronous
 
     // copy inputs to device
-    int *dev_I, *dev_K, *dev_R;
+    float *dev_I, *dev_K, *dev_R;
     // allocate the memory on the GPU
     HANDLE_ERROR(cudaMalloc((void**)&dev_I, n_pixels * kernel_in * sizeof(float)));
     HANDLE_ERROR(cudaMalloc((void**)&dev_K, kernel_in * kernel_out sizeof(float)));
