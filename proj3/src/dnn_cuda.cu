@@ -357,6 +357,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
         for (int i=0; i<iw; i++){
             for (int j=0; j<ih; j++){
                 M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
+                printf("%f<-%f\n", M[INDEX_ROW_MAJOR_2(i,j, iw,ih)], I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)]);
             }
         }
     }
