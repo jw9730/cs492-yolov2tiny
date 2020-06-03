@@ -29,7 +29,7 @@ __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, in
             if (i==0 && j==0){
                 printf("[%d, %d]\tblock %d:\t%f <- %f + %f @ %p\n", i, j, blockIdx.x, *Rij + tmp, *Rij, (*Iix) * (*Kxj), Rij);
             }
-            __sync_fetch_and_add(Rij, tmp);
+            atomicAdd(Rij, tmp);
         }
     }
 }
