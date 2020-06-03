@@ -70,24 +70,26 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int bid = blockIdx.x;
     int tid = threadIdx.x;
     // compute block index in output channel dimension
-    int oc_bid = bid % (ow * oh);
-    int c_ofs = oc_bid * THREADS_PER_BLOCK;
-    int n_tid = (oc - c_ofs < THREADS_PER_BLOCK)? oc - c_ofs : THREADS_PER_BLOCK;
+    int cid = bid % (ow * oh);
+    int c_ofs = cid * THREADS_PER_BLOCK;
+    int n_tid = (oc - c_ofs < THREADS_PER_BLOCK)? (oc - c_ofs) : THREADS_PER_BLOCK;
     if (tid >= n_tid) return;
 
     // compute output pixel of the block
-    int pos_bid = bid - oc_bid;
-    int w = pos_bid % ow;
-    int h = pos_bid - oh * w;
+    int pid = bid - oc_bid;
+    int w = pid % oh;
+    int h = pid - oh * w;
     
     // declare on-chip shared memory
-    extern __shared__ float input[];
+    extern __shared__ float memory[];
     // read input data once per block (shared across threads)
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
-                    input[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+                    int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
+                    int input_idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic);
+                    memory[mem_idx] = I[input_idx];
                 }
             }
         }
@@ -98,10 +100,10 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                int input_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
+                int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,c_ofs+tid, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,c_ofs+tid, ow,oh,oc);
-                atomicAdd(R +output_idx, input[input_idx] * K[kernel_idx]);
+                atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
         }
     }
@@ -110,7 +112,6 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
 extern "C"
 void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc) {
     float *dev_I, *dev_K, *dev_R;
-    assert ((iw == ow*sw) && (ih == oh*sh));
     // I: (iw * ih * ic), row major ordered
     // K: (kw * kh * ic * oc), row major ordered
     // R: (ow * oh * oc), row major ordered
@@ -128,8 +129,8 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // how to organiza blocks?
     // maximizing data reuse, spatial locality
     // thread over output channels (input stationary)
-    int BLOCKS_OUT = ceil(float(oc)/float(THREADS_PER_BLOCK));
-    int BLOCKS = ow * oh * BLOCKS_OUT;
+    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
+    int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
     int shared_memory_size = kw * kh * ic * sizeof(float);
     conv<<<BLOCKS,THREADS_PER_BLOCK, shared_memory_size>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     // copy the array back from the GPU to the CPU
