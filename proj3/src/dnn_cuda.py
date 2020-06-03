@@ -153,9 +153,9 @@ class Conv2D(DnnNode):
             assert len(padding) == 2
             self.pad = padding
             
-        self.ptin = np.pad(self.in_node.result, self.pad, mode='constant')
-        self.PW = self.ptin.shape[1]
-        self.PH = self.ptin.shape[2]
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
+        self.PW = pin.shape[1]
+        self.PH = pin.shape[2]
         self.KW = self.weights.shape[0]
         self.KH = self.weights.shape[1]
         self.IC = self.weights.shape[2]
@@ -170,29 +170,28 @@ class Conv2D(DnnNode):
         #self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        # preprocessing
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
 
+        # fast debugging
+        tic = time.time()
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-                toeplitz_in[ow * self.OH + oh, :] = self.ptin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
-        # fast debugging
-        tic = time.time()
+                toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        tic = time.time()
         c_float_p = POINTER(c_float)
-        in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
+        in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         # parameters: (input, kernel, output, ...)
         mylib.conv2d.argtypes = [c_float_p, c_float_p, c_float_p] + [c_int] * 10
-        # run
-        tic = time.time()
         mylib.conv2d(in_p, k_p, out_p,
                      c_int(self.PW), c_int(self.PH), c_int(self.OW), c_int(self.OH),\
                      c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
@@ -220,19 +219,17 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
-
         tic = time.time()
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         toc = time.time()
         print("BiasAdd: NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        tic = time.time()
         c_float_p = POINTER(c_float)
         mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-
-        tic = time.time()
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
@@ -287,34 +284,34 @@ class MaxPool2D(DnnNode):
         else:
             raise Exception("Unexpected padding mode: {}".format(padding))	
 
-        self.ptin = np.pad(self.in_node.result, self.pad, mode='constant')
-        self.PW = self.ptin.shape[1]
-        self.PH = self.ptin.shape[2]
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
+        self.PW = pin.shape[1]
+        self.PH = pin.shape[2]
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         _, OW, OH, _ = self.result.shape
+
+        tic = time.time()
         # Toeplitz matrix + max filter
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
         for ow in range(0, OW):
             for oh in range(0, OH):
                 w0 = self.stride[1] * ow
                 h0 = self.stride[2] * oh
-                rpin[ow * OH + oh, :, :, :] = self.ptin[0, w0:w0+self.ksize[1], h0:h0+self.ksize[2], :]
+                rpin[ow * OH + oh, :, :, :] = pin[0, w0:w0+self.ksize[1], h0:h0+self.ksize[2], :]
         toeplitz_in = rpin.transpose((0, 3, 1, 2)).reshape((OW * OH * self.OC, self.ksize[1] * self.ksize[2]))
-
-        tic = time.time()
         ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC)) # correctness check
         toc = time.time()
         print("MaxPool2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        tic = time.time()
         c_float_p = POINTER(c_float)
-        in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
+        in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, OW, OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         # parameters: (input, output, ...)
         mylib.max_pool.argtypes = [c_float_p, c_float_p] + [c_int] * 9
-
-        tic = time.time()
         mylib.max_pool(in_p, out_p,\
                        c_int(self.PW), c_int(self.PH),\
                        c_int(self.ksize[1]), c_int(self.ksize[2]),\
@@ -323,10 +320,6 @@ class MaxPool2D(DnnNode):
         cuda_result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
         print("MaxPool2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
-
-        n = int(OH/2)
-        print(cuda_result[0,n,n,10])
-        print(ref_result[0,n,n,10])
 
         self.result = cuda_result
         assert abs(cuda_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
@@ -361,6 +354,7 @@ class BatchNorm(DnnNode):
         toc = time.time()
         print("BatchNorm: NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        tic = time.time()
         c_float_p = POINTER(c_float)
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
@@ -368,8 +362,6 @@ class BatchNorm(DnnNode):
         gamma_p = np.ascontiguousarray(self.gamma).astype(np.float32).ctypes.data_as(c_float_p)
         var_p = np.ascontiguousarray(self.variance).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-
-        tic = time.time()
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
@@ -400,12 +392,11 @@ class LeakyReLU(DnnNode):
         toc = time.time()
         print("LeakyReLU: NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        tic = time.time()
         c_float_p = POINTER(c_float)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-
-        tic = time.time()
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
