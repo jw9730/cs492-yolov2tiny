@@ -90,7 +90,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, iw,ih,ic,oc)];
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
                 }
             }
         }
@@ -111,6 +111,9 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
+                if(w == 0 && h == 0 && cid == 0){
+                    printf("%d,%d,%d: %f += %f * %f\n", i,j,k,o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)], M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
+                }
                 atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
             }
         }
