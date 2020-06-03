@@ -339,20 +339,19 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
-    /*
-    int full_idx = iw * ih;
-    int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
+    int all = iw * ih;
+    int load_per_thread = ceil(float(all)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
-    if (l < full_idx) {
-        u = (u < full_idx)? u : full_idx;
+    if (l < all) {
+        u = (u < all)? u : all;
         for (int idx=l; idx<u; idx++){
             int i = idx/ih;
             int j = idx%ih;
             M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
         }
     }
-    */
+   /*
     if(tid == 0){
         for (int i=0; i<iw; i++){
             for (int j=0; j<ih; j++){
@@ -360,6 +359,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             }
         }
     }
+    */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -371,10 +371,10 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // wait until data is ready
     __syncthreads();
     // apply pooling
-    float v = -1e10;
+    float v = -1e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            v = M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] > v? M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] : v;
+            v = (M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] > v)? M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] : v;
         }
     }
     atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
