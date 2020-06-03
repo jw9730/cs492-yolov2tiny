@@ -220,12 +220,12 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
-        """
+
         tic = time.time()
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         toc = time.time()
         print("BiasAdd: NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
         c_float_p = POINTER(c_float)
         mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
@@ -239,8 +239,8 @@ class BiasAdd(DnnNode):
         print("BiasAdd: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = cuda_result
-        #assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
-        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
@@ -350,14 +350,14 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        """
+
         tic = time.time()
         ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
                     (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                     (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon).astype(np.float32)
         toc = time.time()
         print("BatchNorm: NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
         c_float_p = POINTER(c_float)
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
@@ -374,8 +374,8 @@ class BatchNorm(DnnNode):
 
         self.result = cuda_result
         # correctness check
-        #assert abs(cuda_result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
-        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -391,12 +391,12 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        """
+
         tic = time.time()
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         toc = time.time()
         print("LeakyReLU: NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
         c_float_p = POINTER(c_float)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
@@ -409,8 +409,8 @@ class LeakyReLU(DnnNode):
         print("LeakyReLU: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = cuda_result
-        #assert abs(cuda_result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
-        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class Input(DnnNode):
    def __init__(self, name, in_shape):
