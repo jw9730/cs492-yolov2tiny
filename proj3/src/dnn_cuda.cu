@@ -189,7 +189,7 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK) return;
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
@@ -282,7 +282,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK) return;
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
