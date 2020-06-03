@@ -199,7 +199,7 @@ class Conv2D(DnnNode):
                      c_int(self.IC), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
+        print("Conv2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
         #assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
         self.result = cuda_result
 
@@ -287,44 +287,45 @@ class MaxPool2D(DnnNode):
         else:
             raise Exception("Unexpected padding mode: {}".format(padding))	
 
-        ptin= np.pad(self.in_node.result, self.pad, mode='constant')
-        self.PW = ptin.shape[1]
-        self.PH = ptin.shape[2]
+        self.ptin = np.pad(self.in_node.result, self.pad, mode='constant')
+        self.PW = self.ptin.shape[1]
+        self.PH = self.ptin.shape[2]
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
+        _, OW, OH, _ = self.result.shape
         # Toeplitz matrix + max filter
-        #c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
-        #mylib.max_pool.argtypes = c_float_p, c_float_p, c_int, c_int  # set function argument types
-
-        _, OW, OH, OC = self.result.shape
-        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
         for ow in range(0, OW):
             for oh in range(0, OH):
                 w0 = self.stride[1] * ow
                 h0 = self.stride[2] * oh
-                rpin[ow * OH + oh, :, :, :] = pin[0, w0:w0+self.ksize[1], h0:h0+self.ksize[2], :]
-
+                rpin[ow * OH + oh, :, :, :] = self.ptin[0, w0:w0+self.ksize[1], h0:h0+self.ksize[2], :]
         toeplitz_in = rpin.transpose((0, 3, 1, 2)).reshape((OW * OH * self.OC, self.ksize[1] * self.ksize[2]))
-        #out_size = c_int(OW * OH * self.OC)
-        #pool_size = c_int(self.ksize[1] * self.ksize[2])
-        #in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
-        #out_p = np.zeros((OW * OH * self.OC,), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
 
         tic = time.time()
-        ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC))  # correctness check
+        ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC)) # correctness check
         toc = time.time()
         print("MaxPool2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
+        c_float_p = POINTER(c_float)
+        in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
+        out_p = np.zeros((1, OW, OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        # parameters: (input, output, ...)
+        mylib.max_pool.argtypes = [c_float_p, c_float_p] + [c_int] * 9
+
         tic = time.time()
-        mylib.max_pool(in_p, out_p, out_size, pool_size)  # apply filter as a matrix multiplication
-        avx_result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
+        mylib.max_pool(in_p, out_p,\
+                       c_int(self.PW), c_int(self.PH),\
+                       c_int(self.ksize[1]), c_int(self.ksize[2]),\
+                       c_int(self.stride[1]), c_int(self.stride[2]),\
+                       c_int(OW), c_int(OH), c_int(self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
-        print("MaxPool2D: TOEPLITZ-OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
-        """
-        self.result = ref_result
-        #assert abs(avx_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((avx_result - ref_result).mean())
+        print("MaxPool2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
+
+        self.result = cuda_result
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
 
 
 class BatchNorm(DnnNode):
@@ -405,7 +406,7 @@ class LeakyReLU(DnnNode):
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("LeakyReLU: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("LeakyReLU: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = cuda_result
         #assert abs(cuda_result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())

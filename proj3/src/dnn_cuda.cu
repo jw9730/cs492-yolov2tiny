@@ -100,11 +100,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= n_tid) return;
     /*
     if(tid == 0){
         for (int i=0; i<kw; i++){
@@ -116,6 +111,11 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
         }
     }
     */
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= n_tid) return;
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
@@ -294,7 +294,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     atomicAdd(R + ofs, Mem[1] * (I[ofs] - Mem[0]) / (sqrt(Mem[2]) + Mem[3]));
 }
 extern "C"
-void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
+void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
     float *dev_I, *dev_M, *dev_G, *dev_V, *dev_R;
     // I: (ow * oh * oc), row major ordered
     // M, G, V, R: (oc)
@@ -319,4 +319,79 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_M); cudaFree(dev_G); cudaFree(dev_V); cudaFree(dev_R);
+}
+
+
+
+
+
+__global__ void mp(float *I, float *K, float *R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc){
+    // input stationary
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
+    int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
+    // declare on-chip shared memory
+    extern __shared__ float M[];
+    // read input data once per block (shared across threads)
+    // this process could serve as bottleneck, load distribution is critical
+    // distribute indices across threads
+    if(tid == 0){
+        for (int i=0; i<iw; i++){
+            for (int j=0; j<ih; j++){
+                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,ic)];
+            }
+        }
+    }
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
+
+    // retrieve output pixel
+    int pos = ofs + tid;
+    int w = pos/oh;
+    int h = pos%oh;
+
+    // wait until data is ready
+    __syncthreads();
+    
+    // apply pooling
+    float v = -1e10;
+    int idx;
+    for (int i=0; i<kw; i++){
+        for (int j=0; j<kh; j++){
+            idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, kw,kh,ic);
+            v = M[idx] > v? M[idx] : v;
+        }
+    }
+    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
+}
+extern "C"
+void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc) {
+    float *dev_I, *dev_R;
+    // I: (iw * ih * ic), row major ordered
+    // R: (ow * oh * oc), row major ordered
+    // todo: max-pooling
+    // kernel function: pooling for a single sliding window
+    // allocate the memory on the GPU
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, iw * ih * ic * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    // copy the arrays to the GPU
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
+
+    // how to organize blocks?
+    // maximizing data reuse and parallelism within a block
+    // input stationary (block = output channel)
+    // within a block, thread over output pixels
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
+    int BLOCK_MEMSIZE = iw * ih * sizeof(float);
+    mp<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
+    
+    // copy the array back from the GPU to the CPU
+    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    // cleanup
+    cudaFree(dev_I); cudaFree(dev_R);
 }
