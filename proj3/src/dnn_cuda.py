@@ -362,7 +362,7 @@ class BatchNorm(DnnNode):
         mu_p = np.ascontiguousarray(self.mean).astype(np.float32).ctypes.data_as(c_float_p)
         gamma_p = np.ascontiguousarray(self.gamma).astype(np.float32).ctypes.data_as(c_float_p)
         var_p = np.ascontiguousarray(self.variance).astype(np.float32).ctypes.data_as(c_float_p)
-        out_p = np.zeros((self.OC, self.OW, self.OH), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
 
         tic = time.time()
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
