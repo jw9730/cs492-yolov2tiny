@@ -72,6 +72,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int cid = bid % (ow * oh);
     int c_ofs = cid * THREADS_PER_BLOCK;
     int n_tid = (oc - c_ofs < THREADS_PER_BLOCK)? (oc - c_ofs) : THREADS_PER_BLOCK;
+    printf("block id %d, thread id %d, total threads in this block %d\n", bid, tid, n_tid);
     if (tid >= n_tid) return;
 
     // compute output pixel of the block
