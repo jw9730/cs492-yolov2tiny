@@ -197,11 +197,12 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
+    ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     
     // wait until data is ready
     __syncthreads();
     // add
-    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] + M[0]);
+    atomicAdd(R + ofs, I[ofs] + M[0]);
 }
 extern "C"
 void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
@@ -284,22 +285,20 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
         Mem[2] = V[cid];
         Mem[3] = eps;
     }
-
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= n_tid) return;
-
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
-    
+    ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // wait until data is ready
     __syncthreads();
     // normalize
-    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), (I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] - Mem[0]) * Mem[1]/sqrt(Mem[2]+Mem[3]));
+    atomicAdd(R + ofs, (I[ofs] - Mem[0]) * Mem[1]/sqrt(Mem[2]+Mem[3]));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
