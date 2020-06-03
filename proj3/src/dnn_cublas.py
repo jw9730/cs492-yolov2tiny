@@ -8,7 +8,7 @@ from multiprocessing import Process, sharedctypes
 
 import time
 from ctypes import *
-mylib = cdll.LoadLibrary('./openblas.so')
+mylib = cdll.LoadLibrary('./cublas.so')
 
 parallelism = 8
 

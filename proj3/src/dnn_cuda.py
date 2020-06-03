@@ -8,7 +8,7 @@ from multiprocessing import Process, sharedctypes
 
 import time
 from ctypes import *
-mylib = cdll.LoadLibrary('./avx.so')
+mylib = cdll.LoadLibrary('./cuda.so')
 
 parallelism = 8
 
