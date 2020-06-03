@@ -339,6 +339,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
+    /*
     int full_idx = iw * ih;
     int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
@@ -351,15 +352,14 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
         }
     }
-    /*
+    */
     if(tid == 0){
         for (int i=0; i<iw; i++){
             for (int j=0; j<ih; j++){
-                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)];
+                M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
             }
         }
     }
-    */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -376,7 +376,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int idx;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, kw,kh,oc);
+            idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
             v = M[idx] > v? M[idx] : v;
         }
     }
