@@ -22,7 +22,12 @@ void ki_apply(float *K, float *I, float *R, int in_size, int out_size) {
     cudaStat = cudaMalloc((void**)&d_I, 1 * in_size * sizeof(float));
     cudaStat = cudaMalloc((void**)&d_K, in_size * out_size * sizeof(float));
     cudaStat = cudaMalloc((void**)&d_R, 1 * out_size * sizeof(float));
+
     stat = cublasCreate(&handle);
+
+	stat = cublasSetMatrix (1, in_size, sizeof(float) , I, 1, d_I ,1); 
+	stat = cublasSetMatrix (in_size, out_size, sizeof(float) , K, in_size, d_K ,in_size); 
+	stat = cublasSetMatrix (1, out_size, sizeof(float) , R, 1, d_R, 1); 
 
     float a = 1.0f;
     float b = 1.0f;
