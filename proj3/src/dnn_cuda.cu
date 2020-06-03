@@ -138,7 +138,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
     
-    if (oc > 1e10){
+    if (oc > THREADS_PER_BLOCK){
         // input stationary
         // within a block, hold input and thread over output channels
         int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
