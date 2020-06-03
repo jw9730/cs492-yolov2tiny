@@ -20,12 +20,13 @@ __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, in
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            float * I_ = I + i * kernel_in + blockIdx.x;
-            float * K_ = K + j * kernel_in + blockIdx.x;
+            float * Iix = I + i * kernel_in + blockIdx.x;
+            float * Kxj = K + j * kernel_in + blockIdx.x;
             // target output address
-            float * R_ = R + i * kernel_out + j;
+            float * Rij = R + i * kernel_out + j;
             // accumulate
-            *R_ += *I_ * *K_;
+            printf("[%d, %d], block %d: Rij <- Rij + %f\n", blockIdx.x, (*Iix) * (*Kxj));
+            *Rij += (*Iix) * (*Kxj);
         }
     }
 }
