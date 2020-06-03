@@ -6,7 +6,6 @@
 #include <cuda_runtime.h>
 
 #define THREADS_PER_BLOCK 512
-
 #define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
 {
@@ -16,12 +15,17 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
+__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out, THREADS_PER_BLOCK){
+    int block_idx = blockIdx.x;
+    int thread_idx = threadIdx.x;
+    if(block_idx * THREADS_PER_BLOCK + thread_idx >= kernel_in){
+        return;
+    }
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            float * Iix = I + i * kernel_in + blockIdx.x;
-            float * Kxj = K + j * kernel_in + blockIdx.x;
+            float * Iix = I + i * kernel_in + block_idx * THREADS_PER_BLOCK + thread_idx;
+            float * Kxj = K + j * kernel_in + block_idx * THREADS_PER_BLOCK + thread_idx;
             // target output address
             float * Rij = R + i * kernel_out + j;
             // accumulate
@@ -58,7 +62,8 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     HANDLE_ERROR( cudaMemcpy( dev_K, K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice ) );
     
     // launch kernel on GPU
-    mm<<<kernel_in,1>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
+    int BLOCKS = ceil(float(kernel_in)/float(THREADS_PER_BLOCK));
+    mm<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out, THREADS_PER_BLOCK);
     
     // copy the array 'c' back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost ) );
