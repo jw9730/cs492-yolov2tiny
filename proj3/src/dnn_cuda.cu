@@ -19,52 +19,6 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void mm_tp(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
-    int gidx = blockIdx.x;
-    int lidx = threadIdx.x;
-    if(gidx * THREADS_PER_BLOCK + lidx >= kernel_in){
-        return;
-    }
-    for(int i=0; i<n_pixels; i++){
-        for(int j=0; j<kernel_out; j++){
-            // vectors to compute dot product
-            float * Iix = I + i * kernel_in + gidx * THREADS_PER_BLOCK + lidx;
-            float * Kxj = K + j * kernel_in + gidx * THREADS_PER_BLOCK + lidx;
-            // target output address
-            float * Rij = R + i * kernel_out + j;
-            // accumulate
-            atomicAdd(Rij, (*Iix) * (*Kxj));
-        }
-    }
-}
-extern "C"
-void matmul_tp(float * I, float * K, float * R, int n_pixels, int kernel_in, int kernel_out) {
-    float *dev_I, *dev_K, *dev_R;
-    // I: (n_pixels * kernel_in), row major ordered
-    // K: (kernel_in * kernel_out), column major ordered
-    // R: (n_pixels * kernel_out), row major ordered
-    // todo: compute matrix multiplication between I and K and store the results in R
-
-    // loop over outer dimensions, and compute dot product in chunks of size 512
-    // kernel function: multiply-and-accumulate of floats, accumulation can be asynchronous
-    // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, n_pixels * kernel_in * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_K, kernel_in * kernel_out * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, n_pixels * kernel_out * sizeof(float) ) );
-    // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_K, K, kernel_in * kernel_out * sizeof(float), cudaMemcpyHostToDevice ) );
-    // launch kernel on GPU
-    int BLOCKS = ceil(float(kernel_in)/float(THREADS_PER_BLOCK));
-    mm_tp<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
-    // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost ) );
-    // cleanup
-    cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
-    // problem: no on-chip data reuse (no sharing across threads)
-    // solution: fallback to looped convolution, and enforce input and kernel reuse
-}
-
 __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int cid = blockIdx.x % BLOCKS_PER_PIXEL;

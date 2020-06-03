@@ -185,8 +185,9 @@ class Conv2D(DnnNode):
         toc = time.time()
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
-        # Approach 1. Toeplitz matrix
         c_float_p = POINTER(c_float)
+        """
+        # Approach 1. Toeplitz matrix
         in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
         k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
@@ -199,7 +200,7 @@ class Conv2D(DnnNode):
         toc = time.time()
         print("Conv2D: CUDA-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
         assert abs(cuda_tp_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_tp_result - ref_result).mean())
-
+        """
         # Approach 2. Sliding window convolution
         in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
@@ -216,7 +217,6 @@ class Conv2D(DnnNode):
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
-        print(ref_result[0, 100, 50, 0], ref_result[0, 50, 100, 0])
         assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
 
         self.result = cuda_result
