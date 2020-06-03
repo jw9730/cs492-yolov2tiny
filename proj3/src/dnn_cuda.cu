@@ -43,8 +43,8 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     if (lower < full_idx) {
         upper = (upper < full_idx)? upper : full_idx;
         for (int idx=lower; idx<upper; idx++){
-            int k = idx % ic;
-            int j = idx/ic % kh;
+            int k = idx%ic;
+            int j = idx/ic%kh;
             int i = idx/ic/kh;
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
         }
@@ -74,6 +74,49 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
         }
     }
 }
+__global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
+    // weight stationary
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    int cid = blockIdx.x % BLOCKS_PER_CHANNEL; // output channel index
+    int pid = blockIdx.x / BLOCKS_PER_CHANNEL; // pixel block index (within channel)
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
+    // declare on-chip shared memory
+    extern __shared__ float M[];
+    // read kernel weight once per block (shared across threads)
+    // this process could serve as bottleneck, load distribution is critical
+    // distribute indices across threads
+    if(threadIdx.x == 0){
+        for (int i=0; i<kw; i++){
+            for (int j=0; j<kh; j++){
+                for (int k=0; k<ic; k++){
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, iw,ih,ic,oc)];
+                }
+            }
+        }
+    }
+    // wait until data is ready
+    __syncthreads();
+    // handle boundary
+    if (tid >= n_tid) return;
+    // apply convolution
+    // retrieve output pixel
+    int pos = ofs + tid;
+    assert (cid == pos%oc);
+    int w = pos/oc/oh;
+    int h = pos/oc%oh;
+    float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    for (int i=0; i<kw; i++){
+        for (int j=0; j<kh; j++){
+            for (int k=0; k<ic; k++){
+                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, kw,kh,ic)] * M[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)]);
+            }
+        }
+    }
+}
 extern "C"
 void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc) {
     float *dev_I, *dev_K, *dev_R;
@@ -91,12 +134,22 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice ) );
     // how to organize blocks?
-    // maximizing data reuse
-    // within a block, hold input and thread over output channels (input stationary)
-    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
-    int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
-    int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
-    conv_is<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    // maximizing data reuse and parallelism within a block
+    if (oc > THREADS_PER_BLOCK){
+        // input stationary
+        // within a block, hold input and thread over output channels
+        int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
+        int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
+        int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
+        conv_is<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    }else{
+        // weight stationary
+        // within a block, hold kernel and thread over output pixels
+        int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+        int BLOCKS = oc * BLOCKS_PER_CHANNEL;
+        int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
+        conv_ws<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    }
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
