@@ -325,7 +325,7 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
 
 
 
-__global__ void mp(float *I, float *K, float *R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc){
+__global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc){
     // input stationary
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int bid = blockIdx.x;
