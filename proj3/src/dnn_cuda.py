@@ -209,7 +209,6 @@ class Conv2D(DnnNode):
         mylib.conv2d.argtypes = [c_float_p, c_float_p, c_float_p] + [c_int] * 10
         # run
         tic = time.time()
-        print(self.PW, self.PH, self.OW, self.OH, self.KW, self.KH, self.SW, self.SH, self.IC, self.OC)
         mylib.conv2d(in_p, k_p, out_p,
                      c_int(self.PW), c_int(self.PH), c_int(self.OW), c_int(self.OH),\
                      c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
