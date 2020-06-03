@@ -19,8 +19,10 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
+__global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
     int cid = blockIdx.x % BLOCKS_PER_PIXEL;
     int pid = blockIdx.x / BLOCKS_PER_PIXEL;
     // compute block index in output channel dimension
@@ -29,9 +31,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
-    assert (w * oh + h == pid);
-    assert (pid * BLOCKS_PER_PIXEL + cid == blockIdx.x);
-    if (threadIdx.x >= n_tid) return;
+    if (tid >= n_tid) return;
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -39,9 +39,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
-                    int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
-                    int input_idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic);
-                    M[mem_idx] = I[input_idx];
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
                 }
             }
         }
@@ -49,13 +47,11 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // wait until data is ready
     __syncthreads();
     // apply convolution
-    int output_idx = INDEX_ROW_MAJOR_3(w,h,ofs+threadIdx.x, ow,oh,oc);
+    float *o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
-                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,ofs+threadIdx.x, kw,kh,ic,oc);
-                atomicAdd(R + output_idx, M[mem_idx] * K[kernel_idx]);
+                atomicAdd(o, M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,ofs+tid, kw,kh,ic,oc)]);
             }
         }
     }
@@ -68,7 +64,6 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // K: (kw * kh * ic * oc), row major ordered
     // R: (ow * oh * oc), row major ordered
     // todo: 2d convolution between I and K
-
     // loop over outer dimensions, and compute dot product in chunks of size 512
     // kernel function: convolution for a single sliding window
     // allocate the memory on the GPU
@@ -84,7 +79,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
-    conv<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+    conv_ws<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup

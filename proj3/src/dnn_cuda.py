@@ -201,7 +201,7 @@ class Conv2D(DnnNode):
         print("Conv2D: CUDA-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
         assert abs(cuda_tp_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_tp_result - ref_result).mean())
         """
-        # Approach 2. Sliding window convolution
+        # Approach 2. Weight-stationary
         in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
@@ -213,12 +213,12 @@ class Conv2D(DnnNode):
                      c_int(self.PW), c_int(self.PH), c_int(self.OW), c_int(self.OH),\
                      c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
                      c_int(self.IC), c_int(self.OC))
-        cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+        ws_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        print("Conv2D: CUDA-WSCONV2D elapsed time {:1.5f}s".format(toc - tic))
+        assert abs(ws_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(ws_result - ref_result).mean())
 
-        self.result = cuda_result
+        self.result = ws_result
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
