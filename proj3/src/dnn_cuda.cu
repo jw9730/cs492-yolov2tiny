@@ -49,14 +49,14 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            I_ = d_I + i * kernel_in;
-            K_ = d_K + j * kernel_in;
+            float * I_ = d_I + i * kernel_in;
+            float * K_ = d_K + j * kernel_in;
             // target output address
-            R_ = d_R + i * kernel_out + j;
+            float * R_ = d_R + i * kernel_out + j;
 
             // compute dot product and accumulate the result in target output
             for(int k=0; k<kernel_in; k++){
-                kernel<<<1,1>>>(d_I, d_K, d_R);
+                mul<<<1,1>>>(d_I, d_K, d_R);
             }
         }
     }
