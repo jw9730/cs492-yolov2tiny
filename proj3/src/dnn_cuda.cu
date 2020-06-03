@@ -34,6 +34,7 @@ __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, in
 
 extern "C"
 void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int kernel_out) {
+    float *dev_I, *dev_K, *dev_R;
     // I: (n_pixels * kernel_in), row major ordered
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
@@ -49,7 +50,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // kernel function: multiply-and-accumulate of floats, accumulation can be asynchronous
 
     // copy inputs to device
-    float *dev_I, *dev_K, *dev_R;
     // allocate the memory on the GPU
     HANDLE_ERROR(cudaMalloc((void**)&dev_I, n_pixels * kernel_in * sizeof(float)));
     HANDLE_ERROR(cudaMalloc((void**)&dev_K, kernel_in * kernel_out sizeof(float)));
@@ -60,7 +60,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     HANDLE_ERROR(cudaMemcpy(dev_K, K, kernel_in * kernel_out sizeof(float), cudaMemcpyHostToDevice));
     
     // launch kernel on GPU
-    mm<<<kernel_in,1>>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
+    mm<<<kernel_in,1>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
     
     // copy the array 'c' back from the GPU to the CPU
     HANDLE_ERROR(cudaMemcpy(R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost));
