@@ -59,8 +59,4 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             }
         }
     }
-    
-    for(int i=0; i<n_pixels * kernel_out; i++){
-        printf("%f ", R[i]);
-    }
 }

@@ -202,7 +202,8 @@ class Conv2D(DnnNode):
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-CUDA elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
+        print(cuda_result)
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
         self.result = cuda_result
 
 class BiasAdd(DnnNode):
