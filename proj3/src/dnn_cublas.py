@@ -230,7 +230,7 @@ class Conv2D(DnnNode):
         # 1d kernel: (KW * KH * IC * OC,)
         # should be arranged contiguously in memory, in row major order
         # cast to float pointer type
-        k_1d = np.ascontiguousarray(self.weights.squeeze().astype(np.float32))
+        k_1d = np.asfortranarray(self.weights.squeeze().astype(np.float32))
         k_p = k_1d.ctypes.data_as(c_float_p)
 
         # pixel-wise offload
@@ -241,17 +241,19 @@ class Conv2D(DnnNode):
                 # cast to float pointer type
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-                in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
+                in_1d = np.asfortranarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
 
                 # output buffer
-                buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
+                buf_p = np.zeros((self.OC,), order='f', dtype=np.float32).ctypes.data_as(c_float_p)
 
                 # apply filter as a matrix multiplication
                 mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
 
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
+
+                assert abs(full_result[0, ow, oh, :] - ref_result[0, ow, oh, :]).mean() < 1e-5, "Conv2D: consistency check failed with error {}".format(abs(full_result[0, ow, oh, :] - ref_result[0, ow, oh, :]).mean())
 
         toc = time.time()
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
