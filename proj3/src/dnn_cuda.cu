@@ -6,11 +6,17 @@
 #include <cuda_runtime.h>
 #define THREADS_PER_BLOCK 512
 
-void mul(float *i, float *k, float *r, int n_tid){
-    int tid = 0;
-    while (tid < n_tid){
-        *r += i[tid] * k[tid];
-        tid++;
+__global__ void mul(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
+    for(int i=0; i<n_pixels; i++){
+        for(int j=0; j<kernel_out; j++){
+            // vectors to compute dot product
+            float * I_ = I + i * kernel_in;
+            float * K_ = K + j * kernel_in;
+            // target output address
+            float * R_ = R + i * kernel_out + j;
+            // accumulate
+            *R_ += I_[blockIdx.x] * K_[blockIdx.x];
+        }
     }
 }
 
@@ -19,44 +25,35 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // I: (n_pixels * kernel_in), row major ordered
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
+    // todo: compute matrix multiplication between I and K and store the results in R
     assert((I != NULL) && (K != NULL) && (R != NULL));
 
-    // todo:
-    // compute matrix multiplication between I and K and store the results in R
-
-    // approach:
-    // compute dot products in GPU
     // how to effectively eliminate loops?
-
     // assign blocks
     // within a block, 512 threads can execute in parallel (via shared memory)
 
     // trial 1:
-    // loop over outer dimensions, and compute a dot product in chunks of size 512
-    // shared memory: gets vectors to compute product
+    // loop over outer dimensions, and compute dot product in chunks of size 512
+    // shared memory: gets vectors to compute product, each element consumed by threads
     // kernel function: multiply-and-accumulate of floats, accumulation can be asynchronous
 
     // copy inputs to device
+    int *dev_I, *dev_K, *dev_R;
+    // allocate the memory on the GPU
+    HANDLE_ERROR(cudaMalloc((void**)&dev_I, n_pixels * kernel_in * sizeof(float)));
+    HANDLE_ERROR(cudaMalloc((void**)&dev_K, kernel_in * kernel_out sizeof(float)));
+    HANDLE_ERROR(cudaMalloc((void**)&dev_R, n_pixels * kernel_out * sizeof(float)));
+
+    // copy the arrays to the GPU
+    HANDLE_ERROR(cudaMemcpy(dev_I, I, n_pixels * kernel_in * sizeof(float), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(dev_K, K, kernel_in * kernel_out sizeof(float), cudaMemcpyHostToDevice));
     
     // launch kernel on GPU
-    for(int i=0; i<n_pixels; i++){
-        for(int j=0; j<kernel_out; j++){
-            // vectors to compute dot product
-            float * I_ = I + i * kernel_in;
-            float * K_ = K + j * kernel_in;
-            // target output address
-            float * R_ = R + i * kernel_out + j;
+    mm<<<kernel_in,1>>>>(dev_I, dev_K, dev_R, n_pixels, kernel_in, kernel_out);
+    
+    // copy the array 'c' back from the GPU to the CPU
+    HANDLE_ERROR(cudaMemcpy(R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost));
 
-            // compute dot product and accumulate the result in target output
-            // block-wise
-            int residue = kernel_in;
-            int ofs = 0;
-            while (residue > 0){
-                int n_tid = (residue > THREADS_PER_BLOCK)? THREADS_PER_BLOCK : residue;
-                mul(I_ + ofs, K_ + ofs, R_, n_tid);
-                ofs += THREADS_PER_BLOCK;
-                residue -= THREADS_PER_BLOCK;
-            }
-        }
-    }
+    // cleanup
+    cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
 }
