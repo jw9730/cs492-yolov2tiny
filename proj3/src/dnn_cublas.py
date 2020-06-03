@@ -234,7 +234,8 @@ class Conv2D(DnnNode):
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
 
                 # apply filter as a matrix multiplication
-                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
+                err = mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
+                assert err != 0
 
                 # accumulate pixel output
                 full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))

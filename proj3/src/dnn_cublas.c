@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 
-void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
+int ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     assert(K != NULL);
     assert(I != NULL);
     assert(res != NULL);
