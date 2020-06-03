@@ -105,6 +105,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // apply convolution
     // retrieve output pixel
     int pos = ofs + tid;
+    assert(pos&oc == cid);
     int w = pos/oc/oh;
     int h = pos/oc%oh;
     printf("pos %d, [%d, %d, %d], bid %d, tid %d/%d, BLOCKS_PER_CHANNEL %d\n", pos, w, h, cid, bid, tid, n_tid-1, BLOCKS_PER_CHANNEL);
