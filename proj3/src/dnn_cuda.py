@@ -178,7 +178,7 @@ class Conv2D(DnnNode):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
-                toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
+                toeplitz_in[ow * self.OH + oh, :] = self.ptin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
         # fast debugging
         tic = time.time()
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
