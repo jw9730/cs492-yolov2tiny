@@ -198,12 +198,12 @@ class Conv2D(DnnNode):
                      c_int(self.PW), c_int(self.PH), c_int(self.OW), c_int(self.OH),\
                      c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
                      c_int(self.IC), c_int(self.OC))
-        ws_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: CUDA-WSCONV2D elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(ws_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(ws_result - ref_result).mean())
+        print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
 
-        self.result = ws_result
+        self.result = cuda_result
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
