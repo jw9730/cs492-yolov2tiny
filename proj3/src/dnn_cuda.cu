@@ -15,7 +15,7 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out, THREADS_PER_BLOCK){
+__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out, int THREADS_PER_BLOCK){
     int block_idx = blockIdx.x;
     int thread_idx = threadIdx.x;
     if(block_idx * THREADS_PER_BLOCK + thread_idx >= kernel_in){
