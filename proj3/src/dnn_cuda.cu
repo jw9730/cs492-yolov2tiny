@@ -243,7 +243,7 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     // handle boundary
     if (tid >= n_tid) return;
     // add
-    v = I[bid*THREADS_PER_BLOCK+tid];
+    float v = I[bid*THREADS_PER_BLOCK+tid];
     v = v > 0? v : 0.1*v;
     atomicAdd(R + bid*THREADS_PER_BLOCK+tid, v);
 }
