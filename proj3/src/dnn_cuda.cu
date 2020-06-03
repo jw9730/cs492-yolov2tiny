@@ -62,5 +62,5 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     }
     
     // copy result back to host
-    cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDevicetoHost);
+    cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost);
 }
