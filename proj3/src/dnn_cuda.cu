@@ -77,7 +77,9 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int pid = blockIdx.x / BLOCKS_PER_PIXEL;
     int h = pid % oh;
     int w = pid / oh;
-    // check
+    
+    printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
+    // checkpid + cid == blockIdx.x
     assert (w * oh + h == pid);
     assert (pid + cid == blockIdx.x);
     if (threadIdx.x >= n_tid) return;
