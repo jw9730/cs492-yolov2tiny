@@ -76,7 +76,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     if (tid >= n_tid) return;
 
     // compute output pixel of the block
-    int pid = bid - oc_bid;
+    int pid = bid - cid;
     int w = pid % oh;
     int h = pid - oh * w;
     
