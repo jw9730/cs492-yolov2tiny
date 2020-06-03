@@ -70,22 +70,22 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int tid = threadIdx.x;
     // compute block index in output channel dimension
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
-    int cid = bid % BLOCKS_PER_PIXEL;
+    int cid = blockIdx.x % BLOCKS_PER_PIXEL;
     int offset = cid * THREADS_PER_BLOCK;
     int n_tid = (oc - offset < THREADS_PER_BLOCK)? (oc - offset) : THREADS_PER_BLOCK;
     // compute output pixel of the block
-    int pid = bid - cid;
+    int pid = blockIdx.x / BLOCKS_PER_PIXEL;
     int h = pid % oh;
     int w = pid / oh;
+    // check
     assert (w * oh + h == pid);
-    printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
-    if (tid >= n_tid) return;
-
+    assert (pid + cid == blockIdx.x);
+    if (threadIdx.x >= n_tid) return;
     
     // declare on-chip shared memory
     extern __shared__ float memory[];
     // read input data once per block (shared across threads)
-    if(tid == 0){
+    if(threadIdx.x == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
@@ -103,10 +103,10 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
                 int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
-                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,offset+tid, kw,kh,ic,oc);
-                int output_idx = INDEX_ROW_MAJOR_3(w,h,offset+tid, ow,oh,oc);
+                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,offset+threadIdx.x, kw,kh,ic,oc);
+                int output_idx = INDEX_ROW_MAJOR_3(w,h,offset+threadIdx.x, ow,oh,oc);
                 if (k == 0){
-                    printf("[%d,%d] %1.5f <- %1.5f, acc %1.5f\n", bid, tid, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
+                    printf("[%d,%d] %1.5f<-%1.5f, acc %1.5f\n", blockIdx.x, threadIdx.x, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
                 }
                 atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
