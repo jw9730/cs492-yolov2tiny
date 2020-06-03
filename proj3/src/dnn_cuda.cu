@@ -85,7 +85,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     if (threadIdx.x >= n_tid) return;
     
     // declare on-chip shared memory
-    extern __shared__ float memory[];
+    extern __shared__ float M[];
     // read input data once per block (shared across threads)
     if(threadIdx.x == 0){
         for (int i=0; i<kw; i++){
@@ -93,7 +93,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
                 for (int k=0; k<ic; k++){
                     int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                     int input_idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic);
-                    memory[mem_idx] = I[input_idx];
+                    M[mem_idx] = I[input_idx];
                 }
             }
         }
@@ -107,7 +107,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
             for (int k=0; k<ic; k++){
                 int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,ofs+threadIdx.x, kw,kh,ic,oc);
-                atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
+                atomicAdd(R + output_idx, M[mem_idx] * K[kernel_idx]);
             }
         }
     }
