@@ -185,9 +185,8 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
     // declare on-chip shared memory
     extern __shared__ float M[];
-    if(tid == 0){
-        M[0] = B[cid];
-    }
+    if(tid == 0) M[0] = B[cid];
+
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
@@ -202,7 +201,7 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     // wait until data is ready
     __syncthreads();
     // add
-    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] * M[0]);
+    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] + M[0]);
 }
 extern "C"
 void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {

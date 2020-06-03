@@ -235,7 +235,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BiasAdd: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("BiasAdd: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = cuda_result
         assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
