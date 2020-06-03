@@ -82,7 +82,6 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     
     // declare on-chip shared memory
     __shared__ float input[kw * kh * ic];
-    __shared__ float kernel[kw * kh * ic * n_tid];
     
     // read data for the block onto shared memory
     // input data: read once per block (shared across across threads)
@@ -95,24 +94,16 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
             }
         }
     }
-    // kernel data: read once per thread (thread-specific data)
-    for (int i=0; i<kw; i++){
-        for (int j=0; j<kh; j++){
-            for (int k=0; k<ic; k++){
-                kernel[INDEX_ROW_MAJOR_4(i,j,k,tid, kw,kh,ic,n_tid)] = K[INDEX_ROW_MAJOR_4(w*sw+i,h*sh+j,k,c_ofs+tid, iw,ih,ic,oc)];
-            }
-        }
-    }
     // barrior
-    __synchthreads();
+    __syncthreads();
     // apply convolution
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
                 int input_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
-                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,tid, kw,kh,ic,n_tid);
+                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,c_ofs+tid, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,c_ofs+tid, ow,oh,oc);
-                atomicAdd(R[output_idx], input[input_idx] * kernel[kernel_idx]);
+                atomicAdd(R[output_idx], input[input_idx] * K[kernel_idx]);
             }
         }
     }
