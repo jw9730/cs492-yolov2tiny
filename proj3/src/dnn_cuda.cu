@@ -25,9 +25,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int tid = threadIdx.x;
     int cid = bid % BLOCKS_PER_PIXEL; // channel block index (within pixel)
     int pid = bid / BLOCKS_PER_PIXEL; // pixel index
-    // compute block index in output channel dimension
-    int ofs = cid * THREADS_PER_BLOCK;
-    int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
@@ -62,6 +59,9 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     */
     // wait until data is ready
     __syncthreads();
+    // compute block index in output channel dimension
+    int ofs = cid * THREADS_PER_BLOCK;
+    int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= n_tid) return;
     // apply convolution
@@ -81,11 +81,11 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // declare on-chip shared memory
     extern __shared__ float M[];
+    if(tid == 0){
+        printf("out channel %d\n", cid);
+    }
     // read kernel weight once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
@@ -100,14 +100,17 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= n_tid) return;
-    // apply convolution
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    // apply convolution
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
@@ -134,19 +137,18 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     HANDLE_ERROR( cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice ) );
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
+    int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
     if (oc > THREADS_PER_BLOCK){
         // input stationary
         // within a block, hold input and thread over output channels
         int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
         int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
-        int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
         conv_is<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }else{
         // weight stationary
         // within a block, hold kernel and thread over output pixels
         int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
         int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-        int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
         conv_ws<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }
     // copy the array back from the GPU to the CPU
