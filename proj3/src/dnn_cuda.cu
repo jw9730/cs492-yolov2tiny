@@ -61,7 +61,6 @@ void matmul_tp(float * I, float * K, float * R, int n_pixels, int kernel_in, int
     HANDLE_ERROR( cudaMemcpy( R, dev_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
-
     // problem: no on-chip data reuse (no sharing across threads)
     // solution: fallback to looped convolution, and enforce input and kernel reuse
 }
@@ -103,6 +102,9 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
                 int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,c_ofs+tid, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,c_ofs+tid, ow,oh,oc);
+                if (k == 0){
+                    printf("[%d,%d]\t%f <- %f, result %f\n", bid, tid, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
+                }
                 atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
         }
