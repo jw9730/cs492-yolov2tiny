@@ -68,4 +68,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     cudaFree(d_I);
     cudaFree(d_K);
     cudaFree(d_R);
+    
+    printf("matmul: Finished offloaded matmul in GPU\n");
 }
