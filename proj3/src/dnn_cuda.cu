@@ -291,7 +291,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // wait until data is ready
     __syncthreads();
     // normalize
-    atomicAdd(R + ofs, (I[ofs] - Mem[0]) * Mem[1]/(sqrt(Mem[2])+Mem[3]));
+    atomicAdd(R + ofs, Mem[1] * (I[ofs] - Mem[0]) / (sqrt(Mem[2]) + Mem[3]));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
