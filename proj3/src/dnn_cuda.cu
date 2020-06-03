@@ -60,7 +60,12 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             }
         }
     }
-    
+    // synchronize
+    cudaDeviceSynchronize();
     // copy result back to host
     cudaMemcpy(&R, d_R, n_pixels * kernel_out * sizeof(float), cudaMemcpyDeviceToHost);
+    // free GPU memory
+    cudaFree(d_I);
+    cudaFree(d_K);
+    cudaFree(d_R);
 }

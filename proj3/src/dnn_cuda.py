@@ -204,7 +204,7 @@ class Conv2D(DnnNode):
         mylib.matmul(in_p, k_p, out_p, n_pixels, kernel_in, kernel_out)  # apply filter as a matrix multiplication
         avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: TOEPLITZ-OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("Conv2D: TOEPLITZ-CUDA elapsed time {:1.5f}s".format(toc - tic))
         assert abs(avx_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((avx_result - ref_result).mean())
 
         self.result = avx_result
