@@ -47,7 +47,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
 
             // compute dot product and accumulate the result in target output
             for(int k=0; k<kernel_in; k++){
-                mul(I_, K_, R_);
+                mul(I_ + k, K_ + k, R_);
             }
         }
     }
