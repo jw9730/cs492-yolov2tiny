@@ -105,7 +105,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // apply convolution
     // retrieve output pixel
     int pos = ofs + tid;
-    assert (cid == pos%oc);
     int w = pos/oc/oh;
     int h = pos/oc%oh;
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
