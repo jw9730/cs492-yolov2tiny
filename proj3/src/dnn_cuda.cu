@@ -361,7 +361,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             }
         }
     }
-    
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -394,7 +393,6 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
     // input stationary (block = output channel)
@@ -403,7 +401,6 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
     mp<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
-    
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
