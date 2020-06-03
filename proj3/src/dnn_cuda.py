@@ -188,13 +188,13 @@ class Conv2D(DnnNode):
 
         # argument setup
         c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
-        mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int  # set function argument types
         in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
         k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         n_pixels = c_int(self.OW * self.OH)
         kernel_in = c_int(self.KW * self.KH * self.IC)
         kernel_out = c_int(self.OC)
+        mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int  # set function argument types
 
         # CUDA
         tic = time.time()
