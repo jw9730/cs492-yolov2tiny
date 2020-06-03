@@ -23,8 +23,8 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int bid = blockIdx.x;
     int tid = threadIdx.x;
-    int cid = blockIdx.x % BLOCKS_PER_PIXEL; // channel block index (within pixel)
-    int pid = blockIdx.x / BLOCKS_PER_PIXEL; // pixel index
+    int cid = bid % BLOCKS_PER_PIXEL; // channel block index (within pixel)
+    int pid = bid / BLOCKS_PER_PIXEL; // pixel index
     // compute block index in output channel dimension
     int ofs = cid * THREADS_PER_BLOCK;
     int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
@@ -79,8 +79,8 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int bid = blockIdx.x;
     int tid = threadIdx.x;
-    int cid = blockIdx.x % BLOCKS_PER_CHANNEL; // output channel index
-    int pid = blockIdx.x / BLOCKS_PER_CHANNEL; // pixel block index (within channel)
+    int cid = bid % BLOCKS_PER_CHANNEL; // output channel index
+    int pid = bid / BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
@@ -107,7 +107,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int pos = ofs + tid;
     int w = pos/oc/oh;
     int h = pos/oc%oh;
-    printf("[%d, %d, %d]\n", w, h, cid);
+    printf("[%d, %d, %d], tid %d/%d, BLOCKS_PER_CHANNEL %d\n", w, h, cid, tid, n_tid-1, BLOCKS_PER_CHANNEL);
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
