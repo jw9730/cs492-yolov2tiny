@@ -69,7 +69,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int bid = blockIdx.x;
     int tid = threadIdx.x;
     // compute block index in output channel dimension
-    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK))
+    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int cid = bid % BLOCKS_PER_PIXEL;
     int offset = cid * THREADS_PER_BLOCK;
     int n_tid = (oc - offset < THREADS_PER_BLOCK)? (oc - offset) : THREADS_PER_BLOCK;
