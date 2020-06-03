@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 #include "cublas_v2.h"
 
-int ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
+void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     // K: (in_size, out_size)
     // I: (1, in_size)
     // res: (1, out_size)
