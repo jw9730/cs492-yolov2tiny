@@ -172,3 +172,62 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // cleanup
     cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
 }
+
+
+
+
+
+__global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
+    int cid = bid / BLOCKS_PER_CHANNEL; // channel index
+    // declare on-chip shared memory
+    extern __shared__ float M[];
+    if(tid = 0){
+        M[0] = B[cid];
+    }
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= n_tid) return;
+
+    // retrieve output pixel
+    int pos = ofs + tid;
+    int w = pos/oh;
+    int h = pos%oh;
+    float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    
+    // wait until data is ready
+    __syncthreads();
+    // add
+    atomicAdd(o, I[INDEX_ROW_MAJOR_3(w,h,k, ow,oh,oc)] * M[0]);
+}
+extern "C"
+void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
+    float *dev_I, *dev_B, *dev_R;
+    // I: (ow * oh * oc), row major ordered
+    // B: (oc)
+    // R: (ow * oh * oc), row major ordered
+    // todo: element-wise addition
+    // allocate the memory on the GPU
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_B, oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    // copy the arrays to the GPU
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_B, B, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+
+    // block = channel, thread over pixels
+    int BLOCK_MEMSIZE = sizeof(float);
+    int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
+    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
+    badd<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_B, dev_R, ow, oh, oc);
+    
+    // copy the array back from the GPU to the CPU
+    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    // cleanup
+    cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
+}

@@ -153,9 +153,9 @@ class Conv2D(DnnNode):
             assert len(padding) == 2
             self.pad = padding
             
-        ptin = np.pad(self.in_node.result, self.pad, mode='constant')
-        self.PW = ptin.shape[1]
-        self.PH = ptin.shape[2]
+        self.ptin = np.pad(self.in_node.result, self.pad, mode='constant')
+        self.PW = self.ptin.shape[1]
+        self.PH = self.ptin.shape[2]
         self.KW = self.weights.shape[0]
         self.KH = self.weights.shape[1]
         self.IC = self.weights.shape[2]
@@ -166,13 +166,13 @@ class Conv2D(DnnNode):
         self.OH = int((self.PH - self.KH) / self.SH + 1)
 
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
-        tmp_result = np.ctypeslib.as_ctypes(self.result)
-        self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
+        #tmp_result = np.ctypeslib.as_ctypes(self.result)
+        #self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
         # preprocessing
+        """
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
-        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
@@ -184,10 +184,9 @@ class Conv2D(DnnNode):
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
-
+        """
         c_float_p = POINTER(c_float)
-        # Approach 1. Weight-stationary
-        in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
+        in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         # parameters: (input, kernel, output, ...)
@@ -201,8 +200,7 @@ class Conv2D(DnnNode):
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
-
+        #assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
         self.result = cuda_result
 
 class BiasAdd(DnnNode):
@@ -226,24 +224,22 @@ class BiasAdd(DnnNode):
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         toc = time.time()
         print("BiasAdd: NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
         c_float_p = POINTER(c_float)
-        mylib.bias_add.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
-        in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
+        mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
+        in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
-        out_p = np.zeros((self.OC, self.OW * self.OH), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-        n_pixel = c_int(self.OW * self.OH)
-        n_channel = c_int(self.OC)
+        out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
 
         tic = time.time()
-        mylib.bias_add(in_p, b_p, out_p, n_pixel, n_channel)
-        avx_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
+        mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("BiasAdd: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
-        """
-        self.result = ref_result
-        #assert abs(avx_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(avx_result - ref_result).mean())
-        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+
+        self.result = cuda_result
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
