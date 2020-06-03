@@ -186,19 +186,15 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     // declare on-chip shared memory
     __shared__ float M[1];
     if(tid == 0) M[0] = B[cid];
-
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
-    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= n_tid) return;
-
+    if (tid >= (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK) return;
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    
     // wait until data is ready
     __syncthreads();
     // add
@@ -240,7 +236,7 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     int tid = threadIdx.x;
     // handle boundary
     int ofs = ow*oh*oc - bid*THREADS_PER_BLOCK;
-    if (tid >= ((ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK)) return;
+    if (tid >= (ofs < THREADS_PER_BLOCK? ofs : THREADS_PER_BLOCK)) return;
     // add
     ofs = bid*THREADS_PER_BLOCK+tid;
     atomicAdd(R + ofs, I[ofs] * (I[ofs]>0? 1 : 0.1));
@@ -256,11 +252,9 @@ void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
     HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-
     // block = channel, thread over pixels
     int BLOCKS = ceil(float(ow*oh*oc)/float(THREADS_PER_BLOCK));
     lr<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, ow, oh, oc);
-    
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
@@ -287,9 +281,8 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     }
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
-    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= n_tid) return;
+    if (tid >= (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK) return;
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
@@ -298,7 +291,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // wait until data is ready
     __syncthreads();
     // normalize
-    atomicAdd(R + ofs, (I[ofs] - Mem[0]) * Mem[1]/sqrt(Mem[2]+Mem[3]));
+    atomicAdd(R + ofs, (I[ofs] - Mem[0]) * Mem[1]/(sqrt(Mem[2])+Mem[3]));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
@@ -318,12 +311,10 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
     HANDLE_ERROR( cudaMemcpy( dev_M, M, oc * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_G, G, oc * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_V, V, oc * sizeof(float), cudaMemcpyHostToDevice ) );
-
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
     bn<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_M, dev_G, dev_V, dev_R, eps, ow, oh, oc);
-    
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
