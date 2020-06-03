@@ -299,7 +299,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // wait until data is ready
     __syncthreads();
     // normalize
-    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), (I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] - Mem[0]) * Mem[1]/sqrt(Mem[2]+Mem[3]);
+    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), (I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] - Mem[0]) * Mem[1]/sqrt(Mem[2]+Mem[3]));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc) {
