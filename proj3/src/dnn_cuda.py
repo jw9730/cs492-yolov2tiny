@@ -366,7 +366,7 @@ class BatchNorm(DnnNode):
 
         tic = time.time()
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
-        cuda_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
+        cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("BatchNorm: CUDA elapsed time {:1.5f}s".format(toc - tic))
 

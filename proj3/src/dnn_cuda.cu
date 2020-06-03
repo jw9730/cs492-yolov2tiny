@@ -266,7 +266,7 @@ void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
 
 
 __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, int ow, int oh, int oc){
-    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
+    int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     int bid = blockIdx.x;
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
