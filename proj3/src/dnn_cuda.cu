@@ -266,7 +266,7 @@ void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
 
 
 __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, int ow, int oh, int oc){
-    int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
+    int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int bid = blockIdx.x;
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
@@ -291,6 +291,9 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // wait until data is ready
     __syncthreads();
     // normalize
+    if (cid == 0){
+        printf("%f, %f, %f, %f\n", Mem[0], Mem[1], Mem[2], Mem[3]);
+    }
     atomicAdd(R + ofs, Mem[1] * (I[ofs] - Mem[0]) / (sqrt(Mem[2]) + Mem[3]));
 }
 extern "C"
