@@ -37,5 +37,5 @@ void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     cudaFree(d_res);
     // destroy CUBLAS context
     cublasDestroy(handle);
-    printf("finished");
+    printf("finished\n");
 }
