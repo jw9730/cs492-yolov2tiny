@@ -198,12 +198,11 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
-    float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     
     // wait until data is ready
     __syncthreads();
     // add
-    atomicAdd(o, I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] * M[0]);
+    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), I[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] * M[0]);
 }
 extern "C"
 void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
