@@ -217,7 +217,7 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_B, B, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    HANDLE_ERROR( cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice ) );
 
     // block = channel, thread over pixels
     int BLOCK_MEMSIZE = sizeof(float);
