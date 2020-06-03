@@ -25,10 +25,11 @@ __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, in
             // target output address
             float * Rij = R + i * kernel_out + j;
             // accumulate
-            *Rij += (*Iix) * (*Kxj);
+            float tmp = (*Iix) * (*Kxj);
             if (i==0 && j==0){
-                printf("[%d, %d]\tblock %d:\tRij <- Rij + %f, Rij = %f\n", i, j, blockIdx.x, (*Iix) * (*Kxj), *Rij);
+                printf("[%d, %d]\tblock %d:\t%f <- %f + %f\n", i, j, blockIdx.x, *Rij + tmp, *Rij, (*Iix) * (*Kxj));
             }
+            *Rij += tmp;
         }
     }
 }
