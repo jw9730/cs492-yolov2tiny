@@ -60,7 +60,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // cleanup
     cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
 
-    // problem: no data reuse
+    // problem: no on-chip data reuse (no sharing across threads)
     // solution: fallback to looped convolution, and enforce input and kernel reuse
-    // flatten the spatial dimension
 }
