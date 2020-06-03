@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 
 #define THREADS_PER_BLOCK 512
+#define INDEX_ROW_MAJOR_2(i, j, I, J) (j + J * (i))
 #define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) (k + K * (j + J * (i)))
 #define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) (l + L * (k + K * (j + J * (i))))
 
@@ -332,8 +333,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
-    
-    printf("bid %d, tid %d, pid %d, cid %d, bpc %d\n", bid, tid, pid, cid, BLOCKS_PER_CHANNEL);
 
     // declare on-chip shared memory
     extern __shared__ float M[];
@@ -342,14 +341,14 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // distribute indices across threads
     int full_idx = iw * ih;
     int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
-    int lower = load_per_thread * tid;
-    int upper = load_per_thread * (tid + 1);
-    if (lower < full_idx) {
-        upper = (upper < full_idx)? upper : full_idx;
-        for (int idx=lower; idx<upper; idx++){
+    int l = load_per_thread * tid;
+    int u = load_per_thread * (tid + 1);
+    if (l < full_idx) {
+        u = (u < full_idx)? u : full_idx;
+        for (int idx=l; idx<u; idx++){
             int i = idx/ih;
             int j = idx%ih;
-            M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)];
+            M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
         }
     }
     /*
@@ -400,9 +399,9 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     // maximizing data reuse and parallelism within a block
     // input stationary (block = output channel)
     // within a block, thread over output pixels
+    int BLOCK_MEMSIZE = iw * ih * sizeof(float);
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    int BLOCK_MEMSIZE = iw * ih * sizeof(float);
     mp<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
     
     // copy the array back from the GPU to the CPU
