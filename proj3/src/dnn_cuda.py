@@ -308,6 +308,8 @@ class MaxPool2D(DnnNode):
         toc = time.time()
         print("MaxPool2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
+        print(self.ptin.shape, self.result.shape, self.stride, self.ksize)
+
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, OW, OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
