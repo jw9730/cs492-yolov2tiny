@@ -313,8 +313,6 @@ class MaxPool2D(DnnNode):
         out_p = np.zeros((1, OW, OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         # parameters: (input, output, ...)
         mylib.max_pool.argtypes = [c_float_p, c_float_p] + [c_int] * 9
-        
-        print(self.ptin.shape, self.result.shape, self.stride, self.ksize)
 
         tic = time.time()
         mylib.max_pool(in_p, out_p,\

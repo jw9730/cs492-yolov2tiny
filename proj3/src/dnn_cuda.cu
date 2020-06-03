@@ -6,9 +6,9 @@
 #include <cuda_runtime.h>
 
 #define THREADS_PER_BLOCK 512
-#define INDEX_ROW_MAJOR_2(i, j, I, J) (j + J * (i))
-#define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) (k + K * (j + J * (i)))
-#define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) (l + L * (k + K * (j + J * (i))))
+#define INDEX_ROW_MAJOR_2(i, j, I, J) ((j) + (J) * (i))
+#define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) ((k) + (K) * ((j) + (J) * (i)))
+#define INDEX_ROW_MAJOR_4(i, j, k, l, I, J, K, L) ((l) + (L) * ((k) + (K) * ((j) + (J) * (i))))
 
 #define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
@@ -371,10 +371,11 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // wait until data is ready
     __syncthreads();
     // apply pooling
-    float v = -1e20;
+    float v = -1e10;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            v = (M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] > v)? M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] : v;
+            int idx = INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih);
+            v = ((M[idx] > v)? M[idx] : v);
         }
     }
     atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
