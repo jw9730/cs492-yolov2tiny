@@ -220,11 +220,12 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
+        """
         tic = time.time()
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         toc = time.time()
         print("BiasAdd: NUMPY elapsed time {:1.5f}s".format(toc - tic))
-
+        """
         c_float_p = POINTER(c_float)
         mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
@@ -238,8 +239,8 @@ class BiasAdd(DnnNode):
         print("BiasAdd: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = cuda_result
-        assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
-        assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        #assert abs(cuda_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        #assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
