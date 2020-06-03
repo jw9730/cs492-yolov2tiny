@@ -208,8 +208,11 @@ class Conv2D(DnnNode):
         mylib.conv2d.argtypes = [c_float_p, c_float_p, c_float_p] + [c_int] * 10
         # run
         tic = time.time()
-        mylib.conv2d(in_p, k_p, out_p, c_int(pin.shape[1]), c_int(pin.shape[2]), c_int(self.OW), c_int(self.OH),\
-                     c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH), c_int(self.IC), c_int(self.OC))
+        print(self.PW, self.PH, self.OW, self.OH, self.KW, self.KH, self.SW, self.SH, self.IC, self.OC)
+        mylib.conv2d(in_p, k_p, out_p,
+                     c_int(self.PW), c_int(self.PH), c_int(self.OW), c_int(self.OH),\
+                     c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
+                     c_int(self.IC), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
