@@ -78,7 +78,10 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int h = pid % oh;
     int w = pid / oh;
     
+#ifdef DEBUG
     printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
+#endif
+
     // checkpid + cid == blockIdx.x
     assert (w * oh + h == pid);
     assert (pid + cid == blockIdx.x);
@@ -107,9 +110,11 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
                 int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,offset+threadIdx.x, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,offset+threadIdx.x, ow,oh,oc);
+#ifdef DEBUG
                 if (k == 0){
                     printf("[%d,%d] %1.5f<-%1.5f, acc %1.5f\n", blockIdx.x, threadIdx.x, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
                 }
+#endif
                 atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
         }
@@ -139,7 +144,9 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
     int shared_memory_size = kw * kh * ic * sizeof(float);
-    printf("# blocks: %d, % blocks per pixel: %d\n", BLOCKS, BLOCKS_PER_PIXEL);
+#ifdef DEBUG
+    printf("# blocks: %d, # blocks per pixel: %d\n", BLOCKS, BLOCKS_PER_PIXEL);
+#endif
     conv<<<BLOCKS,THREADS_PER_BLOCK, shared_memory_size>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
