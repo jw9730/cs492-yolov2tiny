@@ -66,23 +66,20 @@ void matmul_tp(float * I, float * K, float * R, int n_pixels, int kernel_in, int
 }
 
 __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
-    int bid = blockIdx.x;
-    int tid = threadIdx.x;
-    // compute block index in output channel dimension
     int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
     int cid = blockIdx.x % BLOCKS_PER_PIXEL;
-    int offset = cid * THREADS_PER_BLOCK;
-    int n_tid = (oc - offset < THREADS_PER_BLOCK)? (oc - offset) : THREADS_PER_BLOCK;
-    // compute output pixel of the block
     int pid = blockIdx.x / BLOCKS_PER_PIXEL;
+    // compute block index in output channel dimension
+    int ofs = cid * THREADS_PER_BLOCK;
+    int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
+    // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
     
 #ifdef DEBUG
-    printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
+    printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, ofs, n_tid, pid, w, h);
 #endif
 
-    // checkpid + cid == blockIdx.x
     assert (w * oh + h == pid);
     assert (pid + cid == blockIdx.x);
     if (threadIdx.x >= n_tid) return;
@@ -104,20 +101,18 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // wait until data is ready
     __syncthreads();
     // apply convolution
+    int output_idx = INDEX_ROW_MAJOR_3(w,h,ofs+threadIdx.x, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
                 int mem_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
-                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,offset+threadIdx.x, kw,kh,ic,oc);
-                int output_idx = INDEX_ROW_MAJOR_3(w,h,offset+threadIdx.x, ow,oh,oc);
-#ifdef DEBUG
-                if (k == 0){
-                    printf("[%d,%d] %1.5f<-%1.5f, acc %1.5f\n", blockIdx.x, threadIdx.x, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
-                }
-#endif
+                int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,ofs+threadIdx.x, kw,kh,ic,oc);
                 atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
         }
+    }
+    if (threadIdx.x == 0){
+        printf("[w,h]:%1.5f\n",R[output_idx]);
     }
 }
 
