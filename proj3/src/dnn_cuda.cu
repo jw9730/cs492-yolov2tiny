@@ -82,9 +82,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     
     // declare on-chip shared memory
     __shared__ float input[kw * kh * ic];
-    
-    // read data for the block onto shared memory
-    // input data: read once per block (shared across across threads)
+    // read input data once per block (shared across threads)
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
@@ -94,7 +92,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
             }
         }
     }
-    // barrior
+    // wait until data is ready
     __syncthreads();
     // apply convolution
     for (int i=0; i<kw; i++){
