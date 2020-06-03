@@ -240,8 +240,7 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     int tid = threadIdx.x;
     // handle boundary
     int ofs = ow*oh*oc - bid*THREADS_PER_BLOCK;
-    int n_tid = (ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK;
-    if (tid >= n_tid) return;
+    if (tid >= ((ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK)) return;
     // add
     ofs = bid*THREADS_PER_BLOCK+tid;
     atomicAdd(R + ofs, I[ofs] * (I[ofs]>0? 1 : 0.1));
