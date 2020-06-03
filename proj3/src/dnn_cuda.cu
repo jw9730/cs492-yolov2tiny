@@ -28,7 +28,7 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // how to effectively eliminate loops?
 
     // assign blocks
-    // within a block, 512 computations can execute in parallel (via shared memory)
+    // within a block, 512 threads can execute in parallel (via shared memory)
 
     // trial 1:
     // loop over outer dimensions, and compute a dot product in chunks of size 512
