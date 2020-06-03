@@ -100,6 +100,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
+    printf("bid %d, tid %d -> pid %d, cid %d, ofs %d, n_tid %d, BLOCKS_PER_CHANNEL\n", bid, tid, pid, cid, ofs, n_tid, BLOCKS_PER_CHANNEL);
     // handle boundary
     if (tid >= n_tid) return;
     // apply convolution
@@ -108,7 +109,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     assert(pos&oc == cid);
     int w = pos/oc/oh;
     int h = pos/oc%oh;
-    printf("pos %d, [%d, %d, %d], bid %d, tid %d/%d, BLOCKS_PER_CHANNEL %d\n", pos, w, h, cid, bid, tid, n_tid-1, BLOCKS_PER_CHANNEL);
+    printf("pos %d, [%d, %d, %d]\n", pos, w, h, pos&oc);
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
