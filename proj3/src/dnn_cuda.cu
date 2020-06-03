@@ -43,9 +43,9 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     if (lower < full_idx) {
         upper = (upper < full_idx)? upper : full_idx;
         for (int idx=lower; idx<upper; idx++){
-            int k = idx % K;
-            int j = idx/K % J;
-            int i = idx/K/J;
+            int k = idx % ic;
+            int j = idx/ic % kh;
+            int i = idx/ic/kh;
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
         }
     }
