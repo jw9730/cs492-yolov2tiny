@@ -179,30 +179,42 @@ class Conv2D(DnnNode):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
-
         # fast debugging
         tic = time.time()
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
-        # argument setup
-        c_float_p = POINTER(c_float)  # float pointer type: every n-d array will be modified to 1d float array
+        # Approach 1. Toeplitz matrix
+        c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
         k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-        n_pixels = c_int(self.OW * self.OH)
-        kernel_in = c_int(self.KW * self.KH * self.IC)
-        kernel_out = c_int(self.OC)
-        mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int  # set function argument types
-
-        # CUDA
+        # parameters: (input, kernel, output, # pixels, kernel input dim, kernel output dim)
+        mylib.matmul_tp.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
+        # run
         tic = time.time()
-        mylib.matmul(in_p, k_p, out_p, n_pixels, kernel_in, kernel_out)  # apply filter as a matrix multiplication
+        mylib.matmul_tp(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
+        cuda_tp_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
+        toc = time.time()
+        print("Conv2D: CUDA-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
+        assert abs(cuda_tp_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_tp_result - ref_result).mean())
+
+        # Approach 2. Sliding window convolution
+        in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
+        k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
+        out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        # parameters: (input, kernel, output, ...)
+        mylib.conv2d.argtypes = [c_float_p, c_float_p, c_float_p] + [c_int] * 10
+        # run
+        tic = time.time()
+        mylib.conv2d(in_p, k_p, out_p, c_int(pin.shape[1]), c_int(pin.shape[2]), c_int(self.OW), c_int(self.OH),\
+                     c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH), c_int(self.IC), c_int(self.OC))
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: TOEPLITZ-CUDA elapsed time {:1.5f}s".format(toc - tic))
+        print("Conv2D: CUDA-CONV2D elapsed time {:1.5f}s".format(toc - tic))
         assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+
         self.result = cuda_result
 
 class BiasAdd(DnnNode):
