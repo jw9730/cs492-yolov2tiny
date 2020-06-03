@@ -107,6 +107,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int pos = ofs + tid;
     int w = pos/oc/oh;
     int h = pos/oc%oh;
+    print("[%d, %d, %d]\n", w, h, cid);
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
