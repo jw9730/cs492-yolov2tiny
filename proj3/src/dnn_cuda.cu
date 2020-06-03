@@ -107,7 +107,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
-    printf("b %d, t %d -> p %d, c %d, pixel %d, [w, h, c_out] = [%d, %d, %d]\n", bid, tid, pid, cid, ofs + tid, pos, w, h, cid);
+    printf("[w, h, c_out] = [%d, %d, %d], b %d, t %d -> p %d, pixel %d, \n", w, h, cid, bid, tid, pid, ofs + tid, pos);
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
