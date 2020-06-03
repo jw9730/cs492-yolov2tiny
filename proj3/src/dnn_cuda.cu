@@ -238,14 +238,12 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
 __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     int bid = blockIdx.x;
     int tid = threadIdx.x;
-    // compute block index in output pixel dimension
-    int n_tid = (ow*oh*oc - bid*THREADS_PER_BLOCK < THREADS_PER_BLOCK)? (ow*oh*oc - bid*THREADS_PER_BLOCK) : THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= n_tid) return;
+    int ofs = ow*oh*oc - bid*THREADS_PER_BLOCK;
+    if (tid >= (ofs < THREADS_PER_BLOCK)? ofs : THREADS_PER_BLOCK) return;
     // add
-    float v = I[bid*THREADS_PER_BLOCK+tid];
-    v = v > 0? v : 0.1*v;
-    atomicAdd(R + bid*THREADS_PER_BLOCK+tid, v);
+    ofs = bid * THREADS_PER_BLOCK + tid;
+    atomicAdd(R + bid*THREADS_PER_BLOCK+tid, I[ofs]*(I[ofs]>0? 1:0.1));
 }
 extern "C"
 void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
