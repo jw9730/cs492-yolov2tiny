@@ -112,7 +112,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
         }
     }
     if (threadIdx.x == 0 && w == 0 && h == 0){
-        printf("[w,h] = [%d,%d]:%1.5f\n", w, h, R[output_idx]);
+        printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
 }
 
