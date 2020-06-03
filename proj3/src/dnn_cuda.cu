@@ -29,10 +29,8 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
-    if (oc == 1024 && cid == 1)
-        printf("bid %d, tid %d, cid %d, ofs %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", blockIdx.x, threadIdx.x, cid, ofs, n_tid, pid, w, h);
     assert (w * oh + h == pid);
-    assert (pid + cid == blockIdx.x);
+    assert (pid * BLOCKS_PER_PIXEL + cid == blockIdx.x);
     if (threadIdx.x >= n_tid) return;
     // declare on-chip shared memory
     extern __shared__ float M[];
