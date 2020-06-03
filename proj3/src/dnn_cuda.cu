@@ -365,19 +365,16 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int pos = ofs + tid;
-    int w = pos/oh;
-    int h = pos%oh;
+    int w = (ofs + tid)/oh;
+    int h = (ofs + tid)%oh;
     
     // wait until data is ready
     __syncthreads();
     // apply pooling
     float v = -1e10;
-    int idx;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            idx = INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih);
-            v = M[idx] > v? M[idx] : v;
+            v = M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] > v? M[INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih)] : v;
         }
     }
     atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
