@@ -9,7 +9,6 @@ void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     // K: (in_size, out_size)
     // I: (1, in_size)
     // res: (1, out_size)
-    printf("matmul: Started offloaded matmul in GPU... ");
 
     cudaError_t cudaStat;     // cudaMalloc status
     cublasStatus_t stat;      // CUBLAS functions status
@@ -37,5 +36,4 @@ void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     cudaFree(d_res);
     // destroy CUBLAS context
     cublasDestroy(handle);
-    printf("finished\n");
 }
