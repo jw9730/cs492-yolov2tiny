@@ -5,10 +5,10 @@ avx.so: dnn_avx.c
 	gcc -shared -fPIC -o $@ $^ -mavx2 -lpthread -lm
 
 cublas.so: dnn_cublas.c
-	nvcc -Xcompiler -shared -o $@ $^ -lcublas
+	nvcc -Xcompiler -fPIC -shared -o $@ $^ -lcublas
 
 cuda.so: dnn_cuda.c
-	nvcc -Xcompiler -shared -o $@ $^
+	nvcc -Xcompiler -fPIC -shared -o $@ $^
 
 all: openblas.so avx.so cublas.so cuda.so
 
