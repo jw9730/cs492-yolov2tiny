@@ -4,9 +4,11 @@
 #include <math.h>
 #include <string.h>
 #include <cuda_runtime.h>
+
+#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 #define THREADS_PER_BLOCK 512
 
-__global__ void mul(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
+__global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
