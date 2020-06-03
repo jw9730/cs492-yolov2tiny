@@ -339,10 +339,10 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
+    /*
     int load_per_thread = ceil(float(iw*ih)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
-    /*
     if (l < iw*ih) {
         u = (u < iw*ih)? u : iw*ih;
         for (int idx=l; idx<u; idx++){
