@@ -197,6 +197,20 @@ class Conv2D(DnnNode):
             .format(np.count_nonzero(np.isnan(self.result)))
         """
 
+        # Fast debugging
+        tic = time.time()
+        kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
+        toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
+        for ow in range(0, self.OW):
+            for oh in range(0, self.OH):
+                w0 = self.SW * ow
+                h0 = self.SH * oh
+                toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
+        ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))# correctness check
+        toc = time.time()
+        print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
+
         # offloaded
         tic = time.time()
         # float pointer type: every n-d array will be modified to 1d float array
@@ -243,7 +257,7 @@ class Conv2D(DnnNode):
         print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
 
         assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
-        # assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
+        assert (full_result - ref_result).mean() < 1e-5, "Conv2D: consistency check failed"
         self.result = full_result
 
     def run_for_oc(self, ptin, chunk, k):
