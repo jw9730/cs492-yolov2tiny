@@ -29,9 +29,8 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
-#ifdef DEBUG
-    printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, ofs, n_tid, pid, w, h);
-#endif
+    if (oc == 1024 && cid == 1):
+        printf("bid %d, tid %d, cid %d, ofs %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, ofs, n_tid, pid, w, h);
     assert (w * oh + h == pid);
     assert (pid + cid == blockIdx.x);
     if (threadIdx.x >= n_tid) return;
