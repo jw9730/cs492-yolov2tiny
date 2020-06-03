@@ -5,6 +5,8 @@
 #include <string.h>
 #include <cuda_runtime.h>
 
+#define THREADS_PER_BLOCK 512
+
 #define HANDLE_ERROR(err) (HandleError( err, __FILE__, __LINE__ ))
 static void HandleError(cudaError_t err, const char *file, int line)
 {
@@ -13,25 +15,19 @@ static void HandleError(cudaError_t err, const char *file, int line)
         exit(EXIT_FAILURE);
     }
 }
-#define THREADS_PER_BLOCK 512
 
 __global__ void mm(float *I, float *K, float *R, int n_pixels, int kernel_in, int kernel_out){
-    printf("Block %d/%d\n", blockIdx.x, kernel_in);
-    if(blockIdx.x >= kernel_in){
-        return;
-    }
     for(int i=0; i<n_pixels; i++){
         for(int j=0; j<kernel_out; j++){
             // vectors to compute dot product
-            float * I_ = I + i * kernel_in;
-            float * K_ = K + j * kernel_in;
+            float * I_ = I + i * kernel_in + blockIdx.x;
+            float * K_ = K + j * kernel_in + blockIdx.x;
             // target output address
             float * R_ = R + i * kernel_out + j;
             // accumulate
-            *R_ += I_[blockIdx.x] * K_[blockIdx.x];
+            *R_ += *I_ * *K_;
         }
     }
-    printf("Block %d/%d done\n", blockIdx.x, kernel_in);
 }
 
 extern "C"
