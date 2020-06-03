@@ -185,7 +185,7 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
     // declare on-chip shared memory
     extern __shared__ float M[];
-    if(tid = 0){
+    if(tid == 0){
         M[0] = B[cid];
     }
     // compute block index in output pixel dimension
