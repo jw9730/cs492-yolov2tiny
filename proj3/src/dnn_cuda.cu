@@ -9,7 +9,7 @@
 void mul(float *i, float *k, float *r, int n_tid){
     int tid = 0;
     while (tid < n_tid){
-        r[tid] += i[tid] * k[tid];
+        *r += i[tid] * k[tid];
         tid++;
     }
 }
