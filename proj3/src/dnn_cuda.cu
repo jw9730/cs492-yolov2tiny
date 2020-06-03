@@ -229,3 +229,42 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     // cleanup
     cudaFree(dev_I); cudaFree(dev_B); cudaFree(dev_R);
 }
+
+
+
+
+
+
+__global__ void lr(float *I, float *R, int ow, int oh, int oc){
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    // compute block index in output pixel dimension
+    int n_tid = (ow*oh*oc - bid*THREADS_PER_BLOCK < THREADS_PER_BLOCK)? (ow*oh*oc - bid*THREADS_PER_BLOCK) : THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= n_tid) return;
+    // add
+    v = I[bid*THREADS_PER_BLOCK+tid];
+    v = v > 0? v : 0.1*v;
+    atomicAdd(R + bid*THREADS_PER_BLOCK+tid, v);
+}
+extern "C"
+void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
+    float *dev_I, *dev_R;
+    // I: (ow * oh * oc), row major ordered
+    // R: (ow * oh * oc), row major ordered
+    // todo: element-wise rectification
+    // allocate the memory on the GPU
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
+    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    // copy the arrays to the GPU
+    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+
+    // block = channel, thread over pixels
+    int BLOCKS = ceil(float(ow*oh*oc)/float(THREADS_PER_BLOCK));
+    lr<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, ow, oh, oc);
+    
+    // copy the array back from the GPU to the CPU
+    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    // cleanup
+    cudaFree(dev_I); cudaFree(dev_R);
+}
