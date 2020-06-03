@@ -84,7 +84,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // declare on-chip shared memory
     extern __shared__ float M[];
     if(tid == 0){
-        printf("out channel %d\n", cid);
+        printf("out channel %d/%d\n", cid, oc-1);
     }
     // read kernel weight once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
