@@ -171,7 +171,7 @@ class Conv2D(DnnNode):
 
     def run(self, counter):
         # preprocessing
-        """
+
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
         for ow in range(0, self.OW):
@@ -184,7 +184,7 @@ class Conv2D(DnnNode):
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
-        """
+
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.ptin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
@@ -200,7 +200,7 @@ class Conv2D(DnnNode):
         cuda_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("Conv2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
-        #assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
+        assert abs(cuda_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_result - ref_result).mean())
         self.result = cuda_result
 
 class BiasAdd(DnnNode):
@@ -330,7 +330,6 @@ class MaxPool2D(DnnNode):
 
         self.result = cuda_result
         assert abs(cuda_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
-
 
 class BatchNorm(DnnNode):
     def __init__(self, name, in_node, mean, variance, gamma, epsilon):
