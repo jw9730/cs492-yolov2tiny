@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #define THREADS_PER_BLOCK 512
 
-__global__ void mul(float *i, float *k, float *r){
+void mul(float *i, float *k, float *r){
     //int idx = blockIdx.x * THREADS_PER_BLOCK + threadIdx.x;
     //r[idx] += i[idx] + k[idx];
     *r += (*i) * (*k);
