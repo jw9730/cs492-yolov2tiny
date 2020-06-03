@@ -28,19 +28,13 @@ void ki_apply(float *K, float *I, float *res, int in_size, int out_size) {
     float bet =0.0f;
     stat = cublasSgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,1,out_size,in_size,&al,d_I,1,d_K,in_size,&bet,d_res,1);
     stat = cublasGetMatrix(1 ,out_size , sizeof(*res) , d_res ,1 ,res , 1 ); // cp d_c - > c
-    cudaFree(d_a);
+    cudaFree(d_I);
     // free device memory
-    cudaFree(d_b);
+    cudaFree(d_K);
     // free device memory
-    cudaFree(d_c);
+    cudaFree(d_res);
     // free device memory
     cublasDestroy( handle );
     // destroy CUBLAS context
-    free(a);
-    // free host memory
-    free(b);
-    // free host memory
-    free(c);
-    // free host memory
-    return EXIT_SUCCESS ;
+    return EXIT_SUCCESS;
 }
