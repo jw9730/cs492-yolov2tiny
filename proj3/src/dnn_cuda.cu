@@ -103,7 +103,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
                 int input_idx = INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic);
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,c_ofs+tid, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,c_ofs+tid, ow,oh,oc);
-                atomicAdd(R[output_idx], input[input_idx] * K[kernel_idx]);
+                atomicAdd(R +output_idx, input[input_idx] * K[kernel_idx]);
             }
         }
     }
