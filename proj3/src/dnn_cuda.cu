@@ -72,13 +72,13 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
     int cid = bid % (ow * oh);
     int offset = cid * THREADS_PER_BLOCK;
     int n_tid = (oc - offset < THREADS_PER_BLOCK)? (oc - offset) : THREADS_PER_BLOCK;
-    if (tid >= n_tid) return;
-
     // compute output pixel of the block
     int pid = bid - cid;
     int w = pid % oh;
     int h = pid - oh * w;
     printf("bid %d, tid %d, cid %d, offset %d, n_tid %d, pid %d, (w,h)=(%d,%d)\n", bid, tid, cid, offset, n_tid, pid, w, h);
+    if (tid >= n_tid) return;
+
     
     // declare on-chip shared memory
     extern __shared__ float memory[];
@@ -104,7 +104,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
                 int kernel_idx = INDEX_ROW_MAJOR_4(i,j,k,offset+tid, kw,kh,ic,oc);
                 int output_idx = INDEX_ROW_MAJOR_3(w,h,offset+tid, ow,oh,oc);
                 if (k == 0){
-                    printf("[%d,%d]\t%f <- %f, \tacc %f\n", bid, tid, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
+                    printf("[%d,%d] %1.5f <- %1.5f, acc %1.5f\n", bid, tid, R[output_idx], memory[mem_idx] * K[kernel_idx], R[output_idx] + memory[mem_idx] * K[kernel_idx]);
                 }
                 atomicAdd(&R[output_idx], memory[mem_idx] * K[kernel_idx]);
             }
