@@ -108,7 +108,7 @@ __global__ void conv(float *I, float *K, float *R, int iw, int ih, int ow, int o
             }
         }
     }
-    if (threadIdx.x == 0 && w == 100 && h == 50){
+    if (threadIdx.x == 0 && w == 99 && h == 50){
         printf("output[%d,%d,0] = %1.5f\n", w, h, R[output_idx]);
     }
     if (threadIdx.x == 0 && w == 50 && h == 99){
