@@ -107,12 +107,11 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
-    printf("[w, h, c_out] = [%d, %d, %d], b %d, t %d -> p %d, pixel %d, \n", w, h, cid, bid, tid, pid, ofs + tid, pos);
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, kw,kh,ic)] * M[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)]);
+                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, kw,kh,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
             }
         }
     }
