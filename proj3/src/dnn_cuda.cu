@@ -100,7 +100,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
-    printf("bid %d, tid %d/%d -> pid %d, cid %d, ofs %d, BLOCKS_PER_CHANNEL\n", bid, tid, n_tid, pid, cid, ofs, BLOCKS_PER_CHANNEL);
+    printf("bid %d, tid %d/%d -> pid %d, cid %d, pos %d, BLOCKS_PER_CHANNEL\n", bid, tid, n_tid-1, pid, cid, ofs + tid, BLOCKS_PER_CHANNEL);
     // handle boundary
     if (tid >= n_tid) return;
     // apply convolution
