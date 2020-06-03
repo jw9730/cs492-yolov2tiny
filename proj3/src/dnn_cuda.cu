@@ -337,26 +337,38 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
+    int full_idx = iw * ih;
+    int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
+    int lower = load_per_thread * tid;
+    int upper = load_per_thread * (tid + 1);
+    if (lower < full_idx) {
+        upper = (upper < full_idx)? upper : full_idx;
+        for (int idx=lower; idx<upper; idx++){
+            int j = idx%ih;
+            int i = idx/ih;
+            M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)];
+        }
+    }
+    /*
     if(tid == 0){
         for (int i=0; i<iw; i++){
             for (int j=0; j<ih; j++){
-                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
+                M[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)] = I[INDEX_ROW_MAJOR_3(i,j,cid, kw,kh,oc)];
             }
         }
     }
+    */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
-
     // retrieve output pixel
     int pos = ofs + tid;
     int w = pos/oh;
     int h = pos%oh;
-
+    
     // wait until data is ready
     __syncthreads();
-    
     // apply pooling
     float v = -1e10;
     int idx;
