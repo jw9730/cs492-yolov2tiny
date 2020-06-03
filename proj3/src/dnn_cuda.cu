@@ -332,6 +332,9 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
+    if (tid == 0){
+        printf("channel %d\n", cid);
+    }
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -358,9 +361,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
         }
     }
     */
-    if (tid == 0){
-        printf("channel %d\n", cid);
-    }
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
