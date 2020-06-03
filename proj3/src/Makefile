@@ -4,11 +4,11 @@ openblas.so: dnn_openblas.c
 avx.so: dnn_avx.c
 	gcc -shared -fPIC -o $@ $^ -mavx2 -lpthread -lm
 
-cublas.so: dnn_cublas.c
-	nvcc -Xcompiler -fPIC -shared -o $@ $^ -lcublas
+cublas.so: dnn_cublas.cu
+	nvcc -shared -fPIC -o $@ $^ -lcublas
 
-cuda.so: dnn_cuda.c
-	nvcc -Xcompiler -fPIC -shared -o $@ $^
+cuda.so: dnn_cuda.cu
+	nvcc -shared -fPIC -o $@ $^
 
 all: openblas.so avx.so cublas.so cuda.so
 
