@@ -37,6 +37,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
     int lower = load_per_thread * tid;
     int upper = load_per_thread * (tid + 1);
+    /*
     if (lower < full_idx) {
         upper = (upper < full_idx)? upper : full_idx;
         for (int idx=lower; idx<upper; idx++){
@@ -46,7 +47,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
         }
     }
-    /*
+    */
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
@@ -56,7 +57,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             }
         }
     }
-    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output channel dimension
@@ -83,9 +83,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
     // declare on-chip shared memory
     extern __shared__ float M[];
-    if(tid == 0){
-        printf("out channel %d/%d\n", cid, oc-1);
-    }
     // read kernel weight once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
@@ -135,9 +132,12 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
+    // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
+    
     if (oc > THREADS_PER_BLOCK){
         // input stationary
         // within a block, hold input and thread over output channels
@@ -151,6 +151,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
         int BLOCKS = oc * BLOCKS_PER_CHANNEL;
         conv_ws<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }
+    
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
