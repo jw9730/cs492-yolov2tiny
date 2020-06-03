@@ -186,22 +186,7 @@ class Conv2D(DnnNode):
         print("Conv2D: TOEPLITZ-NUMPY elapsed time {:1.5f}s".format(toc - tic))
 
         c_float_p = POINTER(c_float)
-        """
-        # Approach 1. Toeplitz matrix
-        in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
-        k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
-        out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
-        # parameters: (input, kernel, output, # pixels, kernel input dim, kernel output dim)
-        mylib.matmul_tp.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
-        # run
-        tic = time.time()
-        mylib.matmul_tp(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
-        cuda_tp_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        toc = time.time()
-        print("Conv2D: CUDA-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
-        assert abs(cuda_tp_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(cuda_tp_result - ref_result).mean())
-        """
-        # Approach 2. Weight-stationary
+        # Approach 1. Weight-stationary
         in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
