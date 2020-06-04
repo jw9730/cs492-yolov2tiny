@@ -251,8 +251,8 @@ class MaxPool2D(DnnNode):
 
     def run(self, counter):
         if DEBUG: tic = time.time()
-        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         _, OW, OH, _ = self.result.shape
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         # Toeplitz matrix + max filter
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
         for ow in range(0, OW):

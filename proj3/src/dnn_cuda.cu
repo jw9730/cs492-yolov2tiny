@@ -130,12 +130,12 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // loop over outer dimensions, and compute dot product in chunks of size 512
     // kernel function: convolution for a single sliding window
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, iw * ih * ic * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_K, kw * kh * ic * oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    cudaMalloc( (void**)&dev_I, iw * ih * ic * sizeof(float) );
+    cudaMalloc( (void**)&dev_K, kw * kh * ic * oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice );
+    cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice );
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
     // dynamic on-chip memory allocation
@@ -158,7 +158,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
         conv_is<<<ow*oh*BLOCKS_PER_PIXEL,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }
     // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_K); cudaFree(dev_R);
 }
@@ -194,17 +194,17 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     // R: (ow * oh * oc), row major ordered
     // todo: element-wise addition
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_B, oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_B, oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice );
+    cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice );
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     badd<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_B, dev_R, ow, oh, oc);
     // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_B); cudaFree(dev_R);
 }
@@ -232,15 +232,15 @@ void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
     // R: (ow * oh * oc), row major ordered
     // todo: element-wise rectification
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice );
     // block = channel, thread over pixels
     int BLOCKS = ceil(float(ow*oh*oc)/float(THREADS_PER_BLOCK));
     lr<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, ow, oh, oc);
     // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_R);
 }
@@ -281,21 +281,21 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
     // R: (ow * oh * oc), row major ordered
     // todo: element-wise normalization
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_M, oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_G, oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_V, oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    cudaMalloc( (void**)&dev_I, ow * oh * oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_M, oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_G, oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_V, oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_M, M, oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_G, G, oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    HANDLE_ERROR( cudaMemcpy( dev_V, V, oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice );
+    cudaMemcpy( dev_M, M, oc * sizeof(float), cudaMemcpyHostToDevice );
+    cudaMemcpy( dev_G, G, oc * sizeof(float), cudaMemcpyHostToDevice );
+    cudaMemcpy( dev_V, V, oc * sizeof(float), cudaMemcpyHostToDevice );
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     bn<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_M, dev_G, dev_V, dev_R, eps, ow, oh, oc);
     // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_M); cudaFree(dev_G); cudaFree(dev_V); cudaFree(dev_R);
 }
@@ -342,15 +342,15 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     // todo: max-pooling
     // kernel function: pooling for a single sliding window
     // allocate the memory on the GPU
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_I, iw * ih * oc * sizeof(float) ) );
-    HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
+    cudaMalloc( (void**)&dev_I, iw * ih * oc * sizeof(float) );
+    cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) );
     // copy the arrays to the GPU
-    HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice ) );
+    cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice );
     // within a block, thread over output pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     mp<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
     // copy the array back from the GPU to the CPU
-    HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
+    cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost );
     // cleanup
     cudaFree(dev_I); cudaFree(dev_R);
 }
