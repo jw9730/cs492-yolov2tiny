@@ -42,7 +42,10 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     if (l < f) {
         u = (u < f)? u : f;
         for (int idx=l; idx<u; idx++){
-            M[INDEX_ROW_MAJOR_3(idx/ic/kh,idx/ic%kh,idx%ic, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(idx/ic/kh,idx/ic%kh,idx%ic,cid, kw,kh,ic,oc)];
+            int k = idx%ic;
+            int j = idx/ic%kh;
+            int i = idx/ic/kh;
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
     /*
@@ -97,7 +100,10 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     if (l < f) {
         u = (u < f)? u : f;
         for (int idx=l; idx<u; idx++){
-            M[INDEX_ROW_MAJOR_3(idx/ic/kh,idx/ic%kh,idx%ic, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+idx/ic/kh,h*sh+idx/ic%kh,idx%ic, iw,ih,ic)];
+            int k = idx%ic;
+            int j = idx/ic%kh;
+            int i = idx/ic/kh;
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
         }
     }
     /*
