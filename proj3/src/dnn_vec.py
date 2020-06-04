@@ -7,6 +7,7 @@ from itertools import product
 from multiprocessing import Process, sharedctypes
 import time
 
+
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
         self.g = graph

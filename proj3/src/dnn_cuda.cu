@@ -38,26 +38,16 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int f = kw*kh*ic;
     int load_per_thread = ceil(float(f)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
-    int u = load_per_thread * (tid + 1);
     if (l < f) {
-        for (int idx=l; idx<((u<f)?u:f); idx++){
+        int u = load_per_thread * (tid + 1);
+        int lim = (u<f)?u:f;
+        for (int idx=l; idx<lim; idx++){
             int i = idx/ic/kh;
             int j = idx/ic%kh;
             int k = idx%ic;
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
-    /*
-    if(tid == 0){
-        for (int i=0; i<kw; i++){
-            for (int j=0; j<kh; j++){
-                for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
-                }
-            }
-        }
-    }
-    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output pixel dimension
@@ -99,26 +89,16 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int f = kw*kh*ic;
     int load_per_thread = ceil(float(f)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
-    int u = load_per_thread * (tid + 1);
     if (l < f) {
-        for (int idx=l; idx<((u<f)?u:f); idx++){
+        int u = load_per_thread * (tid + 1);
+        int lim = (u<f)?u:f;
+        for (int idx=l; idx<lim; idx++){
             int i = idx/ic/kh;
             int j = idx/ic%kh;
             int k = idx%ic;
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
         }
     }
-    /*
-    if(tid == 0){
-        for (int i=0; i<kw; i++){
-            for (int j=0; j<kh; j++){
-                for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
-                }
-            }
-        }
-    }
-    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output channel dimension

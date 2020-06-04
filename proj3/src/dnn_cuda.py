@@ -218,10 +218,10 @@ class BiasAdd(DnnNode):
     def run(self, counter):
         tic = time.time()
         c_float_p = POINTER(c_float)
-        mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
@@ -286,8 +286,8 @@ class MaxPool2D(DnnNode):
 
     def run(self, counter):
         tic = time.time()
-        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         _, OW, OH, _ = self.result.shape
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         c_float_p = POINTER(c_float)
         in_p = pin.ctypes.data_as(c_float_p)
         out_p = np.zeros((1, OW, OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
@@ -339,12 +339,12 @@ class BatchNorm(DnnNode):
     def run(self, counter):
         tic = time.time()
         c_float_p = POINTER(c_float)
-        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         mu_p = self.mean.astype(np.float32).ctypes.data_as(c_float_p)
         gamma_p = self.gamma.astype(np.float32).ctypes.data_as(c_float_p)
         var_p = self.variance.astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
