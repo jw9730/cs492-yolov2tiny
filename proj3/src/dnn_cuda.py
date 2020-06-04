@@ -277,13 +277,12 @@ class MaxPool2D(DnnNode):
                     (pad_top,pad_bottom),
                     (0,0))
         else:
-            raise Exception("Unexpected padding mode: {}".format(padding))	
-        """
+            raise Exception("Unexpected padding mode: {}".format(padding))
+
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         self.PW = pin.shape[1]
         self.PH = pin.shape[2]
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
-        """
 
     def run(self, counter):
         tic = time.time()
