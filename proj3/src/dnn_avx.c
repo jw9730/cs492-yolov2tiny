@@ -375,7 +375,6 @@ void * lr_func(void * aux) {
     float * R_o = args->R_o;
     int n_o = args->n_o;
     int n_chunks = ceil((float) n_o / 8.0);
-
     int residue = n_o;
     float * x = I_o;
     float * o = R_o;
