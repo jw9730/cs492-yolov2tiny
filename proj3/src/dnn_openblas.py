@@ -172,89 +172,35 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        print("Conv2D: run start")
-
-        # There's an error in deep layers when baseline and offloaded code are tested together
-        # (NULL pointer access in .so library)
-        # Only check for first layer output, if needed
-        """
-        # baseline
-        tic = time.time()
-        ptins = []
-        for i in range(0, parallelism):
-            ptins.append(np.pad(self.in_node.result, self.pad, mode='constant'))
-        for chunk in range(0, int(self.OC / parallelism) + 1):
-            pool = [Process(target=self.run_for_oc, args=(ptins[k], chunk, k)) for k in range(min(parallelism * (chunk+1), self.OC) - parallelism * chunk)]
-            for j in range(min(parallelism * (chunk + 1), self.OC) - parallelism * chunk):
-                pool[j].start()
-            for p in pool:
-                p.join()
-        self.result = np.ctypeslib.as_array(self.shm_result)
-        toc = time.time()
-        print("Conv2D: baseline elapsed time {}s".format(toc - tic))
-
-        assert np.count_nonzero(np.isnan(self.result)) == 0, "Conv2D: {} nans found in output array of baseline method"\
-            .format(np.count_nonzero(np.isnan(self.result)))
-        """
-
-        # offloaded
-        tic = time.time()
-        # float pointer type: every n-d array will be modified to 1d float array
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
-        # set function argument types
-        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
-
-        # i_dim: flattened filter size
-        # o_dim: output channel size
-        i_dim = c_int(self.KW * self.KH * self.IC)
-        o_dim = c_int(self.OC)
-
-        # padded input and convolved result
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
-        full_result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
-
-        # 1d kernel: (KW * KH * IC * OC,)
-        # should be arranged contiguously in memory, in row major order
-        # cast to float pointer type
-        k_1d = np.ascontiguousarray(self.weights.squeeze().astype(np.float32))
-        k_p = k_1d.ctypes.data_as(c_float_p)
-
-        # pixel-wise offload
+        k_p = np.ascontiguousarray(self.weights.squeeze().astype(np.float32)).ctypes.data_as(c_float_p)
+        self.result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
+        mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
-                # 1d input: (KW * KH * IC,)
-                # should be arranged contiguously in memory
-                # cast to float pointer type
                 w0 = self.SW * ow
                 h0 = self.SH * oh
                 in_1d = np.ascontiguousarray(pin[0, w0:w0+self.KW, h0:h0+self.KH, :].squeeze().astype(np.float32))
                 in_p = in_1d.ctypes.data_as(c_float_p)
-
-                # output buffer
                 buf_p = np.zeros((self.OC,), order='c', dtype=np.float32).ctypes.data_as(c_float_p)
-
-                # apply filter as a matrix multiplication
-                mylib.ki_apply(k_p, in_p, buf_p, i_dim, o_dim)
-
-                # accumulate pixel output
-                full_result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
-
-        toc = time.time()
-        print("Conv2D: offloaded elapsed time {}s".format(toc - tic))
-
-        assert np.count_nonzero(np.isnan(full_result)) == 0, "Conv2D: {} nans found in output array".format(np.count_nonzero(np.isnan(full_result)))
-        # assert (full_result - self.result).mean() < 1e-5, "Conv2D: consistency check failed"
-        self.result = full_result
-
-    def run_for_oc(self, ptin, chunk, k):
-        oc = chunk * parallelism + k
-        shared_result = np.ctypeslib.as_array(self.shm_result)
-        for ic in range(0, self.IC):
+                mylib.ki_apply(k_p, in_p, buf_p, c_int(self.KW * self.KH * self.IC), c_int(self.OC))
+                self.result[0, ow, oh, :] = np.ctypeslib.as_array(buf_p, (self.OC,))
+        if sys.flags.debug:
+            toc = time.time()
+            print("[OpenBLAS] {:<10}: {:1.5f}s".format('Conv2D', toc - tic))
+            # fast debugging
+            kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
+            toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
             for ow in range(0, self.OW):
                 for oh in range(0, self.OH):
-                    for ii, i in enumerate(range(self.SW * ow, self.SW * ow + self.KW)):
-                        for jj, j in enumerate(range(self.SH * oh, self.SH * oh + self.KH)):
-                            shared_result[0, ow, oh, oc] += ptin[0, i, j, ic] * self.weights[ii, jj, ic, oc]
+                    w0 = self.SW * ow
+                    h0 = self.SH * oh
+                    toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
+            ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
+            assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
+
 
 
 class BiasAdd(DnnNode):
