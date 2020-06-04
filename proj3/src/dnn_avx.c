@@ -12,11 +12,8 @@
 /* MAT_MUL */
 // common arguments
 struct mm_global {
-    int n_pixels;
     int kernel_in;
     int kernel_out;
-    int pix_per_thread;
-    int out_per_thread;
     int n_chunks;
 };
 // thread-specific arguments
@@ -30,11 +27,8 @@ struct mm_args {
 };
 void * mm_func(void * aux) {
     struct mm_args * args = (struct mm_args *) aux;
-    int n_pixels = args->G->n_pixels;
     int kernel_in = args->G->kernel_in;
     int kernel_out = args->G->kernel_out;
-    int pix_per_thread = args->G->pix_per_thread;
-    int out_per_thread = args->G->out_per_thread;
     int n_chunks = args->G->n_chunks;
     int n_pix = args->n_pix;
     int n_out = args->n_out;
@@ -99,11 +93,8 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
 
     // set up global context
     struct mm_global G[1];
-    G->n_pixels = n_pixels;
     G->kernel_in = kernel_in;
     G->kernel_out = kernel_out;
-    G->pix_per_thread = pix_per_thread;
-    G->out_per_thread = out_per_thread;
     G->n_chunks = n_chunks;
 
     // set up threads
