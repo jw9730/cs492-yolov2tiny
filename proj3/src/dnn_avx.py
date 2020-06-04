@@ -190,7 +190,7 @@ class Conv2D(DnnNode):
         mylib.matmul(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("[AVX] Conv2D:\t{:1.5f}s".format(toc - tic))
+        print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
         """
         # fast debugging
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
@@ -224,7 +224,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("[AVX] BiasAdd:\t{:1.5f}s".format(toc - tic))
+        print("[AVX] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
         """
         # fast debugging
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)]
@@ -301,7 +301,7 @@ class MaxPool2D(DnnNode):
         mylib.max_pool(in_p, out_p, c_int(OW * OH * self.OC), c_int(self.ksize[1] * self.ksize[2]))
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
-        print("[AVX] MaxPool2D:\t{:1.5f}s".format(toc - tic))
+        print("[AVX] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
         """
         # fast debugging
         ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC))
@@ -342,7 +342,7 @@ class BatchNorm(DnnNode):
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("[AVX] BatchNorm:\t{:1.5f}s".format(toc - tic))
+        print("[AVX] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
         """
         # fast debugging
         ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
@@ -374,7 +374,7 @@ class LeakyReLU(DnnNode):
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("[AVX] LeakyReLU:\t{:1.5f}s".format(toc - tic))
+        print("[AVX] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
         """
         # fast debugging
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
