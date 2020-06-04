@@ -223,7 +223,7 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     // add
     ofs = bid*THREADS_PER_BLOCK+tid;
     float input = I[ofs];
-    R[ofs] = input > 0? input : input * 0.1f);
+    R[ofs] = (input > 0)? input : input * 0.1f;
 }
 extern "C"
 void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
