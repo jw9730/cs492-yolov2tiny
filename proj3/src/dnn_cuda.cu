@@ -340,11 +340,10 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // retrieve output pixel
     int w = (ofs + tid)/oh;
     int h = (ofs + tid)%oh;
-    
     // wait until data is ready
     __syncthreads();
     // apply pooling
-    float v = -2e20;
+    float v = -1e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             int idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
