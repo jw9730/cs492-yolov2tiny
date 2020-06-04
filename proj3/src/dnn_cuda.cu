@@ -157,8 +157,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
         // input stationary
         // within a block, hold input and thread over output channels
         int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
-        int BLOCKS = ow * oh * BLOCKS_PER_PIXEL;
-        conv_is<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+        conv_is<<<ow*oh*BLOCKS_PER_PIXEL,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
@@ -203,8 +202,7 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     HANDLE_ERROR( cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice ) );
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
-    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    badd<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_B, dev_R, ow, oh, oc);
+    badd<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_B, dev_R, ow, oh, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
@@ -256,27 +254,16 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
-    // declare on-chip shared memory
-    __shared__ float Mem[4];
-    if(tid == 0){
-        Mem[0] = M[cid];
-        Mem[1] = G[cid];
-        Mem[2] = V[cid];
-        Mem[3] = eps;
-    }
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int pos = ofs + tid;
-    int w = pos/oh;
-    int h = pos%oh;
+    int w = (ofs + tid)/oh;
+    int h = (ofs + tid)%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    // wait until data is ready
-    __syncthreads();
     // normalize
-    atomicAdd(R + ofs, Mem[1] * (I[ofs] - Mem[0]) / (sqrt(Mem[2]) + Mem[3]));
+    atomicAdd(R + ofs, G[cid] * (I[ofs] - M[cid]) / (sqrt(V[cid]]) + eps));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
@@ -298,8 +285,7 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
     HANDLE_ERROR( cudaMemcpy( dev_V, V, oc * sizeof(float), cudaMemcpyHostToDevice ) );
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
-    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    bn<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_M, dev_G, dev_V, dev_R, eps, ow, oh, oc);
+    bn<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_M, dev_G, dev_V, dev_R, eps, ow, oh, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
@@ -324,8 +310,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // retrieve output pixel
     int w = (ofs + tid)/oh;
     int h = (ofs + tid)%oh;
-    // wait until data is ready
-    __syncthreads();
     // apply pooling
     float v = -1e20;
     for (int i=0; i<kw; i++){
@@ -351,8 +335,7 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice ) );
     // within a block, thread over output pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
-    int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    mp<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
+    mp<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
