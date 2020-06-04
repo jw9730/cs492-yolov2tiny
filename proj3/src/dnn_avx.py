@@ -173,7 +173,7 @@ class Conv2D(DnnNode):
     def run(self, counter):
         if DEBUG: tic = time.time()
         # 1. Toeplitz matrix multiplication
-        kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
+        kernel = self.weights.reshape((-1, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32, order='c')
         for ow in range(0, self.OW):
