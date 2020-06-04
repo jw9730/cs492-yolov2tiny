@@ -34,13 +34,12 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
-    int full_idx = kw * kh * ic;
-    int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
-    int lower = load_per_thread * tid;
-    int upper = load_per_thread * (tid + 1);
-    if (lower < full_idx) {
-        upper = (upper < full_idx)? upper : full_idx;
-        for (int idx=lower; idx<upper; idx++){
+    int load_per_thread = ceil(float(kw*kh*ic)/float(THREADS_PER_BLOCK));
+    int l = load_per_thread * tid;
+    int u = load_per_thread * (tid + 1);
+    if (l < kw*kh*ic) {
+        u = (u < kw*kh*ic)? u : kw*kh*ic;
+        for (int idx=l; idx<u; idx++){
             int k = idx%ic;
             int j = idx/ic%kh;
             int i = idx/ic/kh;
@@ -60,9 +59,8 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     */
     // compute block index in output channel dimension
     int ofs = cid * THREADS_PER_BLOCK;
-    int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= n_tid) return;
+    if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
     // wait until data is ready
     __syncthreads();
     // apply convolution
@@ -87,13 +85,12 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
-    int full_idx = kw * kh * ic;
-    int load_per_thread = ceil(float(full_idx)/float(THREADS_PER_BLOCK));
-    int lower = load_per_thread * tid;
-    int upper = load_per_thread * (tid + 1);
-    if (lower < full_idx) {
-        upper = (upper < full_idx)? upper : full_idx;
-        for (int idx=lower; idx<upper; idx++){
+    int load_per_thread = ceil(float(kw*kh*ic)/float(THREADS_PER_BLOCK));
+    int l = load_per_thread * tid;
+    int u = load_per_thread * (tid + 1);
+    if (l < kw*kh*ic) {
+        u = (u < kw*kh*ic)? u : kw*kh*ic;
+        for (int idx=l; idx<u; idx++){
             int k = idx%ic;
             int j = idx/ic%kh;
             int i = idx/ic/kh;
@@ -113,13 +110,11 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
-    int n_tid = (ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK;
     // handle boundary
-    if (tid >= n_tid) return;
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int pos = ofs + tid;
-    int w = pos/oh;
-    int h = pos%oh;
+    int w = (ofs + tid)/oh;
+    int h = (ofs + tid)%oh;
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // wait until data is ready
     __syncthreads();
@@ -189,9 +184,8 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int pos = ofs + tid;
-    int w = pos/oh;
-    int h = pos%oh;
+    int w = (ofs + tid)/oh;
+    int h = (ofs + tid)%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // wait until data is ready
     __syncthreads();
