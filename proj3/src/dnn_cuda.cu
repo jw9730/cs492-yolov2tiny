@@ -182,7 +182,7 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int h = (ofs + tid)%oh;
     // add
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    atomicAdd(R + ofs, I[ofs] + Mem[0]);
+    R[ofs] = I[ofs] + Mem[0];
 }
 extern "C"
 void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
@@ -220,7 +220,7 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     if (tid >= (ofs < THREADS_PER_BLOCK? ofs : THREADS_PER_BLOCK)) return;
     // add
     ofs = bid*THREADS_PER_BLOCK+tid;
-    atomicAdd(R + ofs, I[ofs] * (I[ofs]>0? 1 : 0.1));
+    R[ofs] = I[ofs] * (I[ofs]>0? 1 : 0.1);
 }
 extern "C"
 void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
@@ -270,7 +270,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int h = (ofs + tid)%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // normalize
-    atomicAdd(R + ofs, Mem[0] * (I[ofs] - Mem[1]) / (sqrt(Mem[2]) + eps));
+    R[ofs] = Mem[0] * (I[ofs] - Mem[1]) / (sqrt(Mem[2]) + eps);
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
@@ -329,7 +329,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             v = ((I[idx] > v)? I[idx] : v);
         }
     }
-    atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
+    R[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] = v;
 }
 extern "C"
 void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int sh, int ow, int oh, int oc) {
