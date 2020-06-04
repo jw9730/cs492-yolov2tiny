@@ -367,7 +367,7 @@ class LeakyReLU(DnnNode):
     def run(self, counter):
         tic = time.time()
         c_float_p = POINTER(c_float)
-        in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
+        in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW * self.OH * self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
@@ -379,7 +379,7 @@ class LeakyReLU(DnnNode):
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         assert abs(self.result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
-        
+
 
 class Input(DnnNode):
    def __init__(self, name, in_shape):
