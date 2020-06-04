@@ -189,11 +189,11 @@ class Conv2D(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
-
+        """
         # fast debugging
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
-
+        """
 
 
 class BiasAdd(DnnNode):
@@ -223,12 +223,12 @@ class BiasAdd(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
-        """
+
         # fast debugging
-        ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)]
+        ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         assert abs(self.result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
-        """
+
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
