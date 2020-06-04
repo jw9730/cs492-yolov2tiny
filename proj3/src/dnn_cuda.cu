@@ -346,7 +346,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     float v = -1e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            if (w*sw>=iw || h*sh>=ih) continue;
+            if (w*sw+i>=iw || h*sh+j>=ih) continue;
             int idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
             v = ((I[idx] > v)? I[idx] : v);
         }
