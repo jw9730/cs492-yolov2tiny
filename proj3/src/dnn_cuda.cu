@@ -63,7 +63,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int n_tid = (oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= n_tid) return;
-
     // wait until data is ready
     __syncthreads();
     // apply convolution
@@ -122,7 +121,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int w = pos/oh;
     int h = pos%oh;
     float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    
     // wait until data is ready
     __syncthreads();
     // apply convolution
@@ -150,7 +148,6 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * ic * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_K, K, kw * kh * ic * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-
     // how to organize blocks?
     // maximizing data reuse and parallelism within a block
     // dynamic on-chip memory allocation
@@ -215,12 +212,10 @@ void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, ow * oh * oc * sizeof(float), cudaMemcpyHostToDevice ) );
     HANDLE_ERROR( cudaMemcpy( dev_B, B, oc * sizeof(float), cudaMemcpyHostToDevice ) );
-
     // block = channel, thread over pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
     badd<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_B, dev_R, ow, oh, oc);
-    
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup

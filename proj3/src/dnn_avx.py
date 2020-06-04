@@ -198,7 +198,7 @@ class Conv2D(DnnNode):
         mylib.matmul(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
         avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: TOEPLITZ-OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("Conv2D: AVX-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = avx_result
         #assert abs(avx_result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format((avx_result - ref_result).mean())
@@ -237,7 +237,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW * self.OH), c_int(self.OC))
         avx_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BiasAdd: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("BiasAdd: AVX elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = avx_result
         #assert abs(avx_result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(avx_result - ref_result).mean())
@@ -320,7 +320,7 @@ class MaxPool2D(DnnNode):
         mylib.max_pool(in_p, out_p, c_int(OW * OH * self.OC), c_int(self.ksize[1] * self.ksize[2]))
         avx_result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
-        print("MaxPool2D: TOEPLITZ-OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("MaxPool2D: AVX-TOEPLITZ elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = avx_result
         #assert abs(avx_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((avx_result - ref_result).mean())
@@ -368,7 +368,7 @@ class BatchNorm(DnnNode):
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW * self.OH), c_int(self.OC))
         avx_result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BatchNorm: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("BatchNorm: AVX elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = avx_result
         # correctness check
@@ -404,7 +404,7 @@ class LeakyReLU(DnnNode):
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
         avx_result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("LeakyReLU: OFFLOAD elapsed time {:1.5f}s".format(toc - tic))
+        print("LeakyReLU: AVX elapsed time {:1.5f}s".format(toc - tic))
 
         self.result = avx_result
         #assert abs(avx_result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(avx_result - ref_result).mean())
