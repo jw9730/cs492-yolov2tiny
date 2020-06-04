@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define MAX_THREADS 16
+#define MAX_THREADS 8
 
 /* __m256: 256-bit vector containing 8 floats */
 
@@ -64,7 +64,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // I: (n_pixels * kernel_in), row major ordered
     // K: (kernel_in * kernel_out), column major ordered
     // R: (n_pixels * kernel_out), row major ordered
-    assert((I != NULL) && (K != NULL) && (R != NULL));
     assert(MAX_THREADS >= 8);
     // dynamic threading
     int MAX_THREADS_PIX = 1;
@@ -465,7 +464,8 @@ void * mv_func(void * aux) {
             // element-wise product, no aggregation
             __m256 vx = _mm256_loadu_ps(x);
             __m256 vy = _mm256_loadu_ps(y);
-            acc = _mm256_add_ps(acc, _mm256_mul_ps(vx, vy));
+            __m256 vo = _mm256_mul_ps(vx, vy);
+            acc = _mm256_add_ps(acc, vo);
             // update loop variables
             residue -= 8; x += 8; y += 8;
         }
