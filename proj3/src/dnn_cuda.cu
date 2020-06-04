@@ -60,14 +60,16 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int w_ofs = w*sw;
     int h_ofs = h*sh;
     float * o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    float acc = 0;
     // apply convolution
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                *o += I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)];
+                acc += I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)];
             }
         }
     }
+    *o = acc;
 }
 __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     // input stationary
