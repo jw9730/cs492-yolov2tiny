@@ -40,6 +40,7 @@ void * mm_func(void * aux) {
             int residue = kernel_in;
             float * x = I_o + i * kernel_in;
             float * y = K_o + j * kernel_in;
+            float * o = R_o + i * kernel_out + j;
             __m256 acc = _mm256_setzero_ps();
             for (int k=0; k<n_chunks-1; k++){
                 __m256 vx = _mm256_loadu_ps(x);
@@ -55,7 +56,7 @@ void * mm_func(void * aux) {
             __m256 vo = _mm256_mul_ps(vx, vy);
             acc = _mm256_add_ps(acc, vo);
             float * res = (float *) &acc;
-            for (int k=0; k<8; k++) R_o[i * kernel_out + j] += res[k];
+            for (int k=0; k<8; k++) *o += res[k];
         }
     }
 }
@@ -168,8 +169,9 @@ void * ba_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = n_pixel;
         float * x = I_o + i * n_pixel;
+        float * y = B_o + i;
         float * o = R_o + i * n_pixel;
-        __m256 vy = _mm256_set1_ps(B_o[i]);
+        __m256 vy = _mm256_set1_ps(*y);
         // compute elementwise sum
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
@@ -456,6 +458,7 @@ void * mv_func(void * aux) {
         int residue = in_channels;
         float * x = I;
         float * y = K_o + i * in_channels;
+        float * o = R_o + i;
         __m256 acc = _mm256_setzero_ps();
         // compute dot product between kernel and input
         for (int j=0; j<n_chunks-1; j++){
@@ -476,7 +479,7 @@ void * mv_func(void * aux) {
         acc = _mm256_add_ps(acc, vo);
         // accumulate
         float * res = (float *) &acc;
-        for (int k=0; k<8; k++) R_o[i] += res[k];
+        for (int k=0; k<8; k++) *o += res[k];
     }
 }
 void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
@@ -554,6 +557,7 @@ void * mp_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = pool_size;
         float * x = I_o + i * pool_size;
+        float * o = R_o + i;
         // compute max
         __m256 vm = _mm256_set1_ps(-1e20);
         for (int j=0; j<n_chunks-1; j++){
@@ -576,7 +580,7 @@ void * mp_func(void * aux) {
         vm = _mm256_max_ps(v5, v6); // contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
         float vm1 = ((float *)&vm)[0];
         float vm2 = ((float *)&vm)[4];
-        R_o[i] = vm1 > vm2 ? vm1 : vm2;
+        *o = vm1 > vm2 ? vm1 : vm2;
     }
 }
 void max_pool(float * I, float * R, int out_size, int pool_size){
