@@ -184,7 +184,7 @@ class Conv2D(DnnNode):
                      c_int(self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("[CUDA] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
+        print("[CUDA] {:<10}: {:1.5f}s".format('Conv2D', toc - tic))
         """
         # fast debugging
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
