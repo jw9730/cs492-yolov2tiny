@@ -20,14 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_cublas.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_cublas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_cuda.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_cuda.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_openblas.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_openblas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_vec.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_vec.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,7 +106,7 @@
       <workItem from="1590553614042" duration="1446000" />
       <workItem from="1590555129557" duration="40592000" />
       <workItem from="1591066018906" duration="19399000" />
-      <workItem from="1591169376393" duration="27829000" />
+      <workItem from="1591169376393" duration="28701000" />
     </task>
     <servers />
   </component>
