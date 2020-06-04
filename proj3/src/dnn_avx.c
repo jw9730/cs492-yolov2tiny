@@ -465,8 +465,7 @@ void * mv_func(void * aux) {
             // element-wise product, no aggregation
             __m256 vx = _mm256_loadu_ps(x);
             __m256 vy = _mm256_loadu_ps(y);
-            __m256 vo = _mm256_mul_ps(vx, vy);
-            acc = _mm256_add_ps(acc, vo);
+            acc = _mm256_add_ps(acc, _mm256_mul_ps(vx, vy));
             // update loop variables
             residue -= 8; x += 8; y += 8;
         }
