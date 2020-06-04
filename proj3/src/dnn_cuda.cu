@@ -333,7 +333,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
-
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -345,7 +344,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // wait until data is ready
     __syncthreads();
     // apply pooling
-    float v = -1e20;
+    float v = -2e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             int idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
@@ -366,9 +365,6 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     HANDLE_ERROR( cudaMalloc( (void**)&dev_R, ow * oh * oc * sizeof(float) ) );
     // copy the arrays to the GPU
     HANDLE_ERROR( cudaMemcpy( dev_I, I, iw * ih * oc * sizeof(float), cudaMemcpyHostToDevice ) );
-    // how to organize blocks?
-    // maximizing data reuse and parallelism within a block
-    // input stationary (block = output channel)
     // within a block, thread over output pixels
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
