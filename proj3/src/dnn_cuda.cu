@@ -5,6 +5,7 @@
 #include <string.h>
 #include <cuda_runtime.h>
 
+#define DEBUG
 #define THREADS_PER_BLOCK 512
 #define INDEX_ROW_MAJOR_2(i, j, I, J) ((j) + (J) * (i))
 #define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) ((k) + (K) * ((j) + (J) * (i)))
@@ -30,6 +31,11 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
+
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -50,10 +56,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
     int w = (ofs+tid)/oh;
     int h = (ofs+tid)%oh;
@@ -82,6 +84,11 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int w = pid / oh;
     int w_ofs = w*sw;
     int h_ofs = h*sh;
+    // compute block index in output channel dimension
+    int ofs = cid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
+
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -102,10 +109,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
-    // compute block index in output channel dimension
-    int ofs = cid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
     // apply convolution
     float acc = 0;
     for (int i=0; i<kw; i++){
@@ -138,13 +141,17 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
     if (ow*oh > 10 * THREADS_PER_BLOCK){
+#ifdef DEBUG
         printf("dnn_cuda.so: weight stationary\n");
+#endif
         // weight stationary
         // within a block, hold kernel and thread over output pixels
         int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
         conv_ws<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }else{
+#ifdef DEBUG
         printf("dnn_cuda.so: input stationary\n");
+#endif
         // input stationary
         // within a block, hold input and thread over output channels
         int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
@@ -166,20 +173,17 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // import channelwise parameters to shared memory
     __shared__ float Mem[1];
     if(tid == 0) Mem[0] = B[cid];
     // wait until data is ready
     __syncthreads();
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
-    // retrieve output pixel
-    int w = (ofs + tid)/oh;
-    int h = (ofs + tid)%oh;
     // add
-    ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    ofs = INDEX_ROW_MAJOR_3((ofs + tid)/oh,(ofs + tid)%oh,cid, ow,oh,oc);
     R[ofs] = I[ofs] + Mem[0];
 }
 extern "C"
@@ -218,7 +222,8 @@ __global__ void lr(float *I, float *R, int ow, int oh, int oc){
     if (tid >= (ofs < THREADS_PER_BLOCK? ofs : THREADS_PER_BLOCK)) return;
     // add
     ofs = bid*THREADS_PER_BLOCK+tid;
-    R[ofs] = I[ofs] * (I[ofs]>0? 1 : 0.1);
+    float input = I[ofs];
+    R[ofs] = input > 0? input : input * 0.1f);
 }
 extern "C"
 void leaky_relu(float * I, float * R, int ow, int oh, int oc) {
@@ -250,23 +255,23 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
-    // import channelwise parameters to shared memory
-    __shared__ float Mem[3];
-    if(tid == 0){
-        Mem[0] = G[cid];
-        Mem[1] = M[cid];
-        Mem[2] = V[cid];
-    }
-    // wait until data is ready
-    __syncthreads();
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
+    // import channelwise parameters to shared memory
+    __shared__ float memory[3];
+    if(tid == 0){
+        memory[0] = G[cid];
+        memory[1] = M[cid];
+        memory[2] = V[cid];
+    }
+    // wait until data is ready
+    __syncthreads();
     // retrieve output pixel
     ofs = INDEX_ROW_MAJOR_3((ofs + tid)/oh,(ofs + tid)%oh,cid, ow,oh,oc);
     // normalize
-    R[ofs] = Mem[0] * (I[ofs] - Mem[1]) / (sqrt(Mem[2]) + eps);
+    R[ofs] = memory[0] * (I[ofs] - memory[1]) / (sqrt(memory[2]) + eps);
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
@@ -317,12 +322,14 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int h_ofs = h*sh;
     // apply pooling
     float v = -1e20;
+    float input;
     int lw = (kw < iw-w_ofs)? kw : (iw-w_ofs);
     int lh = (kh < ih-h_ofs)? kh : (ih-h_ofs);
     for (int i=0; i<lw; i++){
         for (int j=0; j<lh; j++){
             int idx = INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,cid, iw,ih,oc);
-            v = ((I[idx] > v)? I[idx] : v);
+            input = I[idx];
+            v = ((input > v)? input : v);
         }
     }
     R[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] = v;
