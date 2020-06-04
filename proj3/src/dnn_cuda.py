@@ -5,10 +5,10 @@ import networkx as nx
 import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
-
 import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./cuda.so')
+
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):

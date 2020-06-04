@@ -5,12 +5,10 @@ import networkx as nx
 import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
-
 import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./avx.so')
 
-parallelism = 8
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
@@ -191,11 +189,11 @@ class Conv2D(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
-        """
+
         # fast debugging
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
-        """
+        
 
 
 class BiasAdd(DnnNode):
