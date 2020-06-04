@@ -74,19 +74,18 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
         MAX_THREADS_PIX = MAX_THREADS;
         MAX_THREADS_OUT = 1;
     }
-    if (8.0 > ratio && ratio >= 1.0){
+    else if (8.0 > ratio && ratio >= 1.0){
         MAX_THREADS_PIX = MAX_THREADS/2;
         MAX_THREADS_OUT = 2;
     }
-    if (1.0 > ratio && ratio >= 1/8){
+    else if (1.0 > ratio && ratio >= 1/8){
         MAX_THREADS_PIX = MAX_THREADS/4;
         MAX_THREADS_OUT = 4;
     }
-    if (1/8 > ratio){
+    else if (1/8 > ratio){
         MAX_THREADS_PIX = MAX_THREADS/8;
         MAX_THREADS_OUT = 8;
     }
-
     int pix_per_thread = ceil((float) n_pixels / (float) MAX_THREADS_PIX);
     int out_per_thread = ceil((float) kernel_out / (float) MAX_THREADS_OUT);
     int n_chunks = ceil((float) kernel_in / 8.0);
@@ -111,7 +110,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
         // loop variables
         int out_residue = kernel_out;
         float * K_o = K;
-
         for (t_out=0; t_out<MAX_THREADS_OUT; t_out++){
             int i_ofs = t_pix * pix_per_thread;
             int k_ofs = t_out * out_per_thread;
@@ -124,7 +122,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
             args->R_o = R + i_ofs * kernel_out + k_ofs;
             // run thread
             pthread_create(tid + (t_pix * MAX_THREADS_OUT + t_out), NULL, mm_func, args);
-            //printf("%d, %d\n", t_pix, t_out);
             args++;
             // processed output boundary, exit
             if (out_residue < out_per_thread){
@@ -142,11 +139,9 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
         // update loop vars
         in_residue -= pix_per_thread;
     }
-    //printf("<%d, %d>\n", t_pix_max, t_out_max);
     for (int i=0; i<t_pix_max; i++){
         for (int j=0; j<t_out_max; j++){
             // join thread
-            //printf("%d, %d\n", i, j);
             pthread_join(tid[i * MAX_THREADS_OUT + j], NULL);
         }
     }
@@ -222,7 +217,6 @@ void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
     float * R_o = R;
 
     for (int t=0; t<MAX_THREADS; t++){
-        //printf("%d\n", t);
         // set up thread arguments
         args->G = G;
         args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
@@ -243,9 +237,7 @@ void bias_add(float * I, float * B, float * R, int n_pixel, int n_channel){
         R_o += n_pixel * out_per_thread;
         out_residue -= out_per_thread;
     }
-    //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
-        //printf("%d\n", t);
         // join thread
         pthread_join(tid[t], NULL);
     }
@@ -420,7 +412,6 @@ void leaky_relu(float * I, float * R, int length){
     float * R_o = R;
 
     for (int t=0; t<MAX_THREADS; t++){
-        //printf("%d\n", t);
         // set up thread arguments
         args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
         args->I_o = I_o;
@@ -438,9 +429,7 @@ void leaky_relu(float * I, float * R, int length){
         R_o += out_per_thread;
         out_residue -= out_per_thread;
     }
-    //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
-        //printf("%d\n", t);
         // join thread
         pthread_join(tid[t], NULL);
     }
@@ -624,7 +613,6 @@ void max_pool(float * I, float * R, int out_size, int pool_size){
     float * R_o = R;
 
     for (int t=0; t<MAX_THREADS; t++){
-        //printf("%d\n", t);
         // set up thread arguments
         args->G = G;
         args->n_o = (out_residue < out_per_thread) ? out_residue : out_per_thread;
@@ -643,9 +631,7 @@ void max_pool(float * I, float * R, int out_size, int pool_size){
         R_o += out_per_thread;
         out_residue -= out_per_thread;
     }
-    //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
-        //printf("%d\n", t);
         // join thread
         pthread_join(tid[t], NULL);
     }
