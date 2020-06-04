@@ -3,6 +3,8 @@ import sys
 import math
 import networkx as nx
 import numpy as np
+import time
+import multiprocessing as mp
 
 """
 The class DNNInferenceEngine will take a graph of DNN nodes to produce its computation result.
@@ -12,6 +14,7 @@ Your job is to implement actual computations in the DNN nodes.
 Every intermediate DNN node must contain in node and result.
 The in node is a previous node that feeds a tensor to the current node through result.
 """
+
 
 class DnnInferenceEngine(object):
     def __init__(self, graph):
@@ -42,14 +45,15 @@ class DnnInferenceEngine(object):
             currents = nexts
         return out
 
+
 class DnnGraphBuilder(object):
     def __init__(self):
         self.G = nx.DiGraph()
-        self.name_num = {"conv2d": 0, 
-                         "bias_add": 0, 
-                         "max_pool2d": 0, 
-                         "batch_norm": 0, 
-                         "leaky_relu": 0, 
+        self.name_num = {"conv2d": 0,
+                         "bias_add": 0,
+                         "max_pool2d": 0,
+                         "batch_norm": 0,
+                         "leaky_relu": 0,
                          "input": 0}
         self.in_node = None
         self.out_node = None
@@ -95,18 +99,21 @@ class DnnGraphBuilder(object):
 
     def create_input(self, in_shape):
         out_node = Input(self.get_name("input"), in_shape)
-        self.G.add_node(out_node) 
+        self.G.add_node(out_node)
         self.set_in_node(out_node)  # Assume there's only one input
         return out_node
+
 
 class DnnNode(object):
     def __init__(self):
         pass
 
     def run(self):
-        self.result = None 
+        self.result = None
 
-#
+    #
+
+
 # Complete below classes.
 #
 """
@@ -119,6 +126,8 @@ save the value at self.result for further computations.
 In the run, there must be nested loops which take really long time.
 Use multiprocessing library to improve the performance using, for example, batching technique.
 """
+
+
 class Conv2D(DnnNode):
     def __init__(self, name, in_node, kernel, strides, padding):
         # Given an input tensor of shape [batch, in_height, iout_width, iout_channels]
@@ -160,14 +169,15 @@ class Conv2D(DnnNode):
             s_h, s_w = self.strides
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
         p_h, p_w = 0, 0
         if padding == 'SAME':
-            p_h = h * (s_h - 1) + k_h - s_h
-            p_w = w * (s_w - 1) + k_w - s_w
+            p_h = int(h * (s_h - 1) + k_h - s_h)
+            p_w = int(w * (s_w - 1) + k_w - s_w)
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
@@ -182,22 +192,124 @@ class Conv2D(DnnNode):
         self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        # strides along each dimension
-        s_b, s_h, s_w, s_c = self.strides
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
+
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
-        # https://intellipaat.com/community/558/what-is-the-difference-between-same-and-valid-padding-in-tf-nn-maxpool-of-tensorflow
         p_h_left = p_h // 2
         p_h_right = (p_h + 1) // 2
         p_w_left = p_w // 2
         p_w_right = (p_w + 1) // 2
-        # output dimension (to be iterated over)
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
+
+        # input dimension
+        in_b, in_h, in_w, in_c = self.in_node.in_shape
+        # kernel size
+        k_h, k_w, k_in, k_out = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.strides
+        # output dimension
         out_b, out_h, out_w, out_c = self.in_shape
-        pass
+        assert k_in == in_c and k_out == out_c
+        assert in_b == out_b
+
+        # zero-pad feature map
+        padded_input = np.zeros((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32)
+        padded_input[:, p_h_left:(in_h + p_h) - p_h_right, p_w_left:(in_w + p_w) - p_w_right, :] = self.in_node.result
+
+        # print("Conv2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        # print("Conv2D: kernel (H, W, C_in, C_out) = (%d, %d, %d, %d)" % (k_h, k_w, k_in, k_out))
+        # print("Conv2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
+        # print("Conv2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
+
+        ################################################################################################################
+        # initialize
+        q = mp.Queue()
+        p_list = list()
+
+        # running convolution for limited output pixels
+        def run_split(queue, idx, padded_input, kernel, bounds):
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
+            mark = time.time()
+            ret = np.zeros((out_b, h_end - h_start, w_end - w_start, c_end - c_start), dtype=np.float32)
+            # loop over output pixels
+            for n in range(out_b):
+                for m in range(c_end - c_start):
+                    for y in range(h_end - h_start):
+                        for x in range(w_end - w_start):
+                            for c in range(k_in):
+                                for i in range(k_h):
+                                    for j in range(k_w):
+                                        ret[n, y, x, m] += kernel[i, j, c, m] * \
+                                                           padded_input[n * s_b, y * s_h + i, x * s_w + j, c * s_c]
+            queue.put([ret, idx, bounds])
+            # print("Conv2D mp: [%d] elapsed time %.2fsec" % (idx, time.time() - mark))
+
+        # assign max number of splits per each dimension
+        # print("cpu_count: %d" % mp.cpu_count())
+        n_max_c, n_max_h, n_max_w = 16, 2, 2
+        # length of chunk per each dimension
+        c_per_split = math.ceil(out_c / n_max_c)
+        h_per_split = math.ceil(out_h / n_max_h)
+        w_per_split = math.ceil(out_w / n_max_w)
+        # actual number of splits
+        n_split_c = math.ceil(out_c / c_per_split)
+        n_split_h = math.ceil(out_h / h_per_split)
+        n_split_w = math.ceil(out_w / w_per_split)
+        # multi-threading loop
+        q_idx = 0
+        for c_idx in range(n_split_c):
+            for h_idx in range(n_split_h):
+                for w_idx in range(n_split_w):
+                    # assign chunks
+                    c_start, h_start, w_start = c_idx * c_per_split, h_idx * h_per_split, w_idx * w_per_split
+                    c_end = min(c_start + c_per_split, out_c)
+                    h_end = min(h_start + h_per_split, out_h)
+                    w_end = min(w_start + w_per_split, out_w)
+                    # print("[%d] h %d:%d, w %d:%d, channel %d:%d" % (q_idx, h_start, h_end, w_start, w_end, c_start, c_end))
+                    bounds = (h_start, h_end, w_start, w_end, c_start, c_end)
+
+                    # start thread with split input and kernel
+                    # input: split across h and w
+                    # kernel: split across output channels
+                    thread_input = padded_input[:, h_start * s_h:h_end * s_h + k_h, w_start * s_w:w_end * s_w + k_w, :]
+                    thread_kernel = self.kernel[:, :, :, c_start:c_end]
+                    p = mp.Process(target=run_split, args=(q, q_idx, thread_input, thread_kernel, bounds))
+                    p_list.append(p)
+                    p.start()
+
+                    # increment thread count
+                    q_idx += 1
+
+        # get results and synchronize
+        self.result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        cnt = 0
+        while cnt < n_split_c * n_split_h * n_split_w:
+            ret, idx, bounds = q.get()
+            h_start, h_end, w_start, w_end, c_start, c_end = bounds
+            self.result[:, h_start:h_end, w_start:w_end, c_start:c_end] += ret
+            # print("[%d] deque" % idx)
+            cnt += 1
+        for p in p_list:
+            p.join()
+        ################################################################################################################
+        # vectorized version (as baseline)
+        kernel_2d = self.kernel.reshape((-1, out_c))  # (h * w * in_c, out_c)
+        vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+        mark = time.time()
+        for y in range(out_h):
+            for x in range(out_w):
+                input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
+                vectorized_result[:, y, x, :] = np.matmul(input_rf.reshape((out_b, -1)), kernel_2d)
+        assert ( self.result- vectorized_result ).mean() < 1e-5
+        # print("Conv2D vec: elapsed time %.2fsec" % (time.time() - mark))
+        ################################################################################################################
+        return self.result
+
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
@@ -219,12 +331,17 @@ class BiasAdd(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
+
         # biases should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), biases dimension (256,)
-        pass
+        self.result = self.in_node.result + self.biases.reshape((1, 1, 1, -1))
+
+        return self.result
+
 
 class MaxPool2D(DnnNode):
     def __init__(self, name, in_node, ksize, strides, padding):
@@ -256,7 +373,8 @@ class MaxPool2D(DnnNode):
             k_h, k_w = self.ksize
         elif len(self.ksize) == 4:
             k_b, k_h, k_w, k_c = self.ksize
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_ksize = [k_b, k_h, k_w, k_c]
 
         # parse strides
@@ -267,14 +385,20 @@ class MaxPool2D(DnnNode):
             s_h, s_w = self.strides
         elif len(self.strides) == 4:
             s_b, s_h, s_w, s_c = self.strides
-        else: raise AttributeError
+        else:
+            raise AttributeError
         self.parsed_strides = [s_b, s_h, s_w, s_c]
 
         # compute padding
-        p_h, p_w = 0, 0
+        target_out_h = target_out_w = 0
         if padding == 'SAME':
-            p_h = h * (s_h - 1) + k_h - s_h
-            p_w = w * (s_w - 1) + k_w - s_w
+            target_out_h = np.ceil(float(h) / float(s_h))
+            target_out_w = np.ceil(float(w) / float(s_w))
+        elif padding == 'VALID':
+            target_out_h = np.ceil(float(h - k_h + 1) / float(s_h))
+            target_out_w = np.ceil(float(w - k_w + 1) / float(s_w))
+        p_h = int(np.ceil((target_out_h - 1) * s_h + k_h - h))
+        p_w = int(np.ceil((target_out_w - 1) * s_w + k_w - w))
         self.parsed_padding = [p_h, p_w]
 
         # compute output shape
@@ -285,13 +409,11 @@ class MaxPool2D(DnnNode):
         self.in_shape = [out_b, out_h, out_w, out_c]
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
-        
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+
     def run(self):
-        # pooling size along each dimension
-        k_b, k_h, k_w, k_c = self.parsed_ksize
-        # strides along each dimension
-        s_b, s_h, s_w, s_c = self.parsed_ksize
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
+
         # padding along each dimension
         p_h, p_w = self.parsed_padding
         # caution: tensorflow implementation pads more on rightmost
@@ -299,9 +421,56 @@ class MaxPool2D(DnnNode):
         p_h_right = (p_h + 1) // 2
         p_w_left = p_w // 2
         p_w_right = (p_w + 1) // 2
-        # output dimension (to be iterated over)
+        assert p_h == p_h_left + p_h_right and p_w == p_w_left + p_w_right
+
+        # input dimension
+        in_b, in_h, in_w, in_c = self.in_node.in_shape
+        # pooling size along each dimension
+        k_b, k_h, k_w, k_c = self.parsed_ksize
+        # strides along each dimension
+        s_b, s_h, s_w, s_c = self.parsed_strides
+        # output dimension
         out_b, out_h, out_w, out_c = self.in_shape
-        pass
+
+        # zero-pad feature map
+        padded_input = - (np.ones((in_b, in_h + p_h, in_w + p_w, in_c), dtype=np.float32) * np.inf)
+        padded_input[:, p_h_left:in_h + p_h - p_h_right, p_w_left:in_w + p_w - p_w_right, :] = self.in_node.result
+
+        # print("MaxPool2D: input (B, H, W, C) = (%d, %d, %d, %d)" % (in_b, in_h, in_w, in_c))
+        # print("MaxPool2D: output (B, H, W, C) = (%d, %d, %d, %d)" % (out_b, out_h, out_w, out_c))
+        # print("MaxPool2D: padded input (B, H, W, C) = (%d, %d, %d, %d)" % padded_input.shape)
+
+        ################################################################################################################
+        self.result = -np.inf * np.ones((out_b, out_h, out_w, out_c), dtype=np.float32)
+        mark = time.time()
+        # loop over output pixels
+        for n in range(out_b):
+            for m in range(out_c):
+                for y in range(out_h):
+                    for x in range(out_w):
+                        for i in range(k_b):
+                            for j in range(k_h):
+                                for k in range(k_w):
+                                    for l in range(k_c):
+                                        self.result[n,y,x,m] = max(self.result[n,y,x,m], padded_input[n*s_b+i,y*s_h+j,x*s_w+k,m*s_c+l])
+        #print("MaxPool2D long: elapsed time %.2fsec" % (time.time() - mark))
+        ################################################################################################################
+        # vectorized version (as baseline)
+        # caution: this implementation assumes k_b == 1 and k_c == 1
+        if k_b == 1 and k_c == 1:
+            mark = time.time()
+            vectorized_result = np.zeros((out_b, out_h, out_w, out_c), dtype=np.float32)
+            # loop over output pixels
+            for y in range(out_h):
+                for x in range(out_w):
+                    # vectorized max
+                    input_rf = padded_input[0::s_b, (y * s_h):(y * s_h + k_h), (x * s_w):(x * s_w + k_w), 0::s_c]
+                    vectorized_result[:, y, x, :] = np.amax(input_rf.reshape((out_b, k_h * k_w, out_c)), axis=1)
+            assert (vectorized_result - self.result).mean() < 1e-5
+            # print("MaxPool2D: elapsed time %.2fsec" % (time.time() - mark))
+        ################################################################################################################
+        return self.result
+
 
 class BatchNorm(DnnNode):
     def __init__(self, name, in_node, mean, variance, gamma, epsilon):
@@ -329,12 +498,19 @@ class BatchNorm(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
+
         # mean, variance, and gamma should be broadcasted for b, w and h dimensions
         # e.g. input (1, 416, 416, 256), mean dimension (256,)
-        pass
+        self.result = self.gamma.reshape((1, 1, 1, -1)) * \
+                      (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
+                      (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon)
+
+        return self.result
+
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -350,10 +526,14 @@ class LeakyReLU(DnnNode):
         self.in_shape = prev_out_shape
 
         print(self.name)
-        print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
+        # print("__init__: input shape " + str(prev_out_shape) + ", output shape" + str(self.in_shape))
 
     def run(self):
-        pass
+        assert tuple(self.in_node.in_shape) == tuple(self.in_node.result.shape)
+
+        self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
+
+        return self.result
 
 
 # Do not modify below
@@ -369,4 +549,3 @@ class Input(DnnNode):
 
     def run(self):
         pass
-
