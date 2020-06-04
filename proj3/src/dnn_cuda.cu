@@ -41,11 +41,10 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
     if (l < f) {
-        u = (u < f)? u : f;
-        for (int idx=l; idx<u; idx++){
-            int k = idx%ic;
-            int j = idx/ic%kh;
+        for (int idx=l; idx<((u<f)?u:f); idx++){
             int i = idx/ic/kh;
+            int j = idx/ic%kh;
+            int k = idx%ic;
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
@@ -67,8 +66,10 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int w_ofs = (ofs+tid)/oh*sw;
-    int h_ofs = (ofs+tid)%oh*sh;
+    int w = (ofs+tid)/oh;
+    int h = (ofs+tid)%oh;
+    int w_ofs = w*sw;
+    int h_ofs = h*sh;
     float * o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // apply convolution
     for (int i=0; i<kw; i++){
@@ -89,6 +90,8 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
+    int w_ofs = w*sw;
+    int h_ofs = h*sh;
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -99,12 +102,11 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
     if (l < f) {
-        u = (u < f)? u : f;
-        for (int idx=l; idx<u; idx++){
-            int k = idx%ic;
-            int j = idx/ic%kh;
+        for (int idx=l; idx<((u<f)?u:f); idx++){
             int i = idx/ic/kh;
-            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+            int j = idx/ic%kh;
+            int k = idx%ic;
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
         }
     }
     /*
@@ -112,7 +114,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
                 }
             }
         }
