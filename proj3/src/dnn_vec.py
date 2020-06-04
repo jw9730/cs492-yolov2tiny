@@ -170,7 +170,7 @@ class Conv2D(DnnNode):
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0 + self.KW, h0:h0 + self.KH, :].flatten()
         self.result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: \tNUMPY elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[NUMPY] Conv2D:\t{:1.5f}s".format(toc - tic))
 
 class BiasAdd(DnnNode):
     def __init__(self, name, in_node, biases):
@@ -192,7 +192,7 @@ class BiasAdd(DnnNode):
         tic = time.time()
         self.result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         toc = time.time()
-        print("BiasAdd: \tNUMPY elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[NUMPY] BiasAdd:\t{:1.5f}s".format(toc - tic))
 
 
 class MaxPool2D(DnnNode):
@@ -259,7 +259,7 @@ class MaxPool2D(DnnNode):
         toeplitz_in = rpin.transpose((0, 3, 1, 2)).reshape((OW * OH * self.OC, self.ksize[1] * self.ksize[2]))
         self.result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC)) # correctness check
         toc = time.time()
-        print("MaxPool2D: \tNUMPY elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[NUMPY] MaxPool2D:\t{:1.5f}s".format(toc - tic))
 
 class BatchNorm(DnnNode):
     def __init__(self, name, in_node, mean, variance, gamma, epsilon):
@@ -288,7 +288,7 @@ class BatchNorm(DnnNode):
                     (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                     (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon).astype(np.float32)
         toc = time.time()
-        print("BatchNorm: \tNUMPY elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[NUMPY] BatchNorm:\t{:1.5f}s".format(toc - tic))
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -307,7 +307,7 @@ class LeakyReLU(DnnNode):
         tic = time.time()
         self.result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         toc = time.time()
-        print("LeakyReLU: \tNUMPY elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[NUMPY] LeakyReLU:\t{:1.5f}s".format(toc - tic))
 
 class Input(DnnNode):
     def __init__(self, name, in_shape):

@@ -184,7 +184,7 @@ class Conv2D(DnnNode):
                      c_int(self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("Conv2D: \tCUDA elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[CUDA] Conv2D:\t{:1.5f}s".format(toc - tic))
         """
         # fast debugging
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
@@ -224,7 +224,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BiasAdd: \tCUDA elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[CUDA] BiasAdd:\t{:1.5f}s".format(toc - tic))
         """
         # fast debugging
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)]
@@ -298,7 +298,7 @@ class MaxPool2D(DnnNode):
                        c_int(OW), c_int(OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
-        print("MaxPool2D: \tCUDA elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[CUDA] MaxPool2D:\t{:1.5f}s".format(toc - tic))
         """
         # fast debugging
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
@@ -345,7 +345,7 @@ class BatchNorm(DnnNode):
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("BatchNorm: \tCUDA elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[CUDA] BatchNorm:\t{:1.5f}s".format(toc - tic))
         """
         # fast debugging
         ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
@@ -377,7 +377,7 @@ class LeakyReLU(DnnNode):
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
-        print("LeakyReLU: \tCUDA elapsed time \t{:1.5f}s".format(toc - tic))
+        print("[CUDA] LeakyReLU:\t{:1.5f}s".format(toc - tic))
         """
         # fast debugging
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
