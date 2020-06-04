@@ -321,7 +321,7 @@ class MaxPool2D(DnnNode):
         toc = time.time()
         print("MaxPool2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
-        print(cuda_result[0,10,20,10:12], ref_result[0,10,20,10:12])
+        print(cuda_result[0,10,12,10:12], ref_result[0,10,12,10:12])
 
         self.result = cuda_result
         assert abs(cuda_result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format((cuda_result - ref_result).mean())
