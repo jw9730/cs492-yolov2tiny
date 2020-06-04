@@ -263,7 +263,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int h = (ofs + tid)%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // normalize
-    atomicAdd(R + ofs, G[cid] * (I[ofs] - M[cid]) / (sqrt(V[cid]]) + eps));
+    atomicAdd(R + ofs, G[cid] * (I[ofs] - M[cid]) / (sqrt(V[cid]) + eps));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
