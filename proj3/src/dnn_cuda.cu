@@ -155,7 +155,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // maximizing data reuse and parallelism within a block
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
-    if (ow*oh > 1e10*THREADS_PER_BLOCK){
+    if (ow*oh > 0*THREADS_PER_BLOCK){
         // weight stationary
         // within a block, hold kernel and thread over output pixels
         int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
