@@ -193,7 +193,7 @@ class Conv2D(DnnNode):
         # fast debugging
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
-        
+
 
 
 class BiasAdd(DnnNode):
