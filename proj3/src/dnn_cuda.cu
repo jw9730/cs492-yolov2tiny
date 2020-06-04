@@ -59,7 +59,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int h = (ofs+tid)%oh;
     int w_ofs = w*sw;
     int h_ofs = h*sh;
-    float * o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     float acc = 0;
     // apply convolution
     for (int i=0; i<kw; i++){
@@ -69,7 +68,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
             }
         }
     }
-    *o = acc;
+    R[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] = acc;
 }
 __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     // input stationary
@@ -108,7 +107,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     // handle boundary
     if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
     // apply convolution
-    float * o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
     float acc = 0;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
@@ -117,7 +115,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             }
         }
     }
-    *o = acc;
+    R[INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc)] = acc;
 }
 extern "C"
 void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc) {
@@ -266,9 +264,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     // handle boundary
     if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
-    int w = (ofs + tid)/oh;
-    int h = (ofs + tid)%oh;
-    ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    ofs = INDEX_ROW_MAJOR_3((ofs + tid)/oh,(ofs + tid)%oh,cid, ow,oh,oc);
     // normalize
     R[ofs] = Mem[0] * (I[ofs] - Mem[1]) / (sqrt(Mem[2]) + eps);
 }
