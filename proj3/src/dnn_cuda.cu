@@ -155,7 +155,7 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // maximizing data reuse and parallelism within a block
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
-    if (oc < THREADS_PER_BLOCK){
+    if (oc < THREADS_PER_BLOCK / 2){
         printf("dnn_cuda.so: weight stationary\n");
         // weight stationary
         // within a block, hold kernel and thread over output pixels
