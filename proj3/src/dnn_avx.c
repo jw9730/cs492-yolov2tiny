@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define MAX_THREADS 64
+#define MAX_THREADS 16
 
 /* __m256: 256-bit vector containing 8 floats */
 
@@ -179,8 +179,6 @@ void * ba_func(void * aux) {
             // update loop variables
             residue -= 8; x += 8; o += 8;
         }
-        // handle last chunk
-        assert(residue<=8);
         __m256 vx = _mm256_setzero_ps();
         memcpy(&vx, x, sizeof(float) * residue);
         __m256 vo = _mm256_add_ps(vx, vy);
@@ -485,7 +483,6 @@ void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
     // K: (in_channels, out_channels), column major ordered
     // I: (in_channels)
     // R: (out_channels)
-    assert((K != NULL) && (I != NULL) && (R != NULL));
 
     // threading parameters
     int n_outs = ceil((float) out_channels / (float) MAX_THREADS);
@@ -565,7 +562,6 @@ void * mp_func(void * aux) {
             residue -= 8; x += 8;
         }
         // handle last chunk
-        assert(residue<=8);
         __m256 vx = _mm256_set1_ps(-1e20);
         memcpy(&vx, x, sizeof(float) * residue);
         // reference: https://stackoverflow.com/questions/9795529/how-to-find-the-horizontal-maximum-in-a-256-bit-avx-vector
