@@ -334,33 +334,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
 
-    // declare on-chip shared memory
-    //extern __shared__ float M[];
-    // read input data once per block (shared across threads)
-    // this process could serve as bottleneck, load distribution is critical
-    // distribute indices across threads
-    /*
-    int load_per_thread = ceil(float(iw*ih)/float(THREADS_PER_BLOCK));
-    int l = load_per_thread * tid;
-    int u = load_per_thread * (tid + 1);
-    if (l < iw*ih) {
-        u = (u < iw*ih)? u : iw*ih;
-        for (int idx=l; idx<u; idx++){
-            int i = idx/ih;
-            int j = idx%ih;
-            M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
-        }
-    }
-    if(tid == 0){
-        printf("channel %d/%d\n", cid, oc-1);
-        for (int i=0; i<iw; i++){
-            for (int j=0; j<ih; j++){
-                M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
-                printf("%f<-%f\n", M[INDEX_ROW_MAJOR_2(i,j, iw,ih)], I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)]);
-            }
-        }
-    }
-    */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -397,7 +370,6 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     // maximizing data reuse and parallelism within a block
     // input stationary (block = output channel)
     // within a block, thread over output pixels
-    int BLOCK_MEMSIZE = iw * ih * sizeof(float);
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
     mp<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
