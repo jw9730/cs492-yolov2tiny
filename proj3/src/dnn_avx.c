@@ -55,8 +55,7 @@ void * mm_func(void * aux) {
             memcpy(&vy, y, sizeof(float) * residue);
             __m256 vo = _mm256_mul_ps(vx, vy);
             acc = _mm256_add_ps(acc, vo);
-            float * res = (float *) &acc;
-            for (int k=0; k<8; k++) *o += res[k];
+            for (int k=0; k<8; k++) *o += ((float *)&acc)[k];
         }
     }
 }
@@ -168,9 +167,8 @@ void * ba_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = n_pixel;
         float * x = I_o + i * n_pixel;
-        float * y = B_o + i;
         float * o = R_o + i * n_pixel;
-        __m256 vy = _mm256_set1_ps(*y);
+        __m256 vy = _mm256_set1_ps(B_o[i]);
         // compute elementwise sum
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
@@ -269,12 +267,9 @@ void * bn_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = n_pixel;
         float * x = I_o + i * n_pixel;
-        float * mu = M_o + i;
-        float * gamma = G_o + i;
-        float * var = V_o + i;
         float * o = R_o + i * n_pixel;
-        __m256 v_mu = _mm256_set1_ps(-*mu);
-        __m256 v_factor = _mm256_set1_ps((*gamma)/(sqrt(*var)+eps));
+        __m256 v_mu = _mm256_set1_ps(-M_o[i]);
+        __m256 v_factor = _mm256_set1_ps(G_o[i]/(sqrt(V_o[i])+eps));
         // compute elementwise sum
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
