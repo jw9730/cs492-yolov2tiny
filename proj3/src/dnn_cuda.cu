@@ -336,7 +336,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
 
     // declare on-chip shared memory
-    extern __shared__ float M[];
+    //extern __shared__ float M[];
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
@@ -352,7 +352,6 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             M[INDEX_ROW_MAJOR_2(i,j, iw,ih)] = I[INDEX_ROW_MAJOR_3(i,j,cid, iw,ih,oc)];
         }
     }
-    */
     if(tid == 0){
         printf("channel %d/%d\n", cid, oc-1);
         for (int i=0; i<iw; i++){
@@ -362,6 +361,7 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
             }
         }
     }
+    */
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -376,8 +376,8 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     float v = -1e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            int idx = INDEX_ROW_MAJOR_2(w*sw+i,h*sh+j, iw,ih);
-            v = ((M[idx] > v)? M[idx] : v);
+            int idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
+            v = ((I[idx] > v)? I[idx] : v);
         }
     }
     atomicAdd(R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc), v);
@@ -402,7 +402,7 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
     printf("BLOCK_MEMSIZE = %d bytes\n", iw * ih);
-    mp<<<BLOCKS,THREADS_PER_BLOCK, sizeof(float)>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
+    mp<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
     // cleanup
