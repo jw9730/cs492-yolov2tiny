@@ -321,7 +321,7 @@ class MaxPool2D(DnnNode):
         toc = time.time()
         print("MaxPool2D: CUDA elapsed time {:1.5f}s".format(toc - tic))
 
-        print(max(abs(cuda_result-ref_result)))
+        print(abs(cuda_result-ref_result).max())
         print(abs(cuda_result - ref_result).mean())
 
         self.result = cuda_result
