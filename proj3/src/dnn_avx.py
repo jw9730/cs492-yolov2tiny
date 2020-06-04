@@ -301,11 +301,11 @@ class MaxPool2D(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
-
+        """
         # fast debugging
         ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
-        
+        """
 
 
 class BatchNorm(DnnNode):
@@ -342,14 +342,14 @@ class BatchNorm(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
-        """
+
         # fast debugging
         ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
                     (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                     (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon).astype(np.float32)
         assert abs(self.result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
-        """
+        
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
