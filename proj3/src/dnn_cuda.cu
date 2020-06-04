@@ -31,6 +31,10 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -48,23 +52,8 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
-    /*
-    if(tid == 0){
-        for (int i=0; i<kw; i++){
-            for (int j=0; j<kh; j++){
-                for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
-                }
-            }
-        }
-    }
-    */
     // wait until data is ready
     __syncthreads();
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
     int w = (ofs+tid)/oh;
     int h = (ofs+tid)%oh;
@@ -109,17 +98,6 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
         }
     }
-    /*
-    if(tid == 0){
-        for (int i=0; i<kw; i++){
-            for (int j=0; j<kh; j++){
-                for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
-                }
-            }
-        }
-    }
-    */
     // wait until data is ready
     __syncthreads();
     // compute block index in output channel dimension
