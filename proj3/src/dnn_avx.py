@@ -351,6 +351,7 @@ class BatchNorm(DnnNode):
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
         """
 
+
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
         self.name = name
@@ -374,11 +375,12 @@ class LeakyReLU(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[AVX] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
-
+        """
         # fast debugging
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         assert abs(self.result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        """
 
 
 class Input(DnnNode):
