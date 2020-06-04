@@ -57,12 +57,12 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
         }
     }
     */
+    // wait until data is ready
+    __syncthreads();
     // compute block index in output channel dimension
     int ofs = cid * THREADS_PER_BLOCK;
     // handle boundary
     if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
-    // wait until data is ready
-    __syncthreads();
     // apply convolution
     float *o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
     for (int i=0; i<kw; i++){
@@ -108,6 +108,8 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
         }
     }
     */
+    // wait until data is ready
+    __syncthreads();
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -115,9 +117,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // retrieve output pixel
     int w = (ofs + tid)/oh;
     int h = (ofs + tid)%oh;
-    float *o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    // wait until data is ready
-    __syncthreads();
+    float * o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // apply convolution
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
