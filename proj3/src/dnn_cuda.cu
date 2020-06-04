@@ -400,7 +400,6 @@ void max_pool(float * I, float * R, int iw, int ih, int kw, int kh, int sw, int 
     int BLOCK_MEMSIZE = iw * ih * sizeof(float);
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
     int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-    printf("BLOCK_MEMSIZE = %d bytes\n", iw * ih);
     mp<<<BLOCKS,THREADS_PER_BLOCK>>>(dev_I, dev_R, iw, ih, kw, kh, sw, sh, ow, oh, oc);
     // copy the array back from the GPU to the CPU
     HANDLE_ERROR( cudaMemcpy( R, dev_R, ow * oh * oc * sizeof(float), cudaMemcpyDeviceToHost ) );
