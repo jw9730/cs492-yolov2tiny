@@ -40,7 +40,6 @@ void * mm_func(void * aux) {
             int residue = kernel_in;
             float * x = I_o + i * kernel_in;
             float * y = K_o + j * kernel_in;
-            float * o = R_o + i * kernel_out + j;
             __m256 acc = _mm256_setzero_ps();
             for (int k=0; k<n_chunks-1; k++){
                 __m256 vx = _mm256_loadu_ps(x);
@@ -56,7 +55,7 @@ void * mm_func(void * aux) {
             __m256 vo = _mm256_mul_ps(vx, vy);
             acc = _mm256_add_ps(acc, vo);
             float * res = (float *) &acc;
-            for (int k=0; k<8; k++) *o += res[k];
+            for (int k=0; k<8; k++) R_o[i * kernel_out + j] += res[k];
         }
     }
 }
@@ -67,14 +66,22 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     assert((I != NULL) && (K != NULL) && (R != NULL));
     assert(MAX_THREADS >= 8);
     // dynamic threading
-    int MAX_THREADS_PIX;
-    int MAX_THREADS_OUT;
+    int MAX_THREADS_PIX = 1;
+    int MAX_THREADS_OUT = 8;
     float ratio = n_pixels / kernel_out;
     if (ratio >= 8.0){
         MAX_THREADS_PIX = MAX_THREADS;
         MAX_THREADS_OUT = 1;
     }
-    else{
+    else if (8.0 > ratio && ratio >= 1.0){
+        MAX_THREADS_PIX = MAX_THREADS/2;
+        MAX_THREADS_OUT = 2;
+    }
+    else if (1.0 > ratio && ratio >= 1/8){
+        MAX_THREADS_PIX = MAX_THREADS/4;
+        MAX_THREADS_OUT = 4;
+    }
+    else if (1/8 > ratio){
         MAX_THREADS_PIX = MAX_THREADS/8;
         MAX_THREADS_OUT = 8;
     }
@@ -87,7 +94,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     G->kernel_in = kernel_in;
     G->kernel_out = kernel_out;
     G->n_chunks = n_chunks;
-
     // set up threads
     pthread_t tid[MAX_THREADS];
     struct mm_args args_list[MAX_THREADS];
@@ -97,7 +103,6 @@ void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int ke
     // loop variables
     struct mm_args * args = args_list;
     int in_residue = n_pixels;
-
     for (t_pix=0; t_pix<MAX_THREADS_PIX; t_pix++){
         // loop variables
         int out_residue = kernel_out;
@@ -163,9 +168,8 @@ void * ba_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = n_pixel;
         float * x = I_o + i * n_pixel;
-        float * y = B_o + i;
         float * o = R_o + i * n_pixel;
-        __m256 vy = _mm256_set1_ps(*y);
+        __m256 vy = _mm256_set1_ps(B_o[i]);
         // compute elementwise sum
         for (int j=0; j<n_chunks-1; j++){
             __m256 vx = _mm256_loadu_ps(x);
@@ -346,9 +350,7 @@ void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps
         R_o += n_pixel * out_per_thread;
         out_residue -= out_per_thread;
     }
-    //printf("<%d>\n", t_max);
     for (int t=0; t<t_max; t++){
-        //printf("%d\n", t);
         // join thread
         pthread_join(tid[t], NULL);
     }
@@ -370,7 +372,7 @@ void * lr_func(void * aux) {
     int residue = n_o;
     float * x = I_o;
     float * o = R_o;
-    __m256 leak = _mm256_set1_ps(0.1);
+    __m256 leak = _mm256_set1_ps(0.1f);
     // compute elementwise recfitication
     for (int j=0; j<n_chunks-1; j++){
         __m256 vx = _mm256_loadu_ps(x);
@@ -454,7 +456,6 @@ void * mv_func(void * aux) {
         int residue = in_channels;
         float * x = I;
         float * y = K_o + i * in_channels;
-        float * o = R_o + i;
         __m256 acc = _mm256_setzero_ps();
         // compute dot product between kernel and input
         for (int j=0; j<n_chunks-1; j++){
@@ -475,7 +476,7 @@ void * mv_func(void * aux) {
         acc = _mm256_add_ps(acc, vo);
         // accumulate
         float * res = (float *) &acc;
-        for (int k=0; k<8; k++) *o += res[k];
+        for (int k=0; k<8; k++) R_o[i] += res[k];
     }
 }
 void mvmul(float * K, float * I, float * R, int in_channels, int out_channels) {
@@ -553,7 +554,6 @@ void * mp_func(void * aux) {
     for (int i=0; i<n_o; i++){
         int residue = pool_size;
         float * x = I_o + i * pool_size;
-        float * o = R_o + i;
         // compute max
         __m256 vm = _mm256_set1_ps(-1e20);
         for (int j=0; j<n_chunks-1; j++){
@@ -576,7 +576,7 @@ void * mp_func(void * aux) {
         vm = _mm256_max_ps(v5, v6); // contains max of upper four elements and lower 4 elements. v7=[4 4 4 4 8 8 8 8]
         float vm1 = ((float *)&vm)[0];
         float vm2 = ((float *)&vm)[4];
-        *o = vm1 > vm2 ? vm1 : vm2;
+        R_o[i] = vm1 > vm2 ? vm1 : vm2;
     }
 }
 void max_pool(float * I, float * R, int out_size, int pool_size){
