@@ -254,6 +254,15 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
+    // import channelwise parameters to shared memory
+    __shared__ Mem[3];
+    if(tid == 0){
+        Mem[0] = G[cid];
+        Mem[1] = M[cid];
+        Mem[2] = V[cid];
+    }
+    // wait until data is ready
+    __syncthreads();
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -263,7 +272,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int h = (ofs + tid)%oh;
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
     // normalize
-    atomicAdd(R + ofs, G[cid] * (I[ofs] - M[cid]) / (sqrt(V[cid]) + eps));
+    atomicAdd(R + ofs, Mem[0] * (I[ofs] - Mem[1]) / (sqrt(Mem[2]) + eps));
 }
 extern "C"
 void batch_norm(float * I, float * M, float * G, float * V, float * R, float eps, int ow, int oh, int oc){
