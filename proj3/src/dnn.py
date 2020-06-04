@@ -5,6 +5,7 @@ import networkx as nx
 import numpy as np
 from itertools import product
 from multiprocessing import Process, sharedctypes
+import time
 
 parallelism = 8
 
@@ -160,6 +161,7 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
+        tic = time.time()
         ptins = []
         for i in range(0, parallelism):
             ptins.append(np.pad(self.in_node.result, self.pad, mode='constant'))
@@ -170,6 +172,8 @@ class Conv2D(DnnNode):
             for p in pool:
                 p.join()
         self.result = np.ctypeslib.as_array(self.shm_result)
+        toc = time.time()
+        print("[SCALAR] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
 
     def run_for_oc(self, ptin, chunk, k):
         oc = chunk * parallelism + k
@@ -199,12 +203,15 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 for oc in range(0, self.OC):
                     self.result[0][ow][oh][oc] = tin[0][ow][oh][oc] + self.biases[oc]
+        toc = time.time()
+        print("[SCALAR] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
 
 
 class MaxPool2D(DnnNode):
@@ -258,6 +265,7 @@ class MaxPool2D(DnnNode):
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
+        tic = time.time()
         ptin = np.pad(self.in_node.result, self.pad, mode='constant')
         for oc in range(0, self.OC):
             for pw in range(0, self.PW, self.stride[1]):
@@ -272,6 +280,8 @@ class MaxPool2D(DnnNode):
                             if ptin[0, pw + i, ph + j, oc] > tmp:
                                 tmp = ptin[0, pw + i, ph + j, oc] 
                     self.result[0][int(pw/self.stride[1])][int(ph/self.stride[2])][oc] = tmp
+        toc = time.time()
+        print("[SCALAR] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
 
 class BatchNorm(DnnNode):
     def __init__(self, name, in_node, mean, variance, gamma, epsilon):
@@ -295,6 +305,7 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
@@ -303,6 +314,8 @@ class BatchNorm(DnnNode):
                     self.result[0][ow][oh][oc] \
                         = (tin[0][ow][oh][oc] - self.mean[oc]) * self.gamma[oc] / \
                             math.sqrt(self.variance[oc] + self.epsilon)
+        toc = time.time()
+        print("[SCALAR] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
 
 class LeakyReLU(DnnNode):
     def __init__(self, name, in_node):
@@ -318,12 +331,15 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
+        tic = time.time()
         tin = self.in_node.result
         self.result = np.zeros((1, self.OW, self.OH, self.OC))
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 for oc in range(0, self.OC):
                     self.result[0][ow][oh][oc] = max(tin[0][ow][oh][oc], .1 * tin[0][ow][oh][oc])
+        toc = time.time()
+        print("[SCALAR] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
 
 class Input(DnnNode):
     def __init__(self, name, in_shape):
