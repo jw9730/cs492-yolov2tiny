@@ -173,7 +173,7 @@ class Conv2D(DnnNode):
         tic = time.time()
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         c_float_p = POINTER(c_float)
-        in_p = np.ascontiguousarray(pin).ctypes.data_as(c_float_p)
+        in_p = pin.ctypes.data_as(c_float_p)
         k_p = np.ascontiguousarray(self.weights).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         # parameters: (input, kernel, output, ...)
