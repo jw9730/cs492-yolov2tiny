@@ -161,6 +161,7 @@ class Conv2D(DnnNode):
     def run(self, counter):
         # fast debugging
         tic = time.time()
+        pin = np.pad(self.in_node.result, self.pad, mode='constant')
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
         for ow in range(0, self.OW):
@@ -246,9 +247,9 @@ class MaxPool2D(DnnNode):
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
+        tic = time.time()
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         _, OW, OH, _ = self.result.shape
-        tic = time.time()
         # Toeplitz matrix + max filter
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
         for ow in range(0, OW):
