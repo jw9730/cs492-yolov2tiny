@@ -156,11 +156,13 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     // dynamic on-chip memory allocation
     int BLOCK_MEMSIZE = kw * kh * ic * sizeof(float);
     if (ow*oh > 100*THREADS_PER_BLOCK){
+        print("cuda: weight stationary\n");
         // weight stationary
         // within a block, hold kernel and thread over output pixels
         int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
         conv_ws<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }else{
+        print("cuda: input stationary\n");
         // input stationary
         // within a block, hold input and thread over output channels
         int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
