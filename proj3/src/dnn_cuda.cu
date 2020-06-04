@@ -5,7 +5,7 @@
 #include <string.h>
 #include <cuda_runtime.h>
 
-//#define DEBUG
+#define DEBUG
 #define THREADS_PER_BLOCK 512
 #define INDEX_ROW_MAJOR_2(i, j, I, J) ((j) + (J) * (i))
 #define INDEX_ROW_MAJOR_3(i, j, k, I, J, K) ((k) + (K) * ((j) + (J) * (i)))
