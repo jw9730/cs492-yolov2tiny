@@ -19,60 +19,10 @@ static void HandleError(cudaError_t err, const char *file, int line)
     }
 }
 
-__global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
-    // input stationary
-    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
-    int bid = blockIdx.x;
-    int tid = threadIdx.x;
-    int cid = bid % BLOCKS_PER_PIXEL; // channel block index (within pixel)
-    int pid = bid / BLOCKS_PER_PIXEL; // pixel index
-    // compute output pixel of the block
-    int h = pid % oh;
-    int w = pid / oh;
-    // declare on-chip shared memory
-    extern __shared__ float M[];
-    // read input data once per block (shared across threads)
-    // this process could serve as bottleneck, load distribution is critical
-    // distribute indices across threads
-    int load_per_thread = ceil(float(kw*kh*ic)/float(THREADS_PER_BLOCK));
-    int l = load_per_thread * tid;
-    int u = load_per_thread * (tid + 1);
-    if (l < kw*kh*ic) {
-        u = (u < kw*kh*ic)? u : kw*kh*ic;
-        for (int idx=l; idx<u; idx++){
-            int k = idx%ic;
-            int j = idx/ic%kh;
-            int i = idx/ic/kh;
-            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
-        }
-    }
-    /*
-    if(tid == 0){
-        for (int i=0; i<kw; i++){
-            for (int j=0; j<kh; j++){
-                for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
-                }
-            }
-        }
-    }
-    */
-    // wait until data is ready
-    __syncthreads();
-    // compute block index in output channel dimension
-    int ofs = cid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
-    // apply convolution
-    float *o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
-    for (int i=0; i<kw; i++){
-        for (int j=0; j<kh; j++){
-            for (int k=0; k<ic; k++){
-                atomicAdd(o, M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,ofs+tid, kw,kh,ic,oc)]);
-            }
-        }
-    }
-}
+
+
+
+
 __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     // weight stationary
     int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
@@ -85,11 +35,12 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
-    int load_per_thread = ceil(float(kw*kh*ic)/float(THREADS_PER_BLOCK));
+    int f = kw*kh*ic;
+    int load_per_thread = ceil(float(f)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
-    if (l < kw*kh*ic) {
-        u = (u < kw*kh*ic)? u : kw*kh*ic;
+    if (l < f) {
+        u = (u < f)? u : f;
         for (int idx=l; idx<u; idx++){
             int k = idx%ic;
             int j = idx/ic%kh;
@@ -123,6 +74,61 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
                 atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
+            }
+        }
+    }
+}
+__global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
+    // input stationary
+    int BLOCKS_PER_PIXEL = ceil(float(oc)/float(THREADS_PER_BLOCK));
+    int bid = blockIdx.x;
+    int tid = threadIdx.x;
+    int cid = bid % BLOCKS_PER_PIXEL; // channel block index (within pixel)
+    int pid = bid / BLOCKS_PER_PIXEL; // pixel index
+    // compute output pixel of the block
+    int h = pid % oh;
+    int w = pid / oh;
+    // declare on-chip shared memory
+    extern __shared__ float M[];
+    // read input data once per block (shared across threads)
+    // this process could serve as bottleneck, load distribution is critical
+    // distribute indices across threads
+    int f = kw*kh*ic;
+    int load_per_thread = ceil(float(f)/float(THREADS_PER_BLOCK));
+    int l = load_per_thread * tid;
+    int u = load_per_thread * (tid + 1);
+    if (l < f) {
+        u = (u < f)? u : f;
+        for (int idx=l; idx<u; idx++){
+            int k = idx%ic;
+            int j = idx/ic%kh;
+            int i = idx/ic/kh;
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+        }
+    }
+    /*
+    if(tid == 0){
+        for (int i=0; i<kw; i++){
+            for (int j=0; j<kh; j++){
+                for (int k=0; k<ic; k++){
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+                }
+            }
+        }
+    }
+    */
+    // wait until data is ready
+    __syncthreads();
+    // compute block index in output channel dimension
+    int ofs = cid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
+    // apply convolution
+    float *o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
+    for (int i=0; i<kw; i++){
+        for (int j=0; j<kh; j++){
+            for (int k=0; k<ic; k++){
+                atomicAdd(o, M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,ofs+tid, kw,kh,ic,oc)]);
             }
         }
     }
