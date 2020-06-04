@@ -150,9 +150,8 @@ void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int
     if (ow*oh > THREADS_PER_BLOCK){
         // weight stationary
         // within a block, hold kernel and thread over output pixels
-        int BLOCKS_PER_CHANNEL = ceil(float(ow * oh)/float(THREADS_PER_BLOCK));
-        int BLOCKS = oc * BLOCKS_PER_CHANNEL;
-        conv_ws<<<BLOCKS,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
+        int BLOCKS_PER_CHANNEL = ceil(float(ow*oh)/float(THREADS_PER_BLOCK));
+        conv_ws<<<oc*BLOCKS_PER_CHANNEL,THREADS_PER_BLOCK,BLOCK_MEMSIZE>>>(dev_I, dev_K, dev_R, iw, ih, ow, oh, kw, kh, sw, sh, ic, oc);
     }else{
         // input stationary
         // within a block, hold input and thread over output channels
