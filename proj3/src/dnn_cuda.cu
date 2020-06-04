@@ -31,10 +31,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // output channel index
-    // compute block index in output pixel dimension
-    int ofs = pid * THREADS_PER_BLOCK;
-    // handle boundary
-    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -54,20 +50,25 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     // wait until data is ready
     __syncthreads();
+    // compute block index in output pixel dimension
+    int ofs = pid * THREADS_PER_BLOCK;
+    // handle boundary
+    if (tid >= ((ow * oh - ofs < THREADS_PER_BLOCK)? (ow * oh - ofs) : THREADS_PER_BLOCK)) return;
     // retrieve output pixel
     int w = (ofs+tid)/oh;
     int h = (ofs+tid)%oh;
     int w_ofs = w*sw;
     int h_ofs = h*sh;
-    float * o = R + INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
+    float acc = 0;
     // apply convolution
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
+                acc += I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)];
             }
         }
     }
+    R[INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc)] = acc;
 }
 __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc){
     // input stationary
@@ -105,14 +106,15 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     // handle boundary
     if (tid >= ((oc - ofs < THREADS_PER_BLOCK)? (oc - ofs) : THREADS_PER_BLOCK)) return;
     // apply convolution
-    float *o = R + INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc);
+    float acc = 0;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                atomicAdd(o, M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,ofs+tid, kw,kh,ic,oc)]);
+                acc += M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,ofs+tid, kw,kh,ic,oc)];
             }
         }
     }
+    R[INDEX_ROW_MAJOR_3(w,h,ofs+tid, ow,oh,oc)] = acc;
 }
 extern "C"
 void conv2d(float * I, float * K, float * R, int iw, int ih, int ow, int oh, int kw, int kh, int sw, int sh, int ic, int oc) {
