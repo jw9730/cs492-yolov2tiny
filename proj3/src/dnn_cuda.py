@@ -227,7 +227,7 @@ class BiasAdd(DnnNode):
         print("[CUDA] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
 
         # fast debugging
-        ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)]
+        ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         assert abs(self.result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
 
@@ -383,7 +383,7 @@ class LeakyReLU(DnnNode):
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         assert abs(self.result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
-        
+
 
 class Input(DnnNode):
    def __init__(self, name, in_shape):
