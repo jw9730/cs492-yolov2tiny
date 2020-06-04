@@ -176,7 +176,7 @@ class Conv2D(DnnNode):
         c_float_p = POINTER(c_float)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         k_p = np.asfortranarray(self.weights.squeeze().astype(np.float32)).ctypes.data_as(c_float_p)
-        self.result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32)
+        self.result = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c')
         mylib.ki_apply.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
