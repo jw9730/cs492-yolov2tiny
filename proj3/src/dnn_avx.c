@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define MAX_THREADS 16
+#define MAX_THREADS 8
 
 /* __m256: 256-bit vector containing 8 floats */
 
@@ -35,10 +35,10 @@ void * mm_func(void * aux) {
     float * I_o = args->I_o;
     float * K_o = args->K_o;
     float * R_o = args->R_o;
-    float * x = I_o;
     for (int i=0; i<n_pix; i++){
         for (int j=0; j<n_out; j++){
             int residue = kernel_in;
+            float * x = I_o + i * kernel_in;
             float * y = K_o + j * kernel_in;
             float * o = R_o + i * kernel_out + j;
             __m256 acc = _mm256_setzero_ps();
@@ -58,7 +58,6 @@ void * mm_func(void * aux) {
             float * res = (float *) &acc;
             for (int k=0; k<8; k++) *o += res[k];
         }
-        x += kernel_in;
     }
 }
 void matmul(float * I, float * K, float * R, int n_pixels, int kernel_in, int kernel_out) {
