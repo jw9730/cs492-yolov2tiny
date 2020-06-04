@@ -40,8 +40,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
     if (l < f) {
-        u = (u < f)? u : f;
-        for (int idx=l; idx<u; idx++){
+        for (int idx=l; idx<((u<f)?u:f); idx++){
             int k = idx%ic;
             int j = idx/ic%kh;
             int i = idx/ic/kh;
@@ -90,6 +89,8 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     // compute output pixel of the block
     int h = pid % oh;
     int w = pid / oh;
+    int w_ofs = w*sw;
+    int h_ofs = h*sh;
     // declare on-chip shared memory
     extern __shared__ float M[];
     // read input data once per block (shared across threads)
@@ -100,12 +101,11 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
     int l = load_per_thread * tid;
     int u = load_per_thread * (tid + 1);
     if (l < f) {
-        u = (u < f)? u : f;
-        for (int idx=l; idx<u; idx++){
+        for (int idx=l; idx<((u<f)?u:f); idx++){
             int k = idx%ic;
             int j = idx/ic%kh;
             int i = idx/ic/kh;
-            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+            M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
         }
     }
     /*
@@ -113,7 +113,7 @@ __global__ void conv_is(float *I, float *K, float *R, int iw, int ih, int ow, in
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
                 for (int k=0; k<ic; k++){
-                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)];
+                    M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)];
                 }
             }
         }
@@ -331,12 +331,14 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     // retrieve output pixel
     int w = (ofs + tid)/oh;
     int h = (ofs + tid)%oh;
+    int w_ofs = w*sw;
+    int h_ofs = h*sh;
     // apply pooling
     float v = -1e20;
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
-            if (w*sw+i>=iw || h*sh+j>=ih) continue;
-            int idx = INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,cid, iw,ih,oc);
+            if (w_ofs+i>=iw || h_ofs+j>=ih) continue;
+            int idx = INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,cid, iw,ih,oc);
             v = ((I[idx] > v)? I[idx] : v);
         }
     }
