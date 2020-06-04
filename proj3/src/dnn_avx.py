@@ -171,7 +171,7 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        tic = time.time()
+        if DEBUG: tic = time.time()
         # 1. Toeplitz matrix multiplication
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
@@ -188,9 +188,9 @@ class Conv2D(DnnNode):
         mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int
         mylib.matmul(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        toc = time.time()
-        print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
         if DEBUG:
+            toc = time.time()
+            print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
             # fast debugging
             ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
             assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
@@ -214,7 +214,7 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
-        tic = time.time()
+        if DEBUG: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
@@ -222,9 +222,9 @@ class BiasAdd(DnnNode):
         mylib.bias_add.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
-        toc = time.time()
-        print("[AVX] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
         if DEBUG:
+            toc = time.time()
+            print("[AVX] {:<10}: {:1.5f}s".format('BiasAdd', toc - tic))
             # fast debugging
             ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
             assert abs(self.result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
@@ -283,7 +283,7 @@ class MaxPool2D(DnnNode):
 
     def run(self, counter):
         # Toeplitz matrix + max filter
-        tic = time.time()
+        if DEBUG: tic = time.time()
         _, OW, OH, OC = self.result.shape
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
@@ -299,9 +299,9 @@ class MaxPool2D(DnnNode):
         mylib.max_pool.argtypes = c_float_p, c_float_p, c_int, c_int
         mylib.max_pool(in_p, out_p, c_int(OW * OH * self.OC), c_int(self.ksize[1] * self.ksize[2]))
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
-        toc = time.time()
-        print("[AVX] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
         if DEBUG:
+            toc = time.time()
+            print("[AVX] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
             # fast debugging
             ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC))
             assert abs(self.result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
@@ -364,16 +364,16 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        tic = time.time()
+        if DEBUG: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW * self.OH * self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        toc = time.time()
-        print("[AVX] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
         if DEBUG:
+            toc = time.time()
+            print("[AVX] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
             # fast debugging
             ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
             assert abs(self.result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
