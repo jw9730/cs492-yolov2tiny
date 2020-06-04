@@ -255,7 +255,7 @@ __global__ void bn(float *I, float *M, float *G, float *V, float *R, float eps, 
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
     // import channelwise parameters to shared memory
-    __shared__ Mem[3];
+    __shared__ float Mem[3];
     if(tid == 0){
         Mem[0] = G[cid];
         Mem[1] = M[cid];
