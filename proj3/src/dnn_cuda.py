@@ -219,7 +219,7 @@ class BiasAdd(DnnNode):
         c_float_p = POINTER(c_float)
         mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
-        b_p = self.biases.astype(np.float32).ctypes.data_as(c_float_p)
+        b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
@@ -371,9 +371,9 @@ class LeakyReLU(DnnNode):
     def run(self, counter):
         tic = time.time()
         c_float_p = POINTER(c_float)
-        mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
+        mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
