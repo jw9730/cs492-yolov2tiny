@@ -21,7 +21,10 @@
   <component name="ChangeListManager">
     <list default="true" id="a7c89f5b-d021-4365-b339-e074726a1a4e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_cublas.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_cublas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_avx.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_avx.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_cublas.cu" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_cublas.cu" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_cuda.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_cuda.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proj3/src/dnn_vec.py" beforeDir="false" afterPath="$PROJECT_DIR$/proj3/src/dnn_vec.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
