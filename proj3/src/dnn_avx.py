@@ -176,14 +176,14 @@ class Conv2D(DnnNode):
         # 1. Toeplitz matrix multiplication
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
-        toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
+        toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32, order='c')
         for ow in range(0, self.OW):
             for oh in range(0, self.OH):
                 w0 = self.SW * ow
                 h0 = self.SH * oh
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
         c_float_p = POINTER(c_float)
-        in_p = np.ascontiguousarray(toeplitz_in).ctypes.data_as(c_float_p)
+        in_p = toeplitz_in.ctypes.data_as(c_float_p)
         k_p = np.asfortranarray(kernel).ctypes.data_as(c_float_p)
         out_p = np.zeros((1, self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int
@@ -334,9 +334,9 @@ class BatchNorm(DnnNode):
         tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
-        mu_p = np.ascontiguousarray(self.mean.astype(np.float32)).ctypes.data_as(c_float_p)
-        gamma_p = np.ascontiguousarray(self.gamma.astype(np.float32)).ctypes.data_as(c_float_p)
-        var_p = np.ascontiguousarray(self.variance.astype(np.float32)).ctypes.data_as(c_float_p)
+        mu_p = self.mean.astype(np.float32).ctypes.data_as(c_float_p)
+        gamma_p = self.gamma.astype(np.float32).ctypes.data_as(c_float_p)
+        var_p = self.variance.astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OC, self.OW * self.OH), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW * self.OH), c_int(self.OC))
@@ -368,7 +368,7 @@ class LeakyReLU(DnnNode):
     def run(self, counter):
         tic = time.time()
         c_float_p = POINTER(c_float)
-        in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
+        in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW * self.OH * self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
