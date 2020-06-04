@@ -64,7 +64,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
+                o += I[INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)];
             }
         }
     }
