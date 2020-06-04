@@ -329,7 +329,7 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        tic = time.time()
+        if DEBUG: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
         mu_p = self.mean.astype(np.float32).ctypes.data_as(c_float_p)
@@ -339,9 +339,9 @@ class BatchNorm(DnnNode):
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
-        toc = time.time()
-        print("[AVX] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
         if DEBUG:
+            toc = time.time()
+            print("[AVX] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
             # fast debugging
             ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
                         (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
