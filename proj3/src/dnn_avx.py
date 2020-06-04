@@ -9,7 +9,7 @@ import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./avx.so')
 
-DEBUG = True
+DEBUG = False
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
