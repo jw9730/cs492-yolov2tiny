@@ -185,7 +185,7 @@ class Conv2D(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[CUDA] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
-
+        """
         # fast debugging
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
         toeplitz_in = np.zeros((self.OW * self.OH, self.KW * self.KH * self.IC), dtype=np.float32)
@@ -196,6 +196,7 @@ class Conv2D(DnnNode):
                 toeplitz_in[ow * self.OH + oh, :] = pin[0, w0:w0+self.KW, h0:h0+self.KH, :].flatten()
         ref_result = np.matmul(toeplitz_in, kernel).reshape((1, self.OW, self.OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "Conv2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
+        """
 
 
 class BiasAdd(DnnNode):
@@ -225,11 +226,12 @@ class BiasAdd(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[CUDA] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
-
+        """
         # fast debugging
         ref_result = (self.in_node.result + self.biases.reshape((1, 1, 1, -1))).astype(np.float32)
         assert abs(self.result - ref_result).mean() < 1e-5, "BiasAdd: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        """
 
 
 class MaxPool2D(DnnNode):
@@ -276,11 +278,12 @@ class MaxPool2D(DnnNode):
                     (0,0))
         else:
             raise Exception("Unexpected padding mode: {}".format(padding))	
-
+        """
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         self.PW = pin.shape[1]
         self.PH = pin.shape[2]
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
+        """
 
     def run(self, counter):
         tic = time.time()
@@ -299,7 +302,7 @@ class MaxPool2D(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
         toc = time.time()
         print("[CUDA] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
-
+        """
         # fast debugging
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
         for ow in range(0, OW):
@@ -310,6 +313,7 @@ class MaxPool2D(DnnNode):
         toeplitz_in = rpin.transpose((0, 3, 1, 2)).reshape((OW * OH * self.OC, self.ksize[1] * self.ksize[2]))
         ref_result = np.max(toeplitz_in, axis=1).reshape((1, OW, OH, self.OC))
         assert abs(self.result - ref_result).mean() < 1e-5, "MaxPool2D: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
+        """
 
 
 class BatchNorm(DnnNode):
@@ -346,13 +350,14 @@ class BatchNorm(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[CUDA] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
-
+        """
         # fast debugging
         ref_result = self.gamma.reshape((1, 1, 1, -1)) * \
                     (self.in_node.result - self.mean.reshape((1, 1, 1, -1))) / \
                     (np.sqrt(self.variance).reshape((1, 1, 1, -1)) + self.epsilon).astype(np.float32)
         assert abs(self.result - ref_result).mean() < 1e-5, "BatchNorm: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        """
 
 
 class LeakyReLU(DnnNode):
@@ -378,11 +383,12 @@ class LeakyReLU(DnnNode):
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
         toc = time.time()
         print("[CUDA] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
-
+        """
         # fast debugging
         ref_result = np.maximum(0.1 * self.in_node.result, self.in_node.result)
         assert abs(self.result - ref_result).mean() < 1e-5, "LeakyReLU: correctness check failed with mean err {}".format(abs(self.result - ref_result).mean())
         assert np.count_nonzero(np.isnan(self.result)) == 0, "{} nans found in output".format(np.count_nonzero(np.isnan(self.result)))
+        """
 
 
 class Input(DnnNode):
