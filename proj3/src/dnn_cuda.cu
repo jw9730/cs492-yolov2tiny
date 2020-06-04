@@ -335,8 +335,8 @@ __global__ void mp(float *I, float *R, int iw, int ih, int kw, int kh, int sw, i
     int h_ofs = h*sh;
     // apply pooling
     float v = -1e20;
-    int lw = (kw < iw - w_ofs)? kw : iw - w_ofs;
-    int lh = (kh < ih - h_ofs)? kh : ih - h_ofs;
+    int lw = (kw < iw-w_ofs)? kw : (iw-w_ofs);
+    int lh = (kh < ih-h_ofs)? kh : (ih-h_ofs);
     for (int i=0; i<lw; i++){
         for (int j=0; j<lh; j++){
             int idx = INDEX_ROW_MAJOR_3(w_ofs+i,h_ofs+j,cid, iw,ih,oc);
