@@ -35,7 +35,6 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     // read input data once per block (shared across threads)
     // this process could serve as bottleneck, load distribution is critical
     // distribute indices across threads
-    /*
     int f = kw*kh*ic;
     int load_per_thread = ceil(float(f)/float(THREADS_PER_BLOCK));
     int l = load_per_thread * tid;
@@ -49,6 +48,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
             M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)] = K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)];
         }
     }
+    /*
     if(tid == 0){
         for (int i=0; i<kw; i++){
             for (int j=0; j<kh; j++){
@@ -60,7 +60,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     }
     */
     // wait until data is ready
-    //__syncthreads();
+    __syncthreads();
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -73,7 +73,7 @@ __global__ void conv_ws(float *I, float *K, float *R, int iw, int ih, int ow, in
     for (int i=0; i<kw; i++){
         for (int j=0; j<kh; j++){
             for (int k=0; k<ic; k++){
-                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)] * K[INDEX_ROW_MAJOR_4(i,j,k,cid, kw,kh,ic,oc)]);
+                atomicAdd(o, I[INDEX_ROW_MAJOR_3(w*sw+i,h*sh+j,k, iw,ih,ic)] * M[INDEX_ROW_MAJOR_3(i,j,k, kw,kh,ic)]);
             }
         }
     }
