@@ -175,6 +175,11 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int tid = threadIdx.x;
     int pid = bid % BLOCKS_PER_CHANNEL; // pixel block index (within channel)
     int cid = bid / BLOCKS_PER_CHANNEL; // channel index
+    // import channelwise parameters to shared memory
+    __shared__ float Mem[1];
+    if(tid == 0) Mem[0] = B[cid];
+    // wait until data is ready
+    __syncthreads();
     // compute block index in output pixel dimension
     int ofs = pid * THREADS_PER_BLOCK;
     // handle boundary
@@ -184,7 +189,7 @@ __global__ void badd(float *I, float *B, float *R, int ow, int oh, int oc){
     int h = (ofs + tid)%oh;
     // add
     ofs = INDEX_ROW_MAJOR_3(w,h,cid, ow,oh,oc);
-    atomicAdd(R + ofs, I[ofs] + B[cid]);
+    atomicAdd(R + ofs, I[ofs] + Mem[0]);
 }
 extern "C"
 void bias_add(float * I, float * B, float * R, int ow, int oh, int oc) {
