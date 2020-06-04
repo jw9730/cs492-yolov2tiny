@@ -159,7 +159,6 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        # fast debugging
         tic = time.time()
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         kernel = self.weights.reshape((self.KW * self.KH * self.IC, self.OC)).astype(np.float32)
