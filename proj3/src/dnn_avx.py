@@ -9,7 +9,6 @@ import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./avx.so')
 
-DEBUG = False
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
@@ -171,7 +170,7 @@ class Conv2D(DnnNode):
         self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         # 1. Toeplitz matrix multiplication
         kernel = self.weights.reshape((-1, self.OC)).astype(np.float32)
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
@@ -188,7 +187,7 @@ class Conv2D(DnnNode):
         mylib.matmul.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int, c_int
         mylib.matmul(in_p, k_p, out_p, c_int(self.OW * self.OH), c_int(self.KW * self.KH * self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[AVX] {:<10}: {:1.5f}s".format('Conv2D',toc - tic))
             # fast debugging
@@ -214,7 +213,7 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
@@ -222,7 +221,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add.argtypes = c_float_p, c_float_p, c_float_p, c_int, c_int
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[AVX] {:<10}: {:1.5f}s".format('BiasAdd', toc - tic))
             # fast debugging
@@ -283,7 +282,7 @@ class MaxPool2D(DnnNode):
 
     def run(self, counter):
         # Toeplitz matrix + max filter
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         _, OW, OH, OC = self.result.shape
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         rpin = np.zeros((OW * OH, self.ksize[1], self.ksize[2], self.OC), dtype=np.float32)
@@ -299,7 +298,7 @@ class MaxPool2D(DnnNode):
         mylib.max_pool.argtypes = c_float_p, c_float_p, c_int, c_int
         mylib.max_pool(in_p, out_p, c_int(OW * OH * self.OC), c_int(self.ksize[1] * self.ksize[2]))
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[AVX] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
             # fast debugging
@@ -329,7 +328,7 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result.reshape((-1, self.OC)).transpose()).astype(np.float32).ctypes.data_as(c_float_p)
         mu_p = self.mean.astype(np.float32).ctypes.data_as(c_float_p)
@@ -339,7 +338,7 @@ class BatchNorm(DnnNode):
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW * self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (self.OC, self.OW * self.OH)).transpose().reshape((1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[AVX] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
             # fast debugging
@@ -364,14 +363,14 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = np.ascontiguousarray(self.in_node.result).astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW * self.OH * self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW * self.OH * self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[AVX] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
             # fast debugging

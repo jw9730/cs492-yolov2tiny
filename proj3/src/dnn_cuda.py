@@ -9,7 +9,6 @@ import time
 from ctypes import *
 mylib = cdll.LoadLibrary('./cuda.so')
 
-DEBUG = False
 
 class DnnInferenceEngine(object):
     def __init__(self, graph, debug):
@@ -171,7 +170,7 @@ class Conv2D(DnnNode):
         #self.shm_result = sharedctypes.RawArray(tmp_result._type_, tmp_result)
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         c_float_p = POINTER(c_float)
         in_p = pin.ctypes.data_as(c_float_p)
@@ -184,7 +183,7 @@ class Conv2D(DnnNode):
                      c_int(self.KW), c_int(self.KH), c_int(self.SW), c_int(self.SH),\
                      c_int(self.IC), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[CUDA] {:<10}: {:1.5f}s".format('Conv2D', toc - tic))
             # fast debugging
@@ -216,7 +215,7 @@ class BiasAdd(DnnNode):
         self.result = self.in_node.result 
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         b_p = np.ascontiguousarray(self.biases).astype(np.float32).ctypes.data_as(c_float_p)
@@ -224,7 +223,7 @@ class BiasAdd(DnnNode):
         mylib.bias_add.argtypes = [c_float_p, c_float_p, c_float_p, c_int, c_int, c_int]
         mylib.bias_add(in_p, b_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[CUDA] {:<10}: {:1.5f}s".format('BiasAdd',toc - tic))
             # fast debugging
@@ -284,7 +283,7 @@ class MaxPool2D(DnnNode):
         self.result = np.zeros((1, int(self.PW / self.stride[1]), int(self.PH / self.stride[2]), self.OC))
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         _, OW, OH, _ = self.result.shape
         pin = np.pad(self.in_node.result, self.pad, mode='constant')
         c_float_p = POINTER(c_float)
@@ -298,7 +297,7 @@ class MaxPool2D(DnnNode):
                        c_int(self.stride[1]), c_int(self.stride[2]),\
                        c_int(OW), c_int(OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, OW, OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[CUDA] {:<10}: {:1.5f}s".format('MaxPool2D',toc - tic))
             # fast debugging
@@ -335,7 +334,7 @@ class BatchNorm(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         mu_p = self.mean.astype(np.float32).ctypes.data_as(c_float_p)
@@ -345,7 +344,7 @@ class BatchNorm(DnnNode):
         mylib.batch_norm.argtypes = c_float_p, c_float_p, c_float_p, c_float_p, c_float_p, c_float, c_int, c_int, c_int
         mylib.batch_norm(in_p, mu_p, gamma_p, var_p, out_p, c_float(self.epsilon), c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[CUDA] {:<10}: {:1.5f}s".format('BatchNorm',toc - tic))
             # fast debugging
@@ -370,14 +369,14 @@ class LeakyReLU(DnnNode):
         self.result = self.in_node.result
 
     def run(self, counter):
-        if DEBUG: tic = time.time()
+        if sys.flags.debug: tic = time.time()
         c_float_p = POINTER(c_float)
         in_p = self.in_node.result.astype(np.float32).ctypes.data_as(c_float_p)
         out_p = np.zeros((self.OW, self.OH, self.OC), dtype=np.float32, order='c').ctypes.data_as(c_float_p)
         mylib.leaky_relu.argtypes = c_float_p, c_float_p, c_int, c_int, c_int
         mylib.leaky_relu(in_p, out_p, c_int(self.OW), c_int(self.OH), c_int(self.OC))
         self.result = np.ctypeslib.as_array(out_p, (1, self.OW, self.OH, self.OC))
-        if DEBUG:
+        if sys.flags.debug:
             toc = time.time()
             print("[CUDA] {:<10}: {:1.5f}s".format('LeakyReLU',toc - tic))
             # fast debugging

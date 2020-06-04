@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "cstdlib": "cpp"
+        "*.cu": "cpp",
+        "cstdlib": "cpp",
+        "cmath": "cpp"
     }
 }
