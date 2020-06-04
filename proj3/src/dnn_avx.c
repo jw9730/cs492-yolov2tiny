@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#define MAX_THREADS 8
+#define MAX_THREADS 32
 
 /* __m256: 256-bit vector containing 8 floats */
 
