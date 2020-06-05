@@ -10,7 +10,7 @@
 - Debug mode for correctness check and runtime print: `python3 -d ...`
 
 **Results: Heavy**
-- Baseline: Fully vectorized NumPy
+- Baseline: Naive scalar operations / Fully vectorized NumPy
 - AVX (CPU): Thread-level and instruction-level parallelization
 - CUDA (GPU): Dynamic switching between input stationary and weight stationary dataflow
 <p align="center">
