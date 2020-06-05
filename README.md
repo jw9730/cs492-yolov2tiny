@@ -1,5 +1,6 @@
 # Run object detection faster than numpy
 - Model: YOLOv2-tiny
+- Refer to report for details
 **How to run**
 - Locate into proj3/src/
 - Set wanted library at line 5 of `yolov2tiny.py` (`from [dnn/dnn_vec/dnn_avx/dnn_cuda] import ...`)
@@ -11,15 +12,14 @@
 - Baseline: Fully vectorized NumPy
 - AVX (CPU): Thread-level and instruction-level parallelization
 - CUDA (GPU): Dynamic switching between input stationary and weight stationary dataflow
-
 <p align="center">
-  <img src="./assets/img_4.png">
+  <img width="500" src="./assets/img_4.png">
 </p>
 
 **Ablation Study**
 - Does dynamic switching help?
 <p align="center">
-  <img src="./assets/img_5.png">
+  <img width="500" src="./assets/img_5.png">
 </p>
 <p align="center">
   <img width="300" src="./assets/img.png">
@@ -28,7 +28,6 @@
 **Results: Light**
 - Baseline: Naive scalar operations
 - OpenBLAS / cuBLAS
-
 <p align="center">
-  <img src="./assets/img_3.png">
+  <img width="500" src="./assets/img_3.png">
 </p>
