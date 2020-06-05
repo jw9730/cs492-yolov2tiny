@@ -16,7 +16,7 @@
 - AVX (CPU): Thread-level and instruction-level parallelization
 - CUDA (GPU): Dynamic switching between input stationary and weight stationary dataflow
 <p align="center">
-  <img width="500" src="./assets/img_4.png">
+  <img width="400" src="./assets/img_4.png">
 </p>
 
 **Ablation Study**
@@ -32,5 +32,5 @@
 - Baseline: Naive scalar operations
 - OpenBLAS / cuBLAS
 <p align="center">
-  <img width="500" src="./assets/img_3.png">
+  <img width="300" src="./assets/img_3.png">
 </p>
