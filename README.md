@@ -7,7 +7,7 @@
 - Set wanted library at line 5 of `yolov2tiny.py` (`from [dnn/dnn_vec/dnn_avx/dnn_cuda] import ...`)
 - `make all`
 - `python3 __init__.py [in_image] [out_image] [-DEBUG/NDEBUG]`
-- debug mode for correctness check and runtime print: `python3 -d ...`
+- Debug mode for correctness check and runtime print: `python3 -d ...`
 
 **Results: Heavy**
 - Baseline: Fully vectorized NumPy
