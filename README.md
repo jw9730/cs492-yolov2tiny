@@ -1,7 +1,7 @@
 # Offloaded DNN Inference
 - Model: YOLOv2-tiny
 <p align="center">
-  <img width="300" src="./assets/img_2.png">
+  <img width="200" src="./assets/img_2.png">
 </p>
 
 **How to run**
