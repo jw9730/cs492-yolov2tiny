@@ -13,13 +13,15 @@
 - CUDA (GPU): Dynamic switching between input stationary and weight stationary dataflow
 
 <p align="center">
-  <img width="300" src="./assets/img_4.png">
+  <img src="./assets/img_4.png">
 </p>
 
 **Ablation Study**
 - Does dynamic switching help?
 <p align="center">
-  <img width="300" src="./assets/img_5.png">
+  <img src="./assets/img_5.png">
+</p>
+<p align="center">
   <img width="300" src="./assets/img.png">
 </p>
 
@@ -28,5 +30,5 @@
 - OpenBLAS / cuBLAS
 
 <p align="center">
-  <img width="300" src="./assets/img_3.png">
+  <img src="./assets/img_3.png">
 </p>
