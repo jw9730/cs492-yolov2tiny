@@ -28,7 +28,7 @@
   <img width="300" src="./assets/img.png">
 </p>
 
-***Results (light)***
+*Results (light)*
 - Baseline: Naive scalar operations
 - OpenBLAS / cuBLAS
 <p align="center">
