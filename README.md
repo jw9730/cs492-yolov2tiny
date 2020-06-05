@@ -1,7 +1,9 @@
 # Run object detection faster than numpy
 - Model: YOLOv2-tiny
 
-![ablation](./img.png)
+<p align="center">
+  <img width="600" height="200" src="./img.png">
+</p>
 
 **Baselines**
 - Naive scalar operations
