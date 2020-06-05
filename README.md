@@ -9,7 +9,7 @@
 2. Set optimization at line 5 of `yolov2tiny.py` (`from [dnn/dnn_vec/dnn_avx/dnn_cuda] import ...`)
 3. `make all`
 4. `python3 __init__.py [in_image] [out_image] [-DEBUG/NDEBUG]`
-5. `python3 -d ...`: Debug mode for correctness check and layer-wise runtime display
+5. `python3 -d __init__.py ...` - debug mode for correctness check and layer-wise runtime display
 
 **Results**
 - Baseline: Naive nested loops & Fully vectorized NumPy
