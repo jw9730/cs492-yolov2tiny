@@ -11,7 +11,7 @@
 4. `python3 __init__.py [in_image] [out_image] [-DEBUG/NDEBUG]`
 5. `python3 -d ...`: Debug mode for correctness check and layer-wise runtime display
 
-**Results: Heavy optimization**
+**Results**
 - Baseline: Naive nested loops & Fully vectorized NumPy
 - AVX (CPU): Thread-level and instruction-level parallelization
 - CUDA (GPU): Dynamic switching between input stationary and weight stationary dataflow
@@ -28,9 +28,9 @@
   <img width="300" src="./assets/img.png">
 </p>
 
-***Results: Light***
+***Results (light)***
 - Baseline: Naive scalar operations
 - OpenBLAS / cuBLAS
 <p align="center">
-  <img width="300" src="./assets/img_3.png">
+  <img width="350" src="./assets/img_3.png">
 </p>
