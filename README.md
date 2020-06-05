@@ -7,8 +7,8 @@
 
 **CPU optimization**
 - OpenBLAS
-- AVX (main): Runs comparable to NumPy
+- AVX (main): Runs 30% slower to NumPy
 
 **GPU optimization**
 - cuBLAS
-- CUDA (main): Runs 2x faster than NumPy
+- CUDA (main): Runs 2x faster to NumPy
