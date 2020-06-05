@@ -3,7 +3,7 @@
 
 **Baselines**
 - Naive scalar operations
-- Full vectorized NumPy
+- Fully vectorized NumPy
 
 **CPU optimization**
 - OpenBLAS
