@@ -2,7 +2,7 @@
 - Model: YOLOv2-tiny
 
 <p align="center">
-  <img width="600" src="./img.png">
+  <img width="400" src="./img.png">
 </p>
 
 **Baselines**
