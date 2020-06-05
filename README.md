@@ -2,7 +2,7 @@
 - Model: YOLOv2-tiny
 
 <p align="center">
-  <img width="600" height="200" src="./img.png">
+  <img width="600" src="./img.png">
 </p>
 
 **Baselines**
@@ -11,7 +11,7 @@
 
 **CPU optimization**
 - OpenBLAS
-- AVX (main): Runs 1.2x to NumPy
+- AVX (main): Runs 1.2x slower to NumPy, thread-level and instruction-level parallelization
 
 **GPU optimization**
 - cuBLAS
