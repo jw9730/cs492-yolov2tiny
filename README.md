@@ -1,4 +1,4 @@
-# Run object detection faster than numpy
+# Offloaded DNN Inference
 - Model: YOLOv2-tiny
 - Refer to report for details
 
